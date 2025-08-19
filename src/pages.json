@@ -1,0 +1,153 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^u--(.*)": "uview-plus/components/u-$1/u-$1.vue",
+			"^up-(.*)": "uview-plus/components/u-$1/u-$1.vue",
+			"^u-([^-].*)": "uview-plus/components/u-$1/u-$1.vue"
+		}
+	},
+	"pages": [
+		{
+			"path": "pages/Home",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#000000",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": {
+						"type": "transparent",
+						"backgroundColor": "#000000",
+						"titleText": "",
+						"titleSize": "16px",
+						"titleColor": "#FFFFFF"
+					}
+				}
+			}
+		},
+		{
+			"path": "pages/Defi",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#ffffff",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/Ecology",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#000000",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": {
+						"height": "32px"
+					}
+				}
+			}
+		},
+		{
+			"path": "pages/Person",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#ffffff",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/PointsDetails",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/Invitation",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/Exchange",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/Redeem",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/Settings",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		}
+	],
+
+	"tabBar": {
+		"color": "#999999",
+		"selectedColor": "#FFA500",
+		"backgroundColor": "#000000",
+		"borderStyle": "white",
+		"list": [
+			{
+				"pagePath": "pages/Home",
+				"iconPath": "/static/Home.png",
+				"selectedIconPath": "/static/HomePagesSwitching.png",
+				"text": "Home"
+			},
+			{
+				"pagePath": "pages/Defi",
+				"iconPath": "/static/DeFi.png",
+				"selectedIconPath": "/static/DeFiPagesSwitching.png",
+				"text": "DeFi"
+			},
+			{
+				"pagePath": "pages/Ecology",
+				"iconPath": "/static/Ecology.png",
+				"selectedIconPath": "/static/EcologyPagesSwitching.png",
+				"text": "Ecology"
+			},
+			{
+				"pagePath": "pages/Person",
+				"iconPath": "/static/Person.png",
+				"selectedIconPath": "/static/PersonPagesSwitching.png",
+				"text": "Person"
+			}
+		]
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#0A0A0A",
+		"backgroundColor": "#0A0A0A"
+	}
+}
