@@ -109,6 +109,106 @@
 				"backgroundColor": "#0A0A0A",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "views/VGAURecharge",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/USDTRecharge",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/VGAUWithdraw",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/USDTWithdraw",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/MyFinance",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/ProductPurchase",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/BorrowOrder",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/IncreaseCollateral",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/NewLending",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/InfoPage",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
 		}
 	],
 
