@@ -15,8 +15,8 @@
         
         <!-- 右侧钱包连接和语言选择 -->
         <view class="right-controls">
-          <view class="connect-wallet-btn" @click="connectWallet">
-            <text class="btn-text">Connect Wallet</text>
+          <view class="connect-wallet-btn" @click="walletConnected ? showWalletModal = true : connectWallet()" :class="{ connected: walletConnected }">
+            <text class="btn-text">{{ walletConnected ? `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}` : 'Connect Wallet' }}</text>
           </view>
           <view class="language-container">
             <view class="language-btn" @click="toggleLanguageDropdown">
@@ -73,14 +73,14 @@
 
       <!-- TVL数据区域 -->
       <view class="tvl-section">
-        <view class="tvl-number">561,103</view>
+        <view class="tvl-number">{{ tvlData }}</view>
         <view class="tvl-label">Total TVL of VGAU</view>
         <view class="tvl-details">
           <view class="tvl-item">
-            <text class="tvl-text">1 VGAU=123.4561 USDT</text>
+            <text class="tvl-text">1 VGAU={{ vgauPrice }} USDT</text>
           </view>
           <view class="tvl-apr">
-            <text class="apr-text">1% APR</text>
+            <text class="apr-text">{{ aprData }} APR</text>
           </view>
         </view>
       </view>
@@ -104,9 +104,11 @@
           An RWA protocol that anchors gold assets with on-chain tokens, providing secure and transparent gold digitization solutions.
         </view>
         <view class="contract-info">
-          <text class="contract-label">Contract address:</text>
-          <text class="contract-address">{{ contractAddress.substring(0, 2) }}...</text>
-          <image class="copy-icon" src="/static/fuzhi.png" mode="aspectFit" @click="copyContractAddress" />
+          <text class="contract-label">{{ walletConnected ? 'Wallet address:' : 'Contract address:' }}</text>
+          <text class="contract-address" @click="walletConnected ? copyWalletAddress() : copyContractAddress()">
+            {{ walletConnected ? `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}` : '' }}
+          </text>
+          <image class="copy-icon" src="/static/fuzhi.png" mode="aspectFit" @click="walletConnected ? copyWalletAddress() : copyContractAddress()" />
         </view>
         <view class="project-badges">
           <view class="badge">
@@ -171,12 +173,30 @@
         </view>
       </view>
     </view>
+    
+    <!-- 钱包弹窗 -->
+    <view class="wallet-modal" v-if="showWalletModal" @click="showWalletModal = false">
+      <view class="wallet-modal-content" @click.stop>
+        <!-- 钱包地址和复制按钮 -->
+        <view class="wallet-address-section" @click="copyWalletAddress">
+          <text class="wallet-address">{{ `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}` }}</text>
+          <image class="copy-icon" src="/static/fuzhi.png" mode="aspectFit" />
+        </view>
+        
+        <!-- 断开连接按钮 -->
+        <view class="disconnect-btn" @click="disconnectWallet">
+          <text class="disconnect-text">Disconnect</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
   import { ref, onMounted, onUnmounted } from 'vue'
   import { onPageScroll, onShow } from '@dcloudio/uni-app'
+  import web3Service from '../utils/web3.js'
+  import vgauService from '../utils/vgauService.js'
   
   // 轮播图数据
   const banners = ref([
@@ -191,39 +211,177 @@
   // 合同地址
   const contractAddress = ref('0x1234567890abcdef1234567890abcdef12345678')
   
+  // Web3相关状态
+  const walletConnected = ref(false)
+  const currentAccount = ref('')
+  const accountBalance = ref('0')
+  const vgauBalance = ref('0')
+  const tvlData = ref('561,103')
+  const vgauPrice = ref('123.4561')
+  const aprData = ref('1%')
+  const showWalletModal = ref(false)
+  
   // 复制合同地址到剪贴板
   const copyContractAddress = () => {
+    if (!walletConnected.value) {
+      uni.showToast({
+        title: 'Please Connect Wallet',
+        icon: 'none',
+        duration: 1000
+      })
+      return
+    }
+    
     uni.setClipboardData({
       data: contractAddress.value,
       success: () => {
         uni.showToast({
-          title: 'Copied',
+          title: 'Contract Address Copied',
           icon: 'success',
-          duration: 2000
+          duration: 1000
         })
       },
       fail: () => {
         uni.showToast({
-          title: 'Copy failed',
+          title: 'Copy Failed',
           icon: 'error',
-          duration: 2000
+          duration: 1000
         })
       }
     })
   }
   
   // 连接钱包
-  const connectWallet = () => {
-    uni.showToast({
-      title: 'Wallet connection coming soon',
-      icon: 'none',
-      duration: 2000
-    })
+  const connectWallet = async () => {
+    try {
+      const result = await web3Service.connectWallet()
+      
+      if (result.success) {
+        walletConnected.value = true
+        currentAccount.value = result.account
+        console.log('钱包连接成功，状态更新:', walletConnected.value, currentAccount.value)
+        
+        // 立即显示成功提示
+        uni.showToast({
+          title: 'Wallet Connected',
+          icon: 'success',
+          duration: 1000
+        })
+        
+        // 异步获取数据，不阻塞UI
+        setTimeout(async () => {
+          try {
+            // 获取账户余额
+            await updateAccountBalance()
+            
+            // 获取VGAU余额
+            await updateVGAUBalance()
+            
+            // 获取平台数据
+            await updatePlatformData()
+          } catch (error) {
+            console.error('获取数据失败:', error)
+          }
+        }, 100)
+      } else {
+        uni.showToast({
+          title: result.error || 'Connection Failed',
+          icon: 'error',
+          duration: 1000
+        })
+      }
+    } catch (error) {
+      console.error('连接钱包失败:', error)
+      uni.showToast({
+        title: 'Connection Failed',
+        icon: 'error',
+        duration: 1000
+      })
+    }
+  }
+  
+  // 更新账户余额
+  const updateAccountBalance = async () => {
+    try {
+      const balance = await web3Service.getBalance()
+      if (balance) {
+        accountBalance.value = parseFloat(balance.eth).toFixed(4)
+      }
+    } catch (error) {
+      console.error('获取账户余额失败:', error)
+    }
+  }
+  
+  // 更新VGAU余额
+  const updateVGAUBalance = async () => {
+    try {
+      if (vgauService.isInitialized) {
+        const balance = await vgauService.getVGAUBalance()
+        if (balance) {
+          vgauBalance.value = parseFloat(balance.vgau).toFixed(4)
+        }
+      }
+    } catch (error) {
+      console.error('获取VGAU余额失败:', error)
+    }
+  }
+  
+  // 更新平台数据
+  const updatePlatformData = async () => {
+    try {
+      if (vgauService.isInitialized) {
+        const stats = await vgauService.getPlatformStats()
+        if (stats) {
+          tvlData.value = parseFloat(stats.tvl).toLocaleString()
+          vgauPrice.value = parseFloat(stats.price).toFixed(4)
+          aprData.value = `${(stats.apr * 100).toFixed(2)}%`
+        }
+      }
+    } catch (error) {
+      console.error('获取平台数据失败:', error)
+    }
   }
   
   // 轮播图切换事件
   const onSwiperChange = (e) => {
     currentBannerIndex.value = e.detail.current
+  }
+  
+  // 复制钱包地址
+  const copyWalletAddress = () => {
+    uni.setClipboardData({
+      data: currentAccount.value,
+      success: () => {
+        uni.showToast({
+          title: 'Address Copied',
+          icon: 'success',
+          duration: 1000
+        })
+      },
+      fail: () => {
+        uni.showToast({
+          title: 'Copy Failed',
+          icon: 'error',
+          duration: 1000
+        })
+      }
+    })
+  }
+  
+  // 断开钱包连接
+  const disconnectWallet = () => {
+    web3Service.disconnect()
+    walletConnected.value = false
+    currentAccount.value = ''
+    accountBalance.value = '0'
+    vgauBalance.value = '0'
+    showWalletModal.value = false
+    
+    uni.showToast({
+      title: 'Wallet Disconnected',
+      icon: 'success',
+      duration: 1000
+    })
   }
   
   // 语言选择相关
@@ -258,8 +416,28 @@
     })
   }
   
-  onMounted(() => {
+  onMounted(async () => {
     console.log('首页加载完成')
+    
+    // 初始化Web3和VGAU服务
+    try {
+      await vgauService.init()
+      console.log('VGAU服务初始化成功')
+      
+      // 检查是否已经连接了钱包
+      if (web3Service.isConnected && web3Service.currentAccount) {
+        walletConnected.value = true
+        currentAccount.value = web3Service.currentAccount
+        console.log('检测到已连接的钱包:', currentAccount.value)
+        
+        // 获取初始数据
+        await updateAccountBalance()
+        await updateVGAUBalance()
+        await updatePlatformData()
+      }
+    } catch (error) {
+      console.error('VGAU服务初始化失败:', error)
+    }
     
     // 添加点击外部关闭下拉框的监听器（支持移动端）
     document.addEventListener('click', handleClickOutside)
@@ -341,6 +519,12 @@
 /* 全局背景色 */
 :deep(body), :deep(html) {
   background-color: #0A0A0A !important;
+}
+
+/* 钱包连接按钮样式强制覆盖 */
+:deep(.connect-wallet-btn.connected) {
+  background: #FFFFFF !important;
+  border: 1rpx solid rgba(255, 255, 255, 0.2) !important;
 }
 
 /* 全局Toast样式覆盖 */
@@ -440,6 +624,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 120rpx;
+  border: 1rpx solid transparent;
+}
+
+.connect-wallet-btn.connected {
+  background: #FFFFFF !important;
+  border: 1rpx solid rgba(255, 255, 255, 0.2) !important;
 }
 
 .connect-wallet-btn:active {
@@ -451,6 +642,11 @@
   font-size: 28rpx;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.connect-wallet-btn.connected .btn-text {
+  color: #000000 !important;
+  font-weight: 500;
 }
 
 .language-container {
@@ -707,6 +903,12 @@
 .contract-address {
   font-size: 28rpx;
   color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.contract-address:active {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .copy-icon {
@@ -886,5 +1088,87 @@
     font-size: 20rpx;
     padding: 16rpx 24rpx;
   }
+}
+
+/* 钱包弹窗样式 */
+.wallet-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 2000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 120rpx 32rpx 0 0;
+}
+
+.wallet-modal-content {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  min-width: 280rpx;
+  max-width: 320rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.5);
+}
+
+.wallet-address-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  padding: 16rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.wallet-address-section:active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.98);
+}
+
+.wallet-address {
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 500;
+  font-family: monospace;
+  flex: 1;
+  margin-right: 12rpx;
+}
+
+.copy-icon {
+  width: 24rpx;
+  height: 24rpx;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.wallet-address-section:hover .copy-icon {
+  opacity: 1;
+}
+
+.disconnect-btn {
+  background: #FFFFFF;
+  border-radius: 12rpx;
+  padding: 16rpx;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.disconnect-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.disconnect-text {
+  color: #000000;
+  font-size: 28rpx;
+  font-weight: 500;
 }
 </style> 

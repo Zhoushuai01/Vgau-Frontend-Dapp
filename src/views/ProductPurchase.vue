@@ -209,10 +209,8 @@ const showRecords = () => {
 
 // 显示帮助
 const showHelp = () => {
-  uni.showToast({
-    title: 'Help feature coming soon',
-    icon: 'none',
-    duration: 2000
+  uni.navigateTo({
+    url: '/views/ProductHelp'
   })
 }
 

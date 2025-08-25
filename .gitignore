@@ -12,6 +12,9 @@ node_modules
 dist
 *.local
 
+# Uni-app build output
+unpackage/
+
 # Editor directories and files
 .idea
 *.suo
