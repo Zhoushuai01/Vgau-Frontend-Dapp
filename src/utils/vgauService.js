@@ -27,22 +27,22 @@ class VGAUService {
   }
 
   // 加载所有合约
+  // 修复后的loadAllContracts方法
   async loadAllContracts() {
     try {
       const contractsConfig = getAllContracts()
       
       for (const [key, config] of Object.entries(contractsConfig)) {
-        // 这里需要从实际的ABI文件中导入ABI
-        // 暂时使用空数组，实际使用时需要导入真实的ABI
         const abi = await this.getContractABI(config.name)
         
         if (abi) {
-          await web3Service.loadContract(config.address, abi, config.name)
-          this.contracts[key] = config.name
+          // 使用统一的键名作为合约标识符
+          await web3Service.loadContract(config.address, abi, key)
+          this.contracts[key] = key  // 存储键名而不是config.name
         }
       }
       
-      console.log('所有合约加载完成')
+      console.log('所有合约加载完成', this.contracts)
     } catch (error) {
       console.error('加载合约失败:', error)
       throw error
@@ -67,18 +67,18 @@ class VGAUService {
   // 获取VGAU代币信息
   async getVGAUInfo() {
     try {
-      const contractName = this.contracts.VGAU_TOKEN
+      const contractName = this.contracts.VGAU_TOKEN  // 现在这里会是'VGAU_TOKEN'
       if (!contractName) {
         throw new Error('VGAU代币合约未加载')
       }
-
+  
       const [name, symbol, decimals, totalSupply] = await Promise.all([
         web3Service.callContractMethod(contractName, 'name'),
         web3Service.callContractMethod(contractName, 'symbol'),
         web3Service.callContractMethod(contractName, 'decimals'),
         web3Service.callContractMethod(contractName, 'totalSupply')
       ])
-
+  
       return {
         name,
         symbol,
@@ -94,7 +94,7 @@ class VGAUService {
   // 获取用户VGAU余额
   async getVGAUBalance(address = null) {
     try {
-      const contractName = this.contracts.VGAU_TOKEN
+      const contractName = this.contracts.VGAU_TOKEN  // 修改：使用正确的键名
       if (!contractName) {
         throw new Error('VGAU代币合约未加载')
       }
@@ -117,7 +117,7 @@ class VGAUService {
     }
   }
 
-  // 获取VGAU价格（从兑换合约）
+  // 获取VGAU价格
   async getVGAUPrice() {
     try {
       const contractName = this.contracts.VGAU_EXCHANGE
@@ -125,19 +125,33 @@ class VGAUService {
         throw new Error('VGAU兑换合约未加载')
       }
 
-      // 使用实际的合约方法获取最新XAU价格
-      const priceData = await web3Service.callContractMethod(contractName, 'getLatestValidXAUPrice')
+      // 获取XAU每盎司价格（从chainlink）
+      const priceData = await web3Service.callContractMethod(
+        contractName, 
+        'getLatestValidXAUPrice'
+      )
       
-      // 价格数据包含 roundId, price, startedAt, updatedAt
       if (priceData && priceData.price) {
-        // 将价格转换为USDT格式（假设价格以美元为单位）
-        return web3Service.web3.utils.fromWei(priceData.price, 'ether')
+        
+        // 每盎司价格（从chainlink获取，通常有8位小数）
+        const pricePerOunce = priceData.price
+        
+        // 调用合约的getRequiredUSDTByVGAU函数获取1克VGAU需要的USDT数量
+        const result = await web3Service.callContractMethod(
+          contractName, 
+          'getRequiredUSDTByVGAU', 
+          '1', pricePerOunce
+        )
+        
+        if (result) {
+          // 将结果转换为可读格式（使用18位小数精度）
+          return web3Service.web3.utils.fromWei(result, 'ether')
+        }
       }
       
       return '123.4561' // 默认价格
     } catch (error) {
       console.error('获取VGAU价格失败:', error)
-      // 如果获取失败，返回默认价格
       return '123.4561'
     }
   }
@@ -145,7 +159,7 @@ class VGAUService {
   // 获取TVL数据
   async getTVL() {
     try {
-      const contractName = this.contracts.VGAU_EXCHANGE
+      const contractName = this.contracts.VGAU_EXCHANGE  // 修改：使用正确的键名
       if (!contractName) {
         throw new Error('VGAU兑换合约未加载')
       }
@@ -192,7 +206,7 @@ class VGAUService {
         throw new Error('请先连接钱包')
       }
 
-      const contractName = this.contracts.VGAU_EXCHANGE
+      const contractName = this.contracts.VGAUExchange
       if (!contractName) {
         throw new Error('VGAU兑换合约未加载')
       }
@@ -221,7 +235,7 @@ class VGAUService {
         throw new Error('请先连接钱包')
       }
 
-      const contractName = this.contracts.VGAU_EXCHANGE
+      const contractName = this.contracts.VGAUExchange
       if (!contractName) {
         throw new Error('VGAU兑换合约未加载')
       }
@@ -246,7 +260,7 @@ class VGAUService {
   // 获取兑换率
   async getExchangeRate() {
     try {
-      const contractName = this.contracts.VGAU_EXCHANGE
+      const contractName = this.contracts.VGAUExchange
       if (!contractName) {
         throw new Error('VGAU兑换合约未加载')
       }
@@ -333,4 +347,4 @@ class VGAUService {
 // 创建单例实例
 const vgauService = new VGAUService()
 
-export default vgauService 
+export default vgauService

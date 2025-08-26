@@ -16,7 +16,7 @@
         <!-- 右侧钱包连接和语言选择 -->
         <view class="right-controls">
           <view class="connect-wallet-btn" @click="walletConnected ? showWalletModal = true : connectWallet()" :class="{ connected: walletConnected }">
-            <text class="btn-text">{{ walletConnected ? `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}` : 'Connect Wallet' }}</text>
+            <text class="btn-text">{{ walletConnected ? `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}` : $t('wallet.connect') }}</text>
           </view>
           <view class="language-container">
             <view class="language-btn" @click="toggleLanguageDropdown">
@@ -74,37 +74,35 @@
       <!-- TVL数据区域 -->
       <view class="tvl-section">
         <view class="tvl-number">{{ tvlData }}</view>
-        <view class="tvl-label">Total TVL of VGAU</view>
+        <view class="tvl-label">{{ $t('home.tvl') }}</view>
         <view class="tvl-details">
           <view class="tvl-item">
             <text class="tvl-text">1 VGAU={{ vgauPrice }} USDT</text>
           </view>
-          <view class="tvl-apr">
-            <text class="apr-text">{{ aprData }} APR</text>
-          </view>
+          
         </view>
       </view>
 
       <!-- 兑换功能区域 -->
       <view class="exchange-section">
-        <view class="exchange-title">USDT to VGAU</view>
+        <view class="exchange-title">{{ $t('home.exchange') }}</view>
         <view class="exchange-input">
-          <input class="input-field" placeholder="Enter exchange amount" />
+                      <input class="input-field" :placeholder="$t('home.enterAmount')" />
           <view class="currency-label">VGAU</view>
         </view>
         <view class="confirm-button">
-          <text class="button-text">Confirm Operation</text>
+          <text class="button-text">{{ $t('home.confirmOperation') }}</text>
         </view>
       </view>
 
       <!-- 项目介绍区域 -->
       <view class="project-section">
-        <view class="project-title">Afrigold Ledger</view>
+        <view class="project-title">{{ $t('home.projectTitle') }}</view>
         <view class="project-desc">
-          An RWA protocol that anchors gold assets with on-chain tokens, providing secure and transparent gold digitization solutions.
+          {{ $t('home.projectDesc') }}
         </view>
         <view class="contract-info">
-          <text class="contract-label">{{ walletConnected ? 'Wallet address:' : 'Contract address:' }}</text>
+          <text class="contract-label">{{ walletConnected ? $t('home.walletAddress') : $t('home.contractAddress') }}</text>
           <text class="contract-address" @click="walletConnected ? copyWalletAddress() : copyContractAddress()">
             {{ walletConnected ? `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}` : '' }}
           </text>
@@ -113,15 +111,15 @@
         <view class="project-badges">
           <view class="badge">
             <image class="badge-icon" src="/static/Home/Audited.png" mode="aspectFit" />
-            <text class="badge-text">Audited</text>
+            <text class="badge-text">{{ $t('home.features.audited') }}</text>
           </view>
           <view class="badge">
             <image class="badge-icon" src="/static/Home/Custodian.png" mode="aspectFit" />
-            <text class="badge-text">Custodian</text>
+            <text class="badge-text">{{ $t('home.features.custodian') }}</text>
           </view>
           <view class="badge">
             <image class="badge-icon" src="/static/Home/Details.png" mode="aspectFit" />
-            <text class="badge-text">Details</text>
+            <text class="badge-text">{{ $t('home.features.details') }}</text>
           </view>
         </view>
       </view>
@@ -130,14 +128,14 @@
       <view class="inventory-section">
         <view class="inventory-header">
           <image class="gold-icon" src="/static/Home/Gold.png" mode="aspectFit" />
-          <text class="inventory-title">Gold Inventory</text>
+          <text class="inventory-title">{{ $t('home.goldInventory') }}</text>
         </view>
         <view class="inventory-amount">
           <text class="amount-number">5,611,036g</text>
-          <text class="amount-label">Inventory Amount</text>
+          <text class="amount-label">{{ $t('home.inventoryAmount') }}</text>
         </view>
         <view class="daily-inventory">
-          <text class="daily-label">Daily Inventory Amount</text>
+          <text class="daily-label">{{ $t('home.dailyInventory') }}</text>
           <scroll-view class="daily-scroll" scroll-x="true" show-scrollbar="false">
             <view class="daily-data">
               <view class="daily-item">
@@ -168,8 +166,8 @@
           </scroll-view>
         </view>
         <view class="source-info">
-          <text class="source-text">Source: African Gold Mining Area</text>
-          <text class="certificate-text">Certificate No: AGL-2021-001</text>
+          <text class="source-text">{{ $t('home.source') }}</text>
+          <text class="certificate-text">{{ $t('home.certificate') }}</text>
         </view>
       </view>
     </view>
@@ -185,7 +183,7 @@
         
         <!-- 断开连接按钮 -->
         <view class="disconnect-btn" @click="disconnectWallet">
-          <text class="disconnect-text">Disconnect</text>
+          <text class="disconnect-text">{{ $t('wallet.disconnect') }}</text>
         </view>
       </view>
     </view>
@@ -195,8 +193,12 @@
 <script setup>
   import { ref, onMounted, onUnmounted } from 'vue'
   import { onPageScroll, onShow } from '@dcloudio/uni-app'
+  import { useI18n } from 'vue-i18n'
+  import { setLocale } from '@/i18n/i18n.js'
   import web3Service from '../utils/web3.js'
   import vgauService from '../utils/vgauService.js'
+  
+  const { t, locale } = useI18n()
   
   // 轮播图数据
   const banners = ref([
@@ -225,7 +227,7 @@
   const copyContractAddress = () => {
     if (!walletConnected.value) {
       uni.showToast({
-        title: 'Please Connect Wallet',
+        title: t('wallet.pleaseConnect'),
         icon: 'none',
         duration: 1000
       })
@@ -236,14 +238,14 @@
       data: contractAddress.value,
       success: () => {
         uni.showToast({
-          title: 'Contract Address Copied',
+          title: t('wallet.contractAddressCopied'),
           icon: 'success',
           duration: 1000
         })
       },
       fail: () => {
         uni.showToast({
-          title: 'Copy Failed',
+          title: t('wallet.copyFailed'),
           icon: 'error',
           duration: 1000
         })
@@ -263,7 +265,7 @@
         
         // 立即显示成功提示
         uni.showToast({
-          title: 'Wallet Connected',
+          title: t('wallet.connected'),
           icon: 'success',
           duration: 1000
         })
@@ -285,7 +287,7 @@
         }, 100)
       } else {
         uni.showToast({
-          title: result.error || 'Connection Failed',
+          title: result.error || t('wallet.connectionFailed'),
           icon: 'error',
           duration: 1000
         })
@@ -293,7 +295,7 @@
     } catch (error) {
       console.error('连接钱包失败:', error)
       uni.showToast({
-        title: 'Connection Failed',
+        title: t('wallet.connectionFailed'),
         icon: 'error',
         duration: 1000
       })
@@ -353,14 +355,14 @@
       data: currentAccount.value,
       success: () => {
         uni.showToast({
-          title: 'Address Copied',
+          title: t('wallet.addressCopied'),
           icon: 'success',
           duration: 1000
         })
       },
       fail: () => {
         uni.showToast({
-          title: 'Copy Failed',
+          title: t('wallet.copyFailed'),
           icon: 'error',
           duration: 1000
         })
@@ -378,7 +380,7 @@
     showWalletModal.value = false
     
     uni.showToast({
-      title: 'Wallet Disconnected',
+      title: t('wallet.disconnected'),
       icon: 'success',
       duration: 1000
     })
@@ -386,7 +388,6 @@
   
   // 语言选择相关
   const showLanguageDropdown = ref(false)
-  const currentLanguage = ref('en') // 默认设置为英文，因为当前页面是英文页面
   
   // 切换语言下拉框显示
   const toggleLanguageDropdown = () => {
@@ -394,26 +395,36 @@
   }
   
   // 选择语言
-  const selectLanguage = (language) => {
-    currentLanguage.value = language
-    showLanguageDropdown.value = false
-    
-    // 语言切换提示文字
-    const switchMessages = {
-      'ar': 'تم التبديل',
-      'en': 'Switched',
-      'fr': 'Changé',
-      'zh': '已切換',
-      'pt': 'Alterado'
+  const selectLanguage = async (language) => {
+    try {
+      // 使用Vue I18n的语言切换功能
+      await setLocale(language)
+      showLanguageDropdown.value = false
+      
+      // 语言切换提示文字
+      const switchMessages = {
+        'ar': 'تم التبديل',
+        'en': 'Switched',
+        'fr': 'Changé',
+        'zh': '已切換',
+        'pt': 'Alterado'
+      }
+      
+      // 使用与复制功能相同的Toast样式
+      uni.showToast({
+        title: switchMessages[language] || 'Language Changed',
+        icon: 'none',
+        duration: 2000,
+        position: 'center'
+      })
+    } catch (error) {
+      console.error('语言切换失败:', error)
+      uni.showToast({
+        title: 'Language switch failed',
+        icon: 'error',
+        duration: 2000
+      })
     }
-    
-    // 使用与复制功能相同的Toast样式
-    uni.showToast({
-      title: switchMessages[language],
-      icon: 'none',
-      duration: 2000,
-      position: 'center'
-    })
   }
   
   onMounted(async () => {
@@ -811,10 +822,6 @@
   color: #FFFFFF;
 }
 
-.apr-text {
-  font-size: 28rpx;
-  color: #00CC66;
-}
 
 /* 兑换功能区域 */
 .exchange-section {

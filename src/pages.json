@@ -219,6 +219,26 @@
 				"backgroundColor": "#0A0A0A",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "views/History",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/TransactionDetail",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
 		}
 	],
 

@@ -2,9 +2,9 @@
   <view class="person-container">
     <!-- 顶部标题栏 - 固定在顶部 -->
     <view class="header">
-      <text class="header-title">Profile Center</text>
+      <text class="header-title">{{ $t('person.title') }}</text>
       <view class="header-actions">
-        <view class="header-btn">
+        <view class="header-btn" @click="goToHistory">
           <image src="/static/Person/History.png" class="header-icon" />
         </view>
         <view class="header-btn">
@@ -30,7 +30,7 @@
         <!-- 钱包地址 -->
         <view class="wallet-section">
           <view class="wallet-info">
-            <text class="wallet-label">Wallet Address</text>
+            <text class="wallet-label">{{ $t('person.walletAddress') }}</text>
             <text class="wallet-address">{{ walletAddress }}</text>
           </view>
           <view class="copy-btn" @click="copyWalletAddress">
@@ -47,58 +47,58 @@
           <view class="action-icon exchange-icon">
             <image src="/static/Person/Exchange.png" class="action-icon-img" />
           </view>
-          <text class="action-label">Exchange</text>
+          <text class="action-label">{{ $t('person.menu.exchange') }}</text>
         </view>
         
         <view class="action-item" @click="goToRedeem">
           <view class="action-icon redeem-icon">
             <image src="/static/Person/Redeem.png" class="action-icon-img" />
           </view>
-          <text class="action-label">Redeem</text>
+          <text class="action-label">{{ $t('person.menu.redeem') }}</text>
         </view>
         
         <view class="action-item" @click="goToInvitation">
           <view class="action-icon invite-icon">
             <image src="/static/Person/Invite.png" class="action-icon-img" />
           </view>
-          <text class="action-label">Invite</text>
+          <text class="action-label">{{ $t('person.menu.invite') }}</text>
         </view>
         
         <view class="action-item" @click="goToPointsDetails">
           <view class="action-icon points-icon">
             <image src="/static/Person/Points.png" class="action-icon-img" />
           </view>
-          <text class="action-label">Points</text>
+          <text class="action-label">{{ $t('person.menu.points') }}</text>
         </view>
       </view>
 
       <!-- 资产概览标题 -->
       <view class="section-title">
-        <text class="title-text">Asset Overview</text>
+        <text class="title-text">{{ $t('person.assetOverview') }}</text>
       </view>
 
       <!-- 资产数据卡片 -->
               <view class="assets-grid">
           <view class="asset-card">
-            <text class="asset-label">Current Staked Amount</text>
+            <text class="asset-label">{{ $t('person.currentStakedAmount') }}</text>
             <text class="asset-unit">VGAU</text>
             <text class="asset-value">{{ assets.stakedVGAU }}</text>
           </view>
           
           <view class="asset-card">
-            <text class="asset-label">Total Staked Rewards</text>
+            <text class="asset-label">{{ $t('person.totalStakedRewards') }}</text>
             <text class="asset-unit">USDT</text>
             <text class="asset-value">{{ assets.stakingYield }}</text>
           </view>
           
           <view class="asset-card">
-            <text class="asset-label">Current Collateral</text>
+            <text class="asset-label">{{ $t('person.currentCollateral') }}</text>
             <text class="asset-unit">VGAU</text>
             <text class="asset-value">{{ assets.collateralVGAU }}</text>
           </view>
           
           <view class="asset-card">
-            <text class="asset-label">Remaining Debt</text>
+            <text class="asset-label">{{ $t('person.remainingDebt') }}</text>
             <text class="asset-unit">USDT</text>
             <text class="asset-value">{{ assets.remainingDebt }}</text>
           </view>
@@ -106,7 +106,7 @@
 
       <!-- 累计积分 -->
       <view class="points-section">
-        <text class="points-label">Total Points</text>
+        <text class="points-label">{{ $t('person.totalPoints') }}</text>
         <text class="points-value">{{ points }}</text>
       </view>
 
@@ -116,17 +116,17 @@
           <view class="notification-icon">
             <image src="/static/Person/Notice.png" class="icon-img" />
           </view>
-          <text class="notification-title">Notification Center (Liquidation Alert)</text>
+          <text class="notification-title">{{ $t('person.notificationCenter') }}</text>
         </view>
         
         <view class="notification-content">
-          <text class="notification-text">Your assets are near liquidation threshold, please top up.</text>
+          <text class="notification-text">{{ $t('person.liquidationAlert') }}</text>
         </view>
         
         <view class="notification-divider"></view>
         
         <view class="notification-action">
-          <button class="action-button">Top Up Now</button>
+          <button class="action-button">{{ $t('person.topUpNow') }}</button>
         </view>
       </view>
 
@@ -134,7 +134,7 @@
       <view class="more-settings" >
         <view class="settings-left"@click="goToSettings">
           <image src="/static/Person/More-Settings.png" class="settings-btn-icon" @error="onImageError" />
-            <text class="settings-text">More Settings</text>
+            <text class="settings-text">{{ $t('person.moreSettings') }}</text>
         </view>
       </view>
     </view>
@@ -145,6 +145,9 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t, locale } = useI18n()
 
 // 响应式数据
 const walletAddress = ref('0x7e0fbF2D6DEa2371ea8f237c056B024dA4Bc87af')
@@ -169,7 +172,7 @@ const copyWalletAddress = () => {
   // H5环境使用navigator.clipboard
   if (navigator.clipboard) {
     navigator.clipboard.writeText(walletAddress.value).then(() => {
-      showToast('Wallet address copied!')
+      showToast(t('person.walletAddressCopied'))
     }).catch(() => {
       fallbackCopy()
     })
@@ -183,10 +186,10 @@ const copyWalletAddress = () => {
   uni.setClipboardData({
     data: walletAddress.value,
     success: () => {
-      showToast('Wallet address copied!')
+      showToast(t('person.walletAddressCopied'))
     },
     fail: () => {
-      showToast('Copy failed')
+      showToast(t('person.copyFailed'))
     }
   })
   // #endif
@@ -284,6 +287,13 @@ const goToExchange = () => {
 const goToRedeem = () => {
   uni.navigateTo({
     url: '/views/Redeem'
+  })
+}
+
+// 跳转到历史记录页面
+const goToHistory = () => {
+  uni.navigateTo({
+    url: '/views/History'
   })
 }
 

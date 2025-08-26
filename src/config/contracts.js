@@ -3,23 +3,23 @@ export const CONTRACTS = {
   // BSC测试网配置
   BSC_TESTNET: {
     VGAU_TOKEN: {
-      address: '0x2799cF234C62f9ACee0C0eE2A75A709F29Cc687e',
+      address: '0x75579C9FB3A30e7c3CaBB5c74E4A6c0DB1e2054d',
       name: 'VGAUToken'
     },
     VGAU_EXCHANGE: {
-      address: '0x043f1cE5ebE0238606e24e1C4fC433334F8Ed938',
+      address: '0xbEe820f5ACA3a90f21af24a6573F69E3D3232609',
       name: 'VGAUExchange'
     },
     VGAU_PLATFORM_RECHARGE: {
-      address: '0x222794B80425954A1EE94DB0241D8f2b5b368a81',
+      address: '0xFb015C1e853a66a7713e7C750C2fc4451405601b',
       name: 'VGAUPlatformRecharge'
     },
     VGAU_ACCESS_CONTROL: {
-      address: '0x6D34076cEd015521Decc988cdfEe13C53DbCD510',
+      address: '0x1b514B0eB5614E4D3d71c235aa733B23b21E0359',
       name: 'VGAUAccessControl'
     },
     VGAU_USER_KYC_MANAGER: {
-      address: '0x2b8A7b547a020dE614ea63Fd2978A0c9E2f17b43',
+      address: '0x4772F321A71e70060ceB5C1Ce924DAfA4Ad42B8E',
       name: 'VGAUUserKycManager'
     },
     BEP20_USDT: {

@@ -1,0 +1,208 @@
+import { BASE_URL, API_ENDPOINTS, REQUEST_CONFIG, RESPONSE_CONFIG } from '@/config/api.js'
+
+// 统一的API请求函数
+class ApiService {
+  constructor() {
+    this.baseURL = BASE_URL
+    this.endpoints = API_ENDPOINTS
+  }
+
+  // 通用请求方法
+  async request(url, options = {}) {
+    const config = {
+      ...REQUEST_CONFIG,
+      ...options,
+      url: this.baseURL + url
+    }
+
+    console.log('🌐 API请求配置:', {
+      method: config.method || 'GET',
+      url: config.url,
+      data: config.data,
+      headers: config.headers,
+      timeout: config.timeout
+    })
+
+    try {
+      console.log('📤 开始发送请求...')
+      const response = await uni.request(config)
+      
+      console.log('📡 API响应详情:', {
+        statusCode: response.statusCode,
+        data: response.data,
+        header: response.header
+      })
+      
+      // 检查响应状态
+      if (RESPONSE_CONFIG.successCodes.includes(response.statusCode)) {
+        return response.data
+      } else {
+        console.error('❌ 响应状态码错误:', response.statusCode, response.data)
+        throw new Error(response.data?.message || `Request failed with status ${response.statusCode}`)
+      }
+    } catch (error) {
+      console.error('💥 API请求异常:', {
+        message: error.message,
+        stack: error.stack,
+        config: config
+      })
+      RESPONSE_CONFIG.errorHandler(error)
+      throw error
+    }
+  }
+
+  // GET请求
+  async get(url, params = {}) {
+    return this.request(url, {
+      method: 'GET',
+      data: params
+    })
+  }
+
+  // POST请求
+  async post(url, data = {}) {
+    return this.request(url, {
+      method: 'POST',
+      data
+    })
+  }
+
+  // PUT请求
+  async put(url, data = {}) {
+    return this.request(url, {
+      method: 'PUT',
+      data
+    })
+  }
+
+  // DELETE请求
+  async delete(url) {
+    return this.request(url, {
+      method: 'DELETE'
+    })
+  }
+
+  // 用户认证相关API
+  auth = {
+    // 用户登录
+    login: (credentials) => this.post(this.endpoints.AUTH.LOGIN, credentials),
+    
+    // 用户登出
+    logout: () => this.post(this.endpoints.AUTH.LOGOUT),
+    
+    // 用户注册
+    register: (userData) => this.post(this.endpoints.AUTH.REGISTER, userData),
+    
+    // 获取用户信息
+    getProfile: () => this.get(this.endpoints.AUTH.PROFILE),
+    
+    // 获取当前用户信息（检查登录状态）
+    getMe: () => this.get(this.endpoints.AUTH.ME)
+  }
+
+  // 钱包认证相关API
+  walletAuth = {
+              // 创建登录挑战
+          createLoginChallenge: (walletAddress, chainId) => {
+            // 验证必需参数
+            if (!walletAddress) {
+              throw new Error('钱包地址不能为空')
+            }
+            if (!chainId) {
+              throw new Error('链ID不能为空，chainId是必需的参数')
+            }
+            
+            // 验证chainId格式（必须是10进制数字）
+            if (typeof chainId !== 'number' || chainId <= 0 || !Number.isInteger(chainId)) {
+              throw new Error('链ID格式无效，必须是10进制数字')
+            }
+            
+            return this.post(this.endpoints.WALLET_AUTH.LOGIN_CHALLENGE, { walletAddress, chainId })
+          },
+    
+    // 验证登录签名
+    verifyLoginSignature: (data) => this.post(this.endpoints.WALLET_AUTH.LOGIN_VERIFY, data)
+  }
+
+  // 钱包相关API
+  wallet = {
+    // 获取余额
+    getBalance: () => this.get(this.endpoints.WALLET.BALANCE),
+    
+    // 获取交易记录
+    getTransactions: (params) => this.get(this.endpoints.WALLET.TRANSACTIONS, params),
+    
+    // 提现
+    withdraw: (data) => this.post(this.endpoints.WALLET.WITHDRAW, data),
+    
+    // 充值
+    deposit: (data) => this.post(this.endpoints.WALLET.DEPOSIT, data)
+  }
+
+  // 用户管理相关API
+  user = {
+    // 获取用户资料
+    getProfile: () => this.get(this.endpoints.USER.PROFILE),
+    
+    // 更新用户资料
+    updateProfile: (data) => this.put(this.endpoints.USER.UPDATE, data),
+    
+    // KYC相关
+    getKyc: () => this.get(this.endpoints.USER.KYC),
+    submitKyc: (data) => this.post(this.endpoints.USER.KYC, data)
+  }
+
+  // 2FA认证相关API
+  totp = {
+    // 设置2FA
+    setup: () => this.get(this.endpoints.TOTP.SETUP),
+    
+    // 验证2FA
+    verify: (code) => this.post(this.endpoints.TOTP.VERIFY, { code }),
+    
+    // 禁用2FA
+    disable: (code) => this.post(this.endpoints.TOTP.DISABLE, { code })
+  }
+
+  // 文件管理相关API
+  file = {
+    // 上传文件
+    upload: (fileData) => this.post(this.endpoints.FILE.UPLOAD, fileData),
+    
+    // 下载文件
+    download: (fileId) => this.get(this.endpoints.FILE.DOWNLOAD, { fileId }),
+    
+    // 预览文件
+    preview: (fileId) => this.get(this.endpoints.FILE.PREVIEW, { fileId })
+  }
+
+  // 邀请管理相关API
+  invite = {
+    // 获取邀请码
+    getCode: () => this.get(this.endpoints.INVITE.CODE),
+    
+    // 绑定邀请人
+    bind: (code) => this.post(this.endpoints.INVITE.BIND, { code }),
+    
+    // 获取邀请关系
+    getRelations: (params) => this.get(this.endpoints.INVITE.RELATIONS, params)
+  }
+}
+
+// 创建API服务实例
+const apiService = new ApiService()
+
+// 导出API服务实例
+export default apiService
+
+// 导出各个模块的API方法
+export const authAPI = apiService.auth
+export const walletAuthAPI = apiService.walletAuth
+export const walletAPI = apiService.wallet
+export const userAPI = apiService.user
+export const totpAPI = apiService.totp
+export const fileAPI = apiService.file
+export const inviteAPI = apiService.invite
+
+// 导出基础配置
+export { BASE_URL, API_ENDPOINTS } 

@@ -36,25 +36,18 @@
             <view class="divider"></view>
             <view class="redeemable-info">
               <text class="redeemable-label">Redeemable</text>
-              <text class="redeemable-amount">48,456,156 VGAU</text>
+              <text class="redeemable-amount">{{ vgauBalance }} VGAU</text>
             </view>
           </view>
         </view>
 
-        <!-- 赎回至区域 -->
-        <view class="redeem-to-section">
-          <view class="section-header">
-            <text class="section-title">Redeem To</text>
-            <text class="wallet-label">Bound Wallet Address</text>
-          </view>
-          <text class="daily-limit">Daily Maximum Redemption Limit: 5000000000 VGAU</text>
-        </view>
+
       </view>
 
       <!-- 确认按钮 -->
       <view class="confirm-section">
-        <view class="confirm-btn" @click="confirmRecharge">
-          <text class="confirm-text">Confirm Operation</text>
+        <view class="confirm-btn" :class="{ disabled: isLoading }" @click="confirmRecharge">
+          <text class="confirm-text">{{ isLoading ? 'Processing...' : 'Confirm Operation' }}</text>
         </view>
       </view>
     </view>
@@ -62,10 +55,59 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue'
+  import { ref, onMounted } from 'vue'
+  import contractService from '@/utils/contractService.js'
   
   // 响应式数据
   const amount = ref('')
+  const vgauBalance = ref('0.000000')
+  const isLoading = ref(false)
+  const walletAddress = ref('')
+  
+  // 页面加载时初始化
+  onMounted(async () => {
+    try {
+      await initContractService()
+      await loadUserData()
+    } catch (error) {
+      console.error('页面初始化失败:', error)
+    }
+  })
+  
+  // 初始化合约服务
+  const initContractService = async () => {
+    try {
+      isLoading.value = true
+      await contractService.init()
+      console.log('✅ 合约服务初始化成功')
+    } catch (error) {
+      console.error('❌ 合约服务初始化失败:', error)
+      uni.showToast({
+        title: '合约服务初始化失败',
+        icon: 'none',
+        duration: 3000
+      })
+    } finally {
+      isLoading.value = false
+    }
+  }
+  
+  // 加载用户数据
+  const loadUserData = async () => {
+    try {
+      // 获取VGAU余额
+      const balance = await contractService.getVGAUBalance()
+      vgauBalance.value = balance.formatted
+      
+      // 获取网络信息
+      const networkInfo = await contractService.getNetworkInfo()
+      walletAddress.value = networkInfo.currentAccount
+      
+      console.log('✅ 用户数据加载成功')
+    } catch (error) {
+      console.error('❌ 用户数据加载失败:', error)
+    }
+  }
   
   // 返回上一页
   const goBack = () => {
@@ -78,26 +120,99 @@
   }
   
   // 确认充值
-  const confirmRecharge = () => {
+  const confirmRecharge = async () => {
     if (!amount.value || parseFloat(amount.value) <= 0) {
       uni.showToast({
-        title: 'Please enter a valid amount',
+        title: '请输入有效的充值金额',
         icon: 'none',
         duration: 2000
       })
       return
     }
     
-    uni.showToast({
-      title: `Recharge ${amount.value} VGAU Successfully`,
-      icon: 'success',
-      duration: 2000
-    })
+    const rechargeAmount = parseFloat(amount.value)
     
-    // 延迟返回上一页
-    setTimeout(() => {
-      uni.navigateBack()
-    }, 2000)
+    try {
+      isLoading.value = true
+      
+      // 显示确认弹窗
+      uni.showModal({
+        title: '确认充值',
+        content: `确定要充值 ${rechargeAmount} VGAU 吗？`,
+        confirmText: '确认',
+        cancelText: '取消',
+        success: async (res) => {
+          if (res.confirm) {
+            await executeRecharge(rechargeAmount)
+          }
+        }
+      })
+    } catch (error) {
+      console.error('充值操作失败:', error)
+      uni.showToast({
+        title: '充值操作失败',
+        icon: 'none',
+        duration: 3000
+      })
+    } finally {
+      isLoading.value = false
+    }
+  }
+  
+  // 执行充值
+  const executeRecharge = async (rechargeAmount) => {
+    try {
+      isLoading.value = true
+      
+      uni.showLoading({
+        title: '正在充值...',
+        mask: true
+      })
+      
+      // 执行完整的VGAU充值流程（授权+充值）
+      const result = await contractService.completeVGAURecharge(rechargeAmount)
+      
+      uni.hideLoading()
+      
+      if (result && result.transactionHash) {
+        uni.showToast({
+          title: '充值成功！',
+          icon: 'success',
+          duration: 3000
+        })
+        
+        // 刷新余额
+        await loadUserData()
+        
+        // 清空输入
+        amount.value = ''
+        
+        // 延迟返回上一页
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 2000)
+      }
+    } catch (error) {
+      uni.hideLoading()
+      console.error('❌ 充值执行失败:', error)
+      
+      let errorMessage = '充值失败'
+      if (error.message.includes('insufficient funds')) {
+        errorMessage = '余额不足'
+      } else if (error.message.includes('user rejected')) {
+        errorMessage = '用户取消操作'
+      } else if (error.message.includes('gas')) {
+        errorMessage = 'Gas费用不足'
+      }
+      
+      uni.showToast({
+        title: errorMessage,
+        icon: 'none',
+        duration: 3000
+      })
+    } finally {
+      isLoading.value = false
+    }
   }
 </script>
 
@@ -295,6 +410,15 @@
 
 .confirm-btn:active {
   transform: scale(0.98);
+}
+
+.confirm-btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.confirm-btn.disabled:active {
+  transform: none;
 }
 
 .confirm-text {

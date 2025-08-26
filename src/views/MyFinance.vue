@@ -19,7 +19,6 @@
       <view class="redemption-notice">
         <text class="notice-text">Selected assets will be immediately redeemed to your account</text>
       </view>
-
       <!-- 可赎回资产卡片 -->
       <view class="asset-card">
         <view class="asset-info">
@@ -95,10 +94,8 @@ const goBack = () => {
 
 // 查看历史记录
 const viewHistory = () => {
-  uni.showToast({
-    title: 'History feature coming soon',
-    icon: 'none',
-    duration: 2000
+  uni.navigateTo({
+    url: '/views/History'
   })
 }
 

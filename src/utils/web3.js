@@ -174,14 +174,34 @@ class Web3Service {
       if (!contract) {
         throw new Error(`合约 ${contractName} 未加载`)
       }
-
+  
       const method = contract.methods[methodName]
       if (!method) {
         throw new Error(`方法 ${methodName} 不存在`)
       }
-
+  
       const result = await method(...args).call()
-      return result
+      
+      // 处理 BigInt 类型的返回值
+      // 在callContractMethod中添加BigInt处理
+      const processResult = (obj) => {
+        if (typeof obj === 'bigint') {
+          return obj.toString()
+        }
+        if (Array.isArray(obj)) {
+          return obj.map(processResult)
+        }
+        if (obj && typeof obj === 'object') {
+          const processed = {}
+          for (const [key, value] of Object.entries(obj)) {
+            processed[key] = processResult(value)
+          }
+          return processed
+        }
+        return obj
+      }
+      
+      return processResult(result)
     } catch (error) {
       console.error(`调用合约方法失败:`, error)
       throw error
@@ -210,9 +230,13 @@ class Web3Service {
         ...options
       })
 
+      // 处理BigInt类型的gas估算，转换为字符串后计算
+      const gasEstimateNumber = typeof gasEstimate === 'bigint' ? Number(gasEstimate) : gasEstimate
+      const gasLimit = Math.floor(gasEstimateNumber * 1.2) // 增加20%的gas限制
+
       const transaction = await method(...args).send({
         from: this.currentAccount,
-        gas: Math.floor(gasEstimate * 1.2), // 增加20%的gas限制
+        gas: gasLimit,
         ...options
       })
 
@@ -294,4 +318,4 @@ class Web3Service {
 // 创建单例实例
 const web3Service = new Web3Service()
 
-export default web3Service 
+export default web3Service

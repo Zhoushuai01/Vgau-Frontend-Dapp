@@ -12,11 +12,19 @@ export default defineConfig({
     port: 5173, // 指定端口
     open: true, // 自动打开浏览器
     cors: true, // 启用CORS
+    proxy: {
+      '/api': {
+        target: 'http://192.168.1.100:8080',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '/api')
+      }
+    }
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "api": path.resolve(__dirname, "./src/api/index.js"),
+      "api": path.resolve(__dirname, "./src/api/apiService.js"),
     },
   },
 });

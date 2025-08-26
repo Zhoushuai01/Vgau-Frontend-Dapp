@@ -1,5 +1,14 @@
 <template>
   <view class="content">
+    <!-- 顶部标题栏 - 固定在顶部 -->
+    <view class="header">
+      <view class="header-actions">
+        <view class="header-btn" @click="goToHistory">
+          <image src="/static/history.png" class="header-icon" />
+        </view>
+      </view>
+    </view>
+
     <!-- 主要内容区域 -->
     <view class="main-content">
       <!-- 轮播图区域 -->
@@ -28,14 +37,14 @@
       <!-- 兑换汇率区域 -->
       <view class="exchange-rate-section">
         <view class="rate-info">
-          <text class="rate-label">Exchange Rate</text>
+          <text class="rate-label">{{ $t('defi.exchangeRate') }}</text>
           <text class="rate-value">1 VGAU=123.4561 USDT</text>
         </view>
       </view>
 
       <!-- 余额区域 -->
       <view class="balance-section">
-        <text class="balance-label">Balance</text>
+        <text class="balance-label">{{ $t('defi.balance') }}</text>
         <view class="balance-divider"></view>
         
         <!-- VGAU余额 -->
@@ -62,17 +71,17 @@
         <view class="yield-card">
           <view class="yield-info">
             <view class="yield-item">
-              <text class="yield-label">Current APR</text>
+              <text class="yield-label">{{ $t('defi.currentApr') }}</text>
               <text class="yield-value">1%</text>
             </view>
             <view class="yield-divider"></view>
             <view class="yield-item">
-              <text class="yield-label">Pending</text>
+              <text class="yield-label">{{ $t('defi.pending') }}</text>
               <text class="yield-value">1231.00</text>
             </view>
           </view>
           <view class="claim-button">
-            <text class="claim-text">Claim</text>
+            <text class="claim-text">{{ $t('defi.claim') }}</text>
           </view>
         </view>
       </view>
@@ -80,20 +89,20 @@
       <!-- 操作按钮区域 -->
       <view class="action-section">
         <view class="action-btn primary" @click="handleRecharge">
-          <text class="btn-text">Deposit</text>
+          <text class="btn-text">{{ $t('defi.deposit') }}</text>
         </view>
         <view class="action-btn secondary" @click="handleWithdraw">
-          <text class="btn-text">Withdraw</text>
+          <text class="btn-text">{{ $t('defi.withdraw') }}</text>
         </view>
         
-        <view class="action-buttons">
-          <view class="action-btn outline" @click="handleFinance">
-            <text class="btn-text">Finance</text>
+                  <view class="action-buttons">
+            <view class="action-btn outline" @click="handleFinance">
+              <text class="btn-text">{{ $t('defi.finance') }}</text>
+            </view>
+            <view class="action-btn outline" @click="handleLending">
+              <text class="btn-text">{{ $t('defi.lending') }}</text>
+            </view>
           </view>
-          <view class="action-btn outline" @click="handleLending">
-            <text class="btn-text">Lending</text>
-          </view>
-        </view>
       </view>
     </view>
 
@@ -121,7 +130,7 @@
               <view class="currency-icon">
                 <image class="finance-icon" src="/static/DiFi/licai.png" mode="aspectFit" />
               </view>
-              <text class="currency-name">My Finance</text>
+              <text class="currency-name">{{ $t('defi.myFinance') }}</text>
             </view>
             
             <!-- 产品申购选择 -->
@@ -129,7 +138,7 @@
               <view class="currency-icon">
                 <image class="purchase-icon" src="/static/DiFi/shengou.png" mode="aspectFit" />
               </view>
-              <text class="currency-name">Product Purchase</text>
+              <text class="currency-name">{{ $t('defi.productPurchase') }}</text>
             </view>
           </template>
           
@@ -139,7 +148,7 @@
               <view class="currency-icon">
                 <image class="borrow-icon" src="/static/DiFi/jiebi.png" mode="aspectFit" />
               </view>
-              <text class="currency-name">Borrow Order</text>
+              <text class="currency-name">{{ $t('defi.borrowOrder') }}</text>
             </view>
             
             <!-- 新的借贷选项 -->
@@ -147,7 +156,7 @@
               <view class="currency-icon">
                 <image class="lending-icon" src="/static/DiFi/jiedai.png" mode="aspectFit" />
               </view>
-              <text class="currency-name">New Lending</text>
+              <text class="currency-name">{{ $t('defi.newLending') }}</text>
             </view>
           </template>
           
@@ -177,12 +186,56 @@
         </view>
       </view>
     </view>
+
+    <!-- 钱包绑定弹窗 -->
+    <view class="wallet-bind-modal" v-if="showWalletBindModal" @click="closeWalletBindModal">
+      <view class="modal-overlay"></view>
+      <view class="modal-content" @click.stop>
+        <!-- 弹窗头部 -->
+        <view class="modal-header">
+          <view class="modal-handle"></view>
+          <text class="modal-title">{{ $t('wallet.bind.title') }}</text>
+        </view>
+        
+        <!-- 弹窗内容 -->
+        <view class="bind-content">
+          <view class="bind-icon">
+            <text class="icon-text">🔗</text>
+          </view>
+          <text class="bind-title">{{ $t('wallet.bind.subtitle') }}</text>
+          <text class="bind-description">
+            {{ $t('wallet.bind.description') }}
+          </text>
+          
+          <!-- 操作按钮 -->
+          <view class="bind-actions">
+            <view class="bind-btn primary" @click="goToWebsite">
+              <text class="btn-text">{{ $t('wallet.bind.visitWebsite') }}</text>
+            </view>
+            <view class="bind-btn secondary" @click="closeWalletBindModal">
+              <text class="btn-text">{{ $t('wallet.bind.cancel') }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-overlay" v-if="walletBindStatus.isChecking">
+    <view class="loading-content">
+      <text class="loading-text">{{ $t('wallet.bind.checking') }}</text>
+    </view>
   </view>
 </template>
 
 <script setup>
   import { ref, onMounted } from 'vue'
+  import { smartUserVerify } from '@/utils/walletService.js'
+  import { useI18n } from 'vue-i18n'
  
+  const { t, locale } = useI18n()
+  
   // 轮播图数据
   const banners = ref([
     '/static/Home/banner1.png',
@@ -200,33 +253,140 @@
   
   // 弹窗相关状态
   const showDepositModal = ref(false)
+  const showWalletBindModal = ref(false)
   const selectedCurrency = ref('USDT')
   const currentAction = ref('deposit') // 'deposit' 或 'withdraw'
   
+  // 钱包绑定状态
+  const walletBindStatus = ref({
+    isChecking: false,
+    isBound: false,
+    walletAddress: null
+  })
+  
+  // 智能用户验证（优先检查登录状态）
+  const checkWalletBinding = async () => {
+    try {
+      walletBindStatus.value.isChecking = true
+      
+      const result = await smartUserVerify()
+      
+      if (result.success) {
+        // 用户验证成功
+        walletBindStatus.value.isBound = true
+        walletBindStatus.value.walletAddress = result.walletAddress || 'logged_in_user'
+        
+        // 根据验证方式显示不同消息
+        if (result.skipWalletCheck) {
+          console.log('✅ 用户已登录，跳过钱包验证')
+          // 已登录用户不显示提示框，直接进入功能
+        } else {
+          console.log('✅ 钱包验证成功')
+          uni.showToast({
+            title: '登录成功',
+            icon: 'success',
+            duration: 1500
+          })
+        }
+        
+        return true
+      } else if (result.error === 'WALLET_NOT_BOUND') {
+        // 钱包未绑定，显示绑定弹窗
+        walletBindStatus.value.isBound = false
+        showWalletBindModal.value = true
+        return false
+      } else if (result.error === 'CHAIN_ID_MISSING') {
+        // 链ID缺失，提示用户切换网络
+        uni.showToast({
+          title: result.message || t('wallet.bind.chainIdMissing'),
+          icon: 'none',
+          duration: 3000
+        })
+        return false
+      } else {
+        // 其他错误
+        uni.showToast({
+          title: result.message || t('wallet.bind.checkFailed'),
+          icon: 'none',
+          duration: 2000
+        })
+        return false
+      }
+    } catch (error) {
+      console.error('用户验证失败:', error)
+      uni.showToast({
+        title: t('wallet.bind.checkFailed'),
+        icon: 'none',
+        duration: 2000
+      })
+      return false
+    } finally {
+      walletBindStatus.value.isChecking = false
+    }
+  }
+  
   // 操作按钮事件处理
-  const handleRecharge = () => {
-    currentAction.value = 'deposit'
-    showDepositModal.value = true
+  const handleRecharge = async () => {
+    const isWalletBound = await checkWalletBinding()
+    if (isWalletBound) {
+      currentAction.value = 'deposit'
+      showDepositModal.value = true
+    }
   }
   
-  const handleWithdraw = () => {
-    currentAction.value = 'withdraw'
-    showDepositModal.value = true
+  const handleWithdraw = async () => {
+    const isWalletBound = await checkWalletBinding()
+    if (isWalletBound) {
+      currentAction.value = 'withdraw'
+      showDepositModal.value = true
+    }
   }
   
-  const handleFinance = () => {
-    currentAction.value = 'finance'
-    showDepositModal.value = true
+  const handleFinance = async () => {
+    const isWalletBound = await checkWalletBinding()
+    if (isWalletBound) {
+      currentAction.value = 'finance'
+      showDepositModal.value = true
+    }
   }
   
-  const handleLending = () => {
-    currentAction.value = 'lending'
-    showDepositModal.value = true
+  const handleLending = async () => {
+    const isWalletBound = await checkWalletBinding()
+    if (isWalletBound) {
+      currentAction.value = 'lending'
+      showDepositModal.value = true
+    }
   }
   
   // 弹窗相关方法
   const closeDepositModal = () => {
     showDepositModal.value = false
+  }
+  
+  const closeWalletBindModal = () => {
+    showWalletBindModal.value = false
+  }
+  
+  const goToWebsite = () => {
+    // 跳转到官网绑定页面
+    // 这里可以替换为实际的官网地址
+    const websiteUrl = 'https://vgau.io/bind-wallet'
+    
+    // 在uni-app中打开外部链接
+    uni.navigateTo({
+      url: `/pages/webview/webview?url=${encodeURIComponent(websiteUrl)}`
+    })
+    
+    // 或者直接使用系统浏览器打开
+    // #ifdef H5
+    window.open(websiteUrl, '_blank')
+    // #endif
+    
+    // #ifdef APP-PLUS
+    plus.runtime.openURL(websiteUrl)
+    // #endif
+    
+    closeWalletBindModal()
   }
   
   const selectCurrency = (currency) => {
@@ -312,6 +472,13 @@
       }
   }
   
+  // 跳转到历史记录页面
+  const goToHistory = () => {
+    uni.navigateTo({
+      url: '/views/History'
+    })
+  }
+  
   onMounted(() => {
     console.log('DeFi页面加载完成')
   })
@@ -330,11 +497,52 @@
   overflow-x: hidden;
 }
 
+/* 顶部标题栏样式 */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 20rpx 32rpx 8rpx;
+  background-color: #0A0A0A;
+  height: 70rpx;
+}
+
+.header-title {
+  color: #FFFFFF;
+  font-size: 40rpx;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.header-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.header-btn {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.header-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
 .main-content {
   display: flex;
   flex-direction: column;
   padding: 32rpx;
-  padding-top: 80rpx !important;
+  padding-top: 120rpx !important;
   min-height: 100vh;
   background-color: #0A0A0A;
 }
@@ -787,5 +995,143 @@
   font-weight: 400;
 }
 
+/* 钱包绑定弹窗样式 */
+.wallet-bind-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-</style> 
+.wallet-bind-modal .modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 600rpx;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(50px);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  padding: 48rpx;
+}
+
+.bind-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 24rpx;
+}
+
+.bind-icon {
+  width: 120rpx;
+  height: 120rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16rpx;
+}
+
+.icon-text {
+  font-size: 48rpx;
+}
+
+.bind-title {
+  font-size: 36rpx;
+  color: #FFFFFF;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
+
+.bind-description {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  line-height: 1.5;
+  margin-bottom: 32rpx;
+}
+
+.bind-actions {
+  display: flex;
+  gap: 16rpx;
+  width: 100%;
+}
+
+.bind-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.bind-btn:active {
+  transform: scale(0.98);
+}
+
+.bind-btn.primary {
+  background: linear-gradient(90deg, rgba(254, 218, 120, 1) 0%, rgba(176, 121, 32, 1) 100%);
+}
+
+.bind-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.bind-btn .btn-text {
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.bind-btn.primary .btn-text {
+  color: #000000;
+}
+
+.bind-btn.secondary .btn-text {
+  color: #FFFFFF;
+}
+
+/* 加载状态样式 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.loading-content {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: 16rpx;
+  padding: 32rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 400;
+}
+
+</style>
