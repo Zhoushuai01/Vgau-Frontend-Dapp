@@ -7,7 +7,7 @@
           <image class="back-icon" src="/static/back.png" mode="aspectFit" />
         </view>
                  <view class="page-title">
-           <text class="title-text">Transaction Detail</text>
+           <text class="title-text">{{ t('transactionDetail.title') }}</text>
          </view>
       </view>
     </view>
@@ -32,19 +32,19 @@
                  <!-- 交易详情列表 -->
          <view class="detail-list">
                        <view class="detail-item">
-              <text class="detail-label">Transaction Time</text>
+              <text class="detail-label">{{ t('transactionDetail.transactionTime') }}</text>
               <text class="detail-value">{{ transactionData.date }}</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">Serial Number</text>
+              <text class="detail-label">{{ t('transactionDetail.serialNumber') }}</text>
               <text class="detail-value">{{ transactionData.serialNumber }}</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">Order ID</text>
+              <text class="detail-label">{{ t('transactionDetail.orderId') }}</text>
               <text class="detail-value">{{ transactionData.orderId }}</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">Record Number</text>
+              <text class="detail-label">{{ t('transactionDetail.recordNumber') }}</text>
               <text class="detail-value">{{ transactionData.recordNumber }}</text>
             </view>
          </view>
@@ -53,16 +53,16 @@
       <!-- 钱包信息 -->
       <view class="wallet-info">
                            <view class="info-item">
-            <text class="info-label">Wallet Address</text>
+            <text class="info-label">{{ t('transactionDetail.walletAddress') }}</text>
             <view class="info-value-container">
-              <text class="info-value">{{ transactionData.walletAddress }}</text>
+              <text class="info-value">{{ formatShortAddress(transactionData.walletAddress) }}</text>
               <view class="copy-icon" @click="copyAddress">
                 <image src="/static/fuzhi.png" mode="aspectFit" class="copy-image" />
               </view>
             </view>
           </view>
           <view class="info-item">
-            <text class="info-label">Transaction Hash</text>
+            <text class="info-label">{{ t('transactionDetail.transactionHash') }}</text>
             <view class="info-value-container">
               <text class="info-value">{{ transactionData.transactionHash || '--' }}</text>
               <view class="copy-icon" @click="copyHash">
@@ -77,13 +77,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatShortAddress } from '@/utils/addressUtils'
+
+const { t } = useI18n()
 
 // 交易详情数据
 const transactionData = ref({
-  type: 'Withdraw',
+  type: t('transactionDetail.defaultType'),
   amount: '-5,000 VGAU',
   amountClass: 'negative',
-  status: 'Ongoing',
+  status: t('transactionDetail.defaultStatus'),
   date: '2024-01-15 14:30',
   orderNumber: 'L-202503-0133',
   serialNumber: 'TX202401150001',
@@ -102,21 +106,9 @@ onMounted(() => {
   if (options.transaction) {
     try {
       const transaction = JSON.parse(decodeURIComponent(options.transaction))
-      transactionData.value = {
-        type: transaction.type || 'Withdraw',
-        amount: transaction.amount || '-5,000 VGAU',
-        amountClass: transaction.amountClass || 'negative',
-        status: transaction.status || 'Ongoing',
-        date: transaction.date || '2024-01-15 14:30',
-        orderNumber: transaction.orderNumber || 'L-202503-0133',
-        serialNumber: transaction.serialNumber || 'TX202401150001',
-        orderId: transaction.orderId || 'ORD202401150001',
-        recordNumber: transaction.recordNumber || '842,255',
-        walletAddress: transaction.walletAddress || '0x7eCfbF2D6DEa2371ea8f237c056B024dA4Bc87af',
-        transactionHash: transaction.transactionHash || '--'
-      }
+      transactionData.value = { ...transactionData.value, ...transaction }
     } catch (error) {
-      console.log('解析交易数据失败，使用默认数据')
+      console.error('解析交易数据失败:', error)
     }
   }
 })
@@ -126,40 +118,38 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-// 复制地址
+// 复制钱包地址
 const copyAddress = () => {
-  const address = transactionData.value.walletAddress
   uni.setClipboardData({
-    data: address,
+    data: transactionData.value.walletAddress,
     success: () => {
       uni.showToast({
-        title: 'Address Copied',
+        title: t('transactionDetail.addressCopied'),
         icon: 'success',
-        duration: 1000
+        duration: 2000
       })
     }
   })
 }
 
-// 复制哈希
+// 复制交易哈希
 const copyHash = () => {
-  const hash = transactionData.value.transactionHash
-  if (hash && hash !== '--' && hash !== '') {
+  if (transactionData.value.transactionHash && transactionData.value.transactionHash !== '--') {
     uni.setClipboardData({
-      data: hash,
+      data: transactionData.value.transactionHash,
       success: () => {
         uni.showToast({
-          title: 'Hash Copied',
+          title: t('transactionDetail.hashCopied'),
           icon: 'success',
-          duration: 1000
+          duration: 2000
         })
       }
     })
   } else {
     uni.showToast({
-      title: 'No Transaction Hash',
+      title: t('transactionDetail.noHashToCopy'),
       icon: 'none',
-      duration: 1000
+      duration: 2000
     })
   }
 }

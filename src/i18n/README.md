@@ -15,7 +15,7 @@ src/
 │   │   └── en.js             # 英文语言包
 │   └── README.md             # 说明文档
 ├── components/
-│   └── LanguageSwitcher.vue  # 语言切换组件
+│   # 组件相关文件
 └── main.js                   # 主入口文件
 ```
 
@@ -77,21 +77,7 @@ export default {
 </script>
 ```
 
-### 2. 使用语言切换组件
-
-```vue
-<template>
-  <view>
-    <LanguageSwitcher />
-  </view>
-</template>
-
-<script setup>
-import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
-</script>
-```
-
-### 3. 编程式切换语言
+### 2. 编程式切换语言
 
 ```javascript
 import { setLocale, getCurrentLocale } from '@/i18n/i18n.js'

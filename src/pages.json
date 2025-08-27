@@ -239,6 +239,26 @@
 				"backgroundColor": "#0A0A0A",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "views/BorrowingDetail",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "views/StakingDetail",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#0A0A0A",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#0A0A0A",
+				"navigationStyle": "custom"
+			}
 		}
 	],
 

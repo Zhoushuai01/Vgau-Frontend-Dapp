@@ -7,22 +7,22 @@
           <image src="/static/back.png" class="back-arrow" />
         </view>
       </view>
-      <text class="title-text">Redeem</text>
+      <text class="title-text">{{ t('components.redeem.title') }}</text>
     </view>
 
     <!-- 品牌信息区域 -->
     <view class="brand-section">
       <view class="brand-info">
-        <text class="brand-title">Verifood</text>
-        <text class="brand-subtitle">1g Gold = 1 Token</text>
-        <text class="brand-description">Blockchain-based physical gold digitalization solution</text>
+        <text class="brand-title">{{ t('components.redeem.brandTitle') }}</text>
+        <text class="brand-subtitle">{{ t('components.redeem.brandSubtitle') }}</text>
+        <text class="brand-description">{{ t('components.redeem.brandDescription') }}</text>
       </view>
       
       <!-- 赎回比率信息 -->
       <view class="rate-info">
         <view class="rate-info-content">
-          <text class="rate-text">1 VGAU = 120 USDT</text>
-          <text class="apr-text">15% APR</text>
+          <text class="rate-text">{{ t('components.redeem.rateText') }}</text>
+          <text class="apr-text">{{ t('components.redeem.aprText') }}</text>
         </view>
         <!-- 分隔线 -->
         <view class="divider-line"></view>
@@ -33,11 +33,11 @@
     <view class="redeem-section">
       <!-- 币种选择 -->
       <view class="currency-selector">
-        <text class="currency-text">VGAU</text>
+        <text class="currency-text">{{ t('components.redeem.currency1') }}</text>
         <view class="exchange-icon">
           <image src="/static/zhuanhuan.png" class="icon-img" />
         </view>
-        <text class="currency-text">USDT</text>
+        <text class="currency-text">{{ t('components.redeem.currency2') }}</text>
       </view>
 
       <!-- 输入框 -->
@@ -47,78 +47,67 @@
             class="input-text" 
             type="number" 
             v-model="redeemAmount"
-            placeholder="Enter the quantity to be redeemed"
+            :placeholder="t('components.redeem.redeemAmountPlaceholder')"
             placeholder-class="placeholder-text"
             :adjust-position="false"
             :hold-keyboard="true"
             :cursor-spacing="200"
           />
-          <text class="currency-label">VGAU</text>
+          <text class="currency-label">{{ t('components.redeem.currency1') }}</text>
         </view>
       </view>
 
-      <!-- USDT输入框 -->
-      <view class="usdt-input-section">
-        <text class="usdt-title">The USDT to be exchanged</text>
-        <view class="input-container">
-          <view class="input-field">
-            <input 
-              class="input-text" 
-              type="number" 
-              v-model="usdtAmount"
-              placeholder="Amount"
-              placeholder-class="placeholder-text"
-              :adjust-position="false"
-              :hold-keyboard="true"
-              :cursor-spacing="200"
-            />
-            <text class="currency-label">USDT</text>
-          </view>
-        </view>
+      <!-- 所需USDT显示 -->
+      <view class="required-info">
+        <text class="required-label">{{ t('components.redeem.requiredUSDT') }}</text>
+        <text class="required-value">{{ requiredUSDT }}</text>
       </view>
-
-
     </view>
     
     <!-- 确认赎回按钮 -->
     <view class="confirm-btn" @click="confirmRedeem">
-      <text class="confirm-text">Confirm Redeem</text>
+      <text class="confirm-text">{{ t('components.redeem.confirmRedeem') }}</text>
     </view>
-    
-
 
     <!-- 成功弹窗 -->
     <view v-show="showSuccessModal" class="modal-overlay" @click="closeModal">
       <view class="success-modal" @click.stop>
         <view class="success-content">
-          <text class="success-text">Successfully Exchanged</text>
-          <text class="success-value">{{ redeemAmount }}VGAU</text>
+          <text class="success-text">{{ t('components.redeem.successText') }}</text>
+          <text class="success-value">{{ redeemAmount }} {{ t('components.redeem.currency1') }}</text>
         </view>
         <view class="complete-btn" @click="closeModal">
-          <text class="complete-text">Complete</text>
+          <text class="complete-text">{{ t('components.redeem.completeText') }}</text>
         </view>
       </view>
     </view>
-    
-
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 赎回数量
 const redeemAmount = ref('')
-// USDT数量
-const usdtAmount = ref('')
-// 控制成功弹窗显示
 const showSuccessModal = ref(false)
+
+// 计算所需USDT
+const requiredUSDT = computed(() => {
+  if (!redeemAmount.value || isNaN(redeemAmount.value)) {
+    return '0'
+  }
+  const amount = parseFloat(redeemAmount.value)
+  return (amount * 120).toFixed(2)
+})
 
 // 确认赎回
 const confirmRedeem = () => {
   if (!redeemAmount.value || parseFloat(redeemAmount.value) <= 0) {
     uni.showToast({
-      title: 'Please enter a valid amount',
+      title: t('common.pleaseEnterValidAmount'),
       icon: 'none',
       duration: 2000
     })
@@ -127,21 +116,18 @@ const confirmRedeem = () => {
   
   // 显示成功弹窗
   showSuccessModal.value = true
-  
-  // 2秒后自动关闭弹窗
-  setTimeout(() => {
-    showSuccessModal.value = false
-  }, 2000)
-}
-
-// 关闭弹窗
-const closeModal = () => {
-  showSuccessModal.value = false
 }
 
 // 返回上一页
 const goBack = () => {
   uni.navigateBack()
+}
+
+// 关闭弹窗
+const closeModal = () => {
+  showSuccessModal.value = false
+  // 清空输入
+  redeemAmount.value = ''
 }
 </script>
 
@@ -313,22 +299,6 @@ const goBack = () => {
   height: 48rpx;
 }
 
-/* USDT输入区域 */
-.usdt-input-section {
-  margin: 32rpx 0 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.usdt-title {
-  color: #FFFFFF;
-  font-size: 32rpx;
-  font-weight: 400;
-  line-height: 1.5;
-  text-align: center;
-}
-
 /* 输入框 */
 .input-container {
   margin: 2rpx 0;
@@ -391,6 +361,29 @@ const goBack = () => {
   font-weight: 400;
   line-height: 1.5;
   text-align: center;
+}
+
+/* 所需USDT信息 */
+.required-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4rpx 0;
+  margin-top: -8rpx;
+}
+
+.required-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 32rpx;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.required-value {
+  color: #FFFFFF;
+  font-size: 32rpx;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 /* 成功弹窗样式 */
@@ -459,7 +452,6 @@ const goBack = () => {
   line-height: 1.5;
   text-align: center;
 }
-
 
 /* 响应式设计 */
 @media (max-width: 750rpx) {

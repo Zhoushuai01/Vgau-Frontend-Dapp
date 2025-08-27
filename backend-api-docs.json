@@ -34,6 +34,10 @@
       "description": "# 管理员文件访问API\n\n## 概述\n提供管理员对KYC相关文件的安全访问功能，包括文件下载、预览和元数据查询。\n\n## 核心功能\n### 1. 文件访问控制\n- **权限验证**: 严格的ADMIN角色权限控制\n- **文件存在性检查**: 验证文件是否存在于系统中\n- **安全下载**: 提供安全的文件下载接口\n\n### 2. 文件预览功能\n- **在线预览**: 支持图片和PDF文件的在线预览\n- **缩略图支持**: 为图片文件提供缩略图预览\n- **浏览器兼容**: 自动设置正确的Content-Type\n\n## 支持的文件类型\n- **图片文件**: JPEG、PNG、GIF等常见图片格式\n- **文档文件**: PDF文档\n- **其他文件**: 系统支持的其他MIME类型\n\n## 安全特性\n- **角色控制**: 仅限ADMIN角色用户访问\n- **文件验证**: 验证文件ID的有效性和存在性\n- **审计日志**: 记录所有文件访问操作\n- **防盗链**: 通过权限控制防止未授权访问\n\n## 使用场景\n- KYC申请审核过程中查看用户上传的文件\n- 审核员下载文件进行详细审查\n- 管理员预览文件确认内容合规性\n- 客服人员协助用户处理文件相关问题\n\n## 响应格式\n- 直接返回文件二进制内容\n- 自动设置适当的Content-Type和Content-Disposition\n- 支持浏览器内联显示和下载\n"
     },
     {
+      "name": "用户邀请管理（管理员）",
+      "description": "# 管理员邀请管理API\n\n## 概述\n提供管理员对用户邀请关系的完整管理功能，包括查询、修改和维护邀请体系。\n\n## 核心功能\n### 1. 邀请关系查询\n- **向上链查询**: 查看用户的所有上级邀请人链条\n- **下线查询**: 查看用户的直接下级列表\n- **邀请人查询**: 查看特定用户的直接邀请人\n- **邀请码查询**: 查看用户的当前邀请码\n- **关系管理**: 一站式查看用户的邀请人和下家信息\n\n### 2. 邀请关系管理\n- **解绑操作**: 移除用户的邀请关系\n- **重新绑定**: 更改用户的邀请人\n- **邀请码管理**: 更换用户的邀请码\n- **奖励控制**: 控制重绑时是否发放奖励\n\n### 3. 数据分析支持\n- **多级关系**: 支持查看多层级的邀请关系\n- **深度控制**: 可设置向上链查询的最大深度\n- **分页支持**: 大量数据的分页查询\n- **邀请码管理**: 支持搜索和批量查看邀请码\n- **统计分析**: 提供平台邀请体系的统计数据\n- **排行榜**: 按邀请人数排序的用户排行榜\n\n## 管理功能\n### 解绑邀请关系\n- 移除用户的直接邀请人关系\n- 清理相关的邀请闭包数据\n- 不影响历史奖励记录\n- 支持批量操作\n\n### 重新绑定\n- 先解绑再重新绑定新的邀请人\n- 可选择是否重新发放奖励\n- 自动重建邀请关系闭包\n- 记录完整的操作日志\n\n### 邀请码管理\n- 自定义用户的邀请码\n- 系统自动生成唯一邀请码\n- 验证邀请码的全局唯一性\n- 支持批量更新操作\n\n## 安全特性\n- 严格的ADMIN角色权限控制\n- 完整的操作审计日志记录\n- 数据一致性保证机制\n- 防止循环邀请关系\n\n## 使用场景\n- 处理用户邀请关系纠纷\n- 修正错误的邀请关系\n- 系统数据维护和清理\n- 特殊业务需求的关系调整\n\n## 注意事项\n- 所有操作都会影响奖励计算\n- 建议在低峰期进行批量操作\n- 重要操作建议备份相关数据\n- 操作前确认业务影响范围\n"
+    },
+    {
       "name": "用户认证管理",
       "description": "# 用户认证管理API\n\n## 概述\n提供完整的用户认证和授权功能，支持安全的用户注册、登录和会话管理。\n\n## 主要功能\n- **用户登录**: 邮箱密码登录，支持2FA双因子认证\n- **用户注册**: 新用户注册，包含邮箱验证\n- **用户登出**: 安全登出，清理会话数据（通过POST /api/auth/logout）\n- **会话管理**: 获取当前用户信息和会话状态\n- **可用性检查**: 检查用户名和邮箱是否可用\n\n## 安全特性\n- 密码加密存储\n- 2FA双因子认证保护\n- 邮箱验证码防护\n- 会话安全管理\n- 请求频率限制\n\n## 登出机制\n- 使用Spring Security内置登出功能\n- 登出地址: POST /api/auth/logout\n- 自动清理2FA会话和HttpSession数据\n- 返回JSON格式的登出响应\n"
     },
@@ -68,10 +72,6 @@
     {
       "name": "充值监听器管理",
       "description": "# 充值监听器管理API\n\n## 概述\n提供充值事件监听器的完整监控和管理功能，确保区块链充值事件的可靠处理。\n\n## 核心功能\n### 1. 状态监控\n- **全局状态**: 查看所有链的监听器运行状态\n- **单链状态**: 查看特定链的详细监听信息\n- **健康检查**: 执行完整的系统健康诊断\n- **性能指标**: 查看内存、线程、处理效率等指标\n\n### 2. 监听器控制\n- **启动/停止**: 控制特定链或全部链的监听器\n- **重启功能**: 快速重启有问题的监听器\n- **紧急控制**: 在系统异常时快速响应\n\n### 3. 重试任务管理\n- **任务查询**: 查看失败和重试中的任务\n- **手动处理**: 标记任务成功或重置任务状态\n- **统计分析**: 分析重试任务的模式和原因\n\n### 4. 熔断器管理\n- **状态查看**: 监控各链的熔断器状态\n- **手动控制**: 在必要时手动触发或关闭熔断器\n- **自动保护**: 防止系统在异常情况下过载\n\n## 监控链类型\n- **ETH**: 以太坊主网\n- **BSC**: Binance Smart Chain\n- **POLYGON**: Polygon网络\n- **ARB**: Arbitrum网络\n\n## 安全特性\n- 严格的ADMIN角色权限控制\n- 所有操作记录完整的审计日志\n- 实时监控和报警机制\n- 故障自动恢复和降级保护\n\n## 使用场景\n- 监控充值事件的处理状态\n- 排查充值延迟或失败问题\n- 系统维护和紧急故障处理\n- 性能优化和容量规划\n"
-    },
-    {
-      "name": "管理员资金管理",
-      "description": "# 管理员资金管理API\n\n## 概述\n提供管理员专用的资金管理和监控功能，用于平台资金的管理和维护。\n\n## 权限要求\n- 需要管理员（ADMIN）角色权限\n- 所有操作都会记录完整的审计日志\n\n## 主要功能\n- **用户资金管理**: 查询任意用户的余额和操作历史\n- **批量操作**: 批量调整用户余额、冻结/解冻账户\n- **提现审核**: 审核和处理用户提现申请\n- **系统监控**: 查看平台资金统计和健康状态\n- **数据导出**: 导出用户余额和操作记录\n\n## 安全特性\n- 严格的角色权限控制\n- 所有操作强制记录操作人和原因\n- 支持批量操作的事务回滚\n- 实时的操作审计和监控\n"
     },
     {
       "name": "用户钱包管理",
@@ -154,10 +154,6 @@
       "description": "用户端 VGAU 实物黄金提现相关接口"
     },
     {
-      "name": "用户邀请管理（管理员）",
-      "description": "# 管理员邀请管理API\n\n## 概述\n提供管理员对用户邀请关系的完整管理功能，包括查询、修改和维护邀请体系。\n\n## 核心功能\n### 1. 邀请关系查询\n- **向上链查询**: 查看用户的所有上级邀请人链条\n- **下线查询**: 查看用户的直接下级列表\n- **邀请人查询**: 查看特定用户的直接邀请人\n- **邀请码查询**: 查看用户的当前邀请码\n\n### 2. 邀请关系管理\n- **解绑操作**: 移除用户的邀请关系\n- **重新绑定**: 更改用户的邀请人\n- **邀请码管理**: 更换用户的邀请码\n- **奖励控制**: 控制重绑时是否发放奖励\n\n### 3. 数据分析支持\n- **多级关系**: 支持查看多层级的邀请关系\n- **深度控制**: 可设置向上链查询的最大深度\n- **分页支持**: 大量数据的分页查询\n\n## 管理功能\n### 解绑邀请关系\n- 移除用户的直接邀请人关系\n- 清理相关的邀请闭包数据\n- 不影响历史奖励记录\n- 支持批量操作\n\n### 重新绑定\n- 先解绑再重新绑定新的邀请人\n- 可选择是否重新发放奖励\n- 自动重建邀请关系闭包\n- 记录完整的操作日志\n\n### 邀请码管理\n- 自定义用户的邀请码\n- 系统自动生成唯一邀请码\n- 验证邀请码的全局唯一性\n- 支持批量更新操作\n\n## 安全特性\n- 严格的ADMIN角色权限控制\n- 完整的操作审计日志记录\n- 数据一致性保证机制\n- 防止循环邀请关系\n\n## 使用场景\n- 处理用户邀请关系纠纷\n- 修正错误的邀请关系\n- 系统数据维护和清理\n- 特殊业务需求的关系调整\n\n## 注意事项\n- 所有操作都会影响奖励计算\n- 建议在低峰期进行批量操作\n- 重要操作建议备份相关数据\n- 操作前确认业务影响范围\n"
-    },
-    {
       "name": "外链管理（管理员）",
       "description": "# 外链管理员API\n\n## 概述\n提供管理员权限的外链管理接口，用于创建、更新、删除和管理外链。\n\n## 主要功能\n- 创建外链\n- 更新外链信息\n- 删除外链\n- 启用/禁用外链\n- 更新外链排序\n- 批量调整排序\n- 获取所有外链（包括禁用的）\n- 获取分类统计信息\n\n## 安全特性\n- 需要ADMIN角色权限\n- 完整的CRUD操作\n- 返回完整的外链信息（包括点击统计）\n"
     },
@@ -184,6 +180,10 @@
     {
       "name": "Web3钱包登录",
       "description": "Web3钱包签名登录相关接口"
+    },
+    {
+      "name": "管理员资金管理",
+      "description": "# 管理员资金管理API\n\n## 概述\n提供管理员专用的资金管理和监控功能，用于平台资金的管理和维护。\n\n## 权限要求\n- 需要管理员（ADMIN）角色权限\n- 所有操作都会记录完整的审计日志\n\n## 主要功能\n- **用户资金管理**: 查询任意用户的余额和操作历史\n- **交易分析**: 分析区块链交易Hash，解析充值事件和处理状态\n- **充值补录**: 手动补录系统故障期间的遗漏充值\n- **批量操作**: 批量调整用户余额、冻结/解冻账户\n- **提现审核**: 审核和处理用户提现申请\n- **系统监控**: 查看平台资金统计和健康状态\n- **数据导出**: 导出用户余额和操作记录\n\n## 安全特性\n- 严格的角色权限控制\n- 所有操作强制记录操作人和原因\n- 支持批量操作的事务回滚\n- 实时的操作审计和监控\n"
     },
     {
       "name": "VGAU活期存款",
@@ -5663,6 +5663,142 @@
                   "success": true,
                   "message": "手续费配置已重置到Application Properties",
                   "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/user-funds/deposit/manual": {
+      "post": {
+        "tags": [
+          "管理员资金管理"
+        ],
+        "summary": "手动补录充值记录",
+        "description": "管理员手动补录用户充值记录，用于充值监听系统故障时的补救措施\n\n## 功能说明\n- 为用户手动创建充值记录并增加余额\n- 支持关联实际的链上交易哈希（如果有）\n- 支持无交易哈希的纯补录操作\n- 自动防重复充值保护机制\n\n## 使用场景\n- **系统故障补录**: 充值监听系统故障期间的遗漏充值\n- **数据修复**: 因技术问题导致的充值记录丢失\n- **客服处理**: 用户充值问题的人工干预处理\n- **紧急补偿**: 需要立即到账的特殊情况处理\n\n## 安全特性\n- 严格的管理员权限控制（ADMIN角色）\n- 自动检测重复交易哈希，防止重复充值\n- 完整的操作审计日志记录\n- 强制要求详细的补录原因说明\n\n## 操作流程\n1. 验证管理员权限和请求参数\n2. 检查交易哈希重复性（如果提供）\n3. 创建充值操作记录\n4. 增加用户可用余额\n5. 记录操作审计日志\n6. 发布资金变更事件\n\n## 注意事项\n- 操作不可撤销，请确保数据准确性\n- 必须提供详细的补录原因\n- 建议在操作前进行二次确认\n- 大额补录建议多人审核\n",
+        "operationId": "manualDeposit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualDepositRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "充值补录成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "补录成功": {
+                    "summary": "成功补录用户充值记录",
+                    "description": "补录成功",
+                    "value": {
+                      "success": true,
+                      "message": "充值补录成功",
+                      "data": {
+                        "id": 123456,
+                        "userId": 1001,
+                        "opType": "DEPOSIT",
+                        "currency": "USDT",
+                        "amount": "100.500000000000000000",
+                        "status": "COMPLETED",
+                        "operatorType": "ADMIN",
+                        "operatorId": 1,
+                        "onchainTxHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                        "onchainLogIndex": 5,
+                        "externalRef": "manual_deposit_20240120_001",
+                        "remark": "系统故障期间用户充值未自动到账，管理员手动补录",
+                        "createTime": "2024-01-20T15:30:00"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误或数据验证失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "参数验证失败": {
+                    "summary": "请求参数不符合要求",
+                    "description": "参数验证失败",
+                    "value": {
+                      "success": false,
+                      "message": "充值金额不能为空",
+                      "data": null
+                    }
+                  },
+                  "重复充值": {
+                    "summary": "交易哈希已存在，防止重复充值",
+                    "description": "重复充值",
+                    "value": {
+                      "success": false,
+                      "message": "该交易哈希已存在充值记录，无需重复补录",
+                      "data": null
+                    }
+                  },
+                  "交易信息不一致": {
+                    "summary": "交易哈希和日志索引必须同时提供或同时为空",
+                    "description": "交易信息不一致",
+                    "value": {
+                      "success": false,
+                      "message": "提供交易哈希时必须同时提供日志索引",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "管理员未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseUserFundsOperationDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要ADMIN角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseUserFundsOperationDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用户不存在",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseUserFundsOperationDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseUserFundsOperationDto"
                 }
               }
             }
@@ -15048,6 +15184,281 @@
         }
       }
     },
+    "/api/admin/user-funds/transaction/{txHash}/analyze": {
+      "get": {
+        "tags": [
+          "管理员资金管理"
+        ],
+        "summary": "分析交易Hash获取充值事件信息",
+        "description": "分析指定的交易Hash，解析其中的充值事件和相关信息\n\n## 功能说明\n- 从区块链获取交易详细信息（区块高度、状态等）\n- 解析VGAUPlatformRecharge合约的充值事件\n- 识别USDTRecharged和VGAURecharged事件\n- 检查充值事件的处理状态\n- 查询钱包地址的用户绑定关系\n- 为未处理事件提供手动补录建议\n\n## 使用场景\n- **充值问题排查**: 快速检查用户反馈的充值交易状态\n- **补录辅助**: 为管理员提供准确的补录参数建议\n- **状态核实**: 验证交易是否已被系统正确处理\n- **批量检查**: 支持批量检查多个交易的处理状态\n\n## 返回信息\n### 交易基本信息\n- 区块高度、区块哈希、交易索引\n- 交易状态（成功/失败）\n- Gas消耗信息和时间戳\n- 区块链网络信息\n\n### 充值事件详情\n- 用户地址和充值ID\n- 充值金额（原始值和显示值）\n- 事件处理状态和用户绑定信息\n- 已存在的操作记录（如果已处理）\n\n### 手动补录建议\n- 为未处理且用户已绑定的事件提供补录参数\n- 可直接用于调用手动补录接口\n- 包含建议的外部引用ID和备注信息\n\n### 汇总统计\n- 事件总数及处理状态统计\n- 用户绑定情况统计\n- Token支持情况统计\n\n## 注意事项\n- 仅分析VGAUPlatformRecharge合约的充值事件\n- 支持USDT和VGAU两种充值类型\n- 需要交易已被区块链确认\n- 未绑定用户的钱包不会提供补录建议\n",
+        "operationId": "analyzeTransaction",
+        "parameters": [
+          {
+            "name": "txHash",
+            "in": "path",
+            "description": "要分析的交易哈希",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 66,
+              "minLength": 66,
+              "pattern": "^0x[a-fA-F0-9]{64}$"
+            },
+            "example": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "description": "区块链网络ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "支持的链ID: 1(Ethereum), 56(BSC), 137(Polygon), 42161(Arbitrum), 10(Optimism)等"
+            },
+            "example": 56
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "交易分析成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "单个未处理充值事件": {
+                    "summary": "包含一个未处理的USDT充值事件",
+                    "description": "单个未处理充值事件",
+                    "value": {
+                      "success": true,
+                      "message": "交易信息解析成功",
+                      "data": {
+                        "transaction": {
+                          "txHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                          "blockNumber": 12345678,
+                          "blockHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+                          "transactionIndex": 15,
+                          "status": "SUCCESS",
+                          "timestamp": "2024-01-20T15:30:45",
+                          "gasUsed": "65432",
+                          "gasPrice": "20000000000",
+                          "chainId": 1,
+                          "chainName": "Ethereum"
+                        },
+                        "rechargeEvents": [
+                          {
+                            "logIndex": 5,
+                            "contractAddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                            "tokenSymbol": "USDT",
+                            "fromAddress": "0x8ba1f109551bd432803012645hac136c34ad7889",
+                            "toAddress": "0x742d35cc64c4232bd34c8569af334b8ab9db5890",
+                            "rawAmount": "100500000000000000000",
+                            "currency": "USDT",
+                            "displayAmount": "100.5",
+                            "decimals": 18,
+                            "isProcessed": false,
+                            "boundUser": {
+                              "userId": 1001,
+                              "username": "user001",
+                              "email": "user@example.com"
+                            },
+                            "existingOperation": null,
+                            "manualDepositSuggestion": {
+                              "userId": 1001,
+                              "currency": "USDT",
+                              "amount": "100.500000000000000000",
+                              "onchainTxHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                              "onchainLogIndex": 5,
+                              "externalRef": "tx_analyze_20240120_001",
+                              "remark": "基于交易 0x1234...cdef 日志索引 5 的充值事件补录"
+                            }
+                          }
+                        ],
+                        "summary": {
+                          "totalEvents": 1,
+                          "processedEvents": 0,
+                          "unprocessedEvents": 1,
+                          "boundUsers": 1,
+                          "unboundWallets": 0,
+                          "supportedTokens": 1,
+                          "unsupportedTokens": 0
+                        }
+                      }
+                    }
+                  },
+                  "多个混合状态事件": {
+                    "summary": "包含已处理和未处理的多个充值事件",
+                    "description": "多个混合状态事件",
+                    "value": {
+                      "success": true,
+                      "message": "交易信息解析成功",
+                      "data": {
+                        "transaction": {
+                          "txHash": "0xabcd567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                          "blockNumber": 12345680,
+                          "blockHash": "0x9876543210abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                          "transactionIndex": 8,
+                          "status": "SUCCESS",
+                          "timestamp": "2024-01-20T16:15:30",
+                          "gasUsed": "128000",
+                          "gasPrice": "25000000000",
+                          "chainId": 1,
+                          "chainName": "Ethereum"
+                        },
+                        "rechargeEvents": [
+                          {
+                            "logIndex": 3,
+                            "contractAddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                            "tokenSymbol": "USDT",
+                            "fromAddress": "0x1111111111111111111111111111111111111111",
+                            "toAddress": "0x2222222222222222222222222222222222222222",
+                            "rawAmount": "50000000000000000000",
+                            "currency": "USDT",
+                            "displayAmount": "50.0",
+                            "decimals": 18,
+                            "isProcessed": true,
+                            "boundUser": {
+                              "userId": 2001,
+                              "username": "user002",
+                              "email": "user2@example.com"
+                            },
+                            "existingOperation": {
+                              "id": 987654,
+                              "userId": 2001,
+                              "opType": "DEPOSIT",
+                              "status": "COMPLETED",
+                              "createTime": "2024-01-20T16:20:00"
+                            },
+                            "manualDepositSuggestion": null
+                          },
+                          {
+                            "logIndex": 7,
+                            "contractAddress": "0x1234567890123456789012345678901234567890",
+                            "tokenSymbol": "VGAU",
+                            "fromAddress": "0x3333333333333333333333333333333333333333",
+                            "toAddress": "0x4444444444444444444444444444444444444444",
+                            "rawAmount": "25",
+                            "currency": "VGAU",
+                            "displayAmount": "25",
+                            "decimals": 0,
+                            "isProcessed": false,
+                            "boundUser": null,
+                            "existingOperation": null,
+                            "manualDepositSuggestion": null
+                          }
+                        ],
+                        "summary": {
+                          "totalEvents": 2,
+                          "processedEvents": 1,
+                          "unprocessedEvents": 1,
+                          "boundUsers": 1,
+                          "unboundWallets": 1,
+                          "supportedTokens": 2,
+                          "unsupportedTokens": 0
+                        }
+                      }
+                    }
+                  },
+                  "无充值事件": {
+                    "summary": "交易中没有包含充值相关的Token转账事件",
+                    "description": "无充值事件",
+                    "value": {
+                      "success": true,
+                      "message": "交易信息解析成功",
+                      "data": {
+                        "transaction": {
+                          "txHash": "0xdef567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12",
+                          "blockNumber": 12345690,
+                          "blockHash": "0x567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456",
+                          "transactionIndex": 22,
+                          "status": "SUCCESS",
+                          "timestamp": "2024-01-20T17:00:15",
+                          "gasUsed": "21000",
+                          "gasPrice": "30000000000",
+                          "chainId": 1,
+                          "chainName": "Ethereum"
+                        },
+                        "rechargeEvents": [],
+                        "summary": {
+                          "totalEvents": 0,
+                          "processedEvents": 0,
+                          "unprocessedEvents": 0,
+                          "boundUsers": 0,
+                          "unboundWallets": 0,
+                          "supportedTokens": 0,
+                          "unsupportedTokens": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "交易哈希格式错误": {
+                    "summary": "提供的交易哈希格式不正确",
+                    "description": "交易哈希格式错误",
+                    "value": {
+                      "success": false,
+                      "message": "交易哈希格式不正确，应为66位十六进制字符串",
+                      "data": null
+                    }
+                  },
+                  "交易不存在": {
+                    "summary": "指定的交易哈希在区块链上不存在",
+                    "description": "交易不存在",
+                    "value": {
+                      "success": false,
+                      "message": "交易不存在或尚未被区块链确认",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "管理员未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseTransactionAnalysisResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要ADMIN角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseTransactionAnalysisResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误或区块链网络异常",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseTransactionAnalysisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/user-funds/statistics": {
       "get": {
         "tags": [
@@ -17955,6 +18366,399 @@
         }
       }
     },
+    "/api/admin/invite/statistics": {
+      "get": {
+        "tags": [
+          "用户邀请管理（管理员）"
+        ],
+        "summary": "获取邀请统计数据",
+        "description": "获取平台邀请体系的基础统计数据\n\n## 功能说明\n- 统计平台用户邀请相关的核心指标\n- 计算邀请率等关键业务指标\n- 提供邀请体系健康度分析数据\n- 支持管理员决策和运营分析\n\n## 统计指标说明\n### 用户相关\n- **总用户数**: 平台注册用户总数\n- **拥有邀请人的用户数**: 通过邀请注册的用户数量\n- **拥有邀请码的用户数**: 生成了邀请码的用户数量\n- **拥有下家的用户数**: 成功邀请过其他用户的数量\n\n### 关系相关\n- **总邀请关系数**: 平台内所有直推关系的总数\n- **邀请率**: 受邀用户数量 ÷ 总用户数量\n- **平均每个邀请者的下家数**: 总关系数 ÷ 有下家的用户数\n- **最大下家数**: 单个用户拥有的最多下家数量\n\n## 使用场景\n- 管理员运营决策支持\n- 邀请机制效果评估\n- 用户行为分析和洞察\n- 业务健康度监控\n",
+        "operationId": "getInviteStatistics",
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "统计数据示例": {
+                    "description": "统计数据示例",
+                    "value": {
+                      "success": true,
+                      "message": "OK",
+                      "data": {
+                        "totalUsers": 10000,
+                        "usersWithInviter": 6500,
+                        "invitationRate": 0.65,
+                        "usersWithInviteCode": 8500,
+                        "usersWithDownline": 3500,
+                        "totalInviteRelations": 6500,
+                        "avgDownlinePerInviter": 1.86,
+                        "maxDownlineCount": 150
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "管理员未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteStatisticsResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要ADMIN角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteStatisticsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteStatisticsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/invite/relations": {
+      "get": {
+        "tags": [
+          "用户邀请管理（管理员）"
+        ],
+        "summary": "获取指定用户的关系信息",
+        "description": "获取指定用户的完整邀请关系信息，包括邀请人和直推下家列表\n\n## 功能说明\n- 返回目标用户的完整基本信息（用户ID、用户名、邮箱）\n- 返回用户的直接邀请人完整信息（上家）\n- 返回用户的直推下家分页列表（完整信息）\n- 如果用户没有邀请人，邀请人信息为null\n- 支持下家列表的分页查询\n\n## 管理员特权\n- **完整用户信息**: 显示用户ID、完整用户名和邮箱\n- **无掩码处理**: 所有用户名都完整显示，不进行掩码\n- **详细关系链**: 包含邀请人和下家的完整联系信息\n\n## 使用场景\n- 用户关系管理和维护\n- 邀请关系问题排查和客服支持\n- 用户推广效果分析\n- 关系链条完整性检查\n- 用户身份验证和联系\n",
+        "operationId": "getUserRelations",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "目标用户ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1001
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "下家列表页码，从1开始",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "下家列表每页大小，最大100",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "有邀请人且有下家": {
+                    "summary": "目标用户既有邀请人又有直推下家",
+                    "description": "有邀请人且有下家",
+                    "value": {
+                      "success": true,
+                      "message": "OK",
+                      "data": {
+                        "userId": 1001,
+                        "targetUser": {
+                          "userId": 1001,
+                          "username": "target_user",
+                          "email": "target@example.com"
+                        },
+                        "inviter": {
+                          "userId": 1002,
+                          "username": "inviter_user",
+                          "email": "inviter@example.com"
+                        },
+                        "downline": {
+                          "items": [
+                            {
+                              "userId": 2001,
+                              "username": "downline_user1",
+                              "email": "downline1@example.com",
+                              "boundAt": "2024-01-20T15:30:00"
+                            },
+                            {
+                              "userId": 2002,
+                              "username": "downline_user2",
+                              "email": "downline2@example.com",
+                              "boundAt": "2024-01-19T10:15:00"
+                            }
+                          ],
+                          "page": 1,
+                          "size": 20,
+                          "total": 25
+                        }
+                      }
+                    }
+                  },
+                  "无邀请人但有下家": {
+                    "summary": "顶级推广者，没有邀请人但有下家",
+                    "description": "无邀请人但有下家",
+                    "value": {
+                      "success": true,
+                      "message": "OK",
+                      "data": {
+                        "userId": 1001,
+                        "targetUser": {
+                          "userId": 1001,
+                          "username": "top_user",
+                          "email": "top@example.com"
+                        },
+                        "inviter": null,
+                        "downline": {
+                          "items": [
+                            {
+                              "userId": 2001,
+                              "username": "downline_user",
+                              "email": "downline@example.com",
+                              "boundAt": "2024-01-20T15:30:00"
+                            }
+                          ],
+                          "page": 1,
+                          "size": 20,
+                          "total": 5
+                        }
+                      }
+                    }
+                  },
+                  "有邀请人但无下家": {
+                    "summary": "普通用户，有邀请人但还没有发展下家",
+                    "description": "有邀请人但无下家",
+                    "value": {
+                      "success": true,
+                      "message": "OK",
+                      "data": {
+                        "userId": 1001,
+                        "targetUser": {
+                          "userId": 1001,
+                          "username": "normal_user",
+                          "email": "normal@example.com"
+                        },
+                        "inviter": {
+                          "userId": 1002,
+                          "username": "inviter_user",
+                          "email": "inviter@example.com"
+                        },
+                        "downline": {
+                          "items": [],
+                          "page": 1,
+                          "size": 20,
+                          "total": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseAdminUserRelationsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "管理员未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseAdminUserRelationsResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要ADMIN角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseAdminUserRelationsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseAdminUserRelationsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/invite/leaderboard": {
+      "get": {
+        "tags": [
+          "用户邀请管理（管理员）"
+        ],
+        "summary": "获取邀请排行榜",
+        "description": "获取按直接邀请人数排序的用户排行榜\n\n## 功能说明\n- 按直接邀请人数降序排列用户\n- 支持分页查询，避免数据量过大\n- 显示用户基本信息和邀请统计\n- 提供排名信息便于快速定位\n\n## 排序规则\n- **主要排序**: 按直推下家数量降序排列\n- **次要排序**: 下家数量相同时按用户注册时间升序排列\n- **排名计算**: 从1开始的连续排名，考虑分页偏移\n\n## 使用场景\n- 识别平台超级推广者\n- 分析推广用户行为特征\n- 设计激励和奖励机制\n- 推广效果排名展示\n\n## 注意事项\n- 仅统计拥有下家的用户\n- 数据实时计算，反映最新状态\n- 支持大数据量的高效分页查询\n",
+        "operationId": "getInviteLeaderboard",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从1开始",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "每页大小，最大100",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "排行榜数据": {
+                    "description": "排行榜数据",
+                    "value": {
+                      "success": true,
+                      "message": "OK",
+                      "data": {
+                        "items": [
+                          {
+                            "rank": 1,
+                            "userId": 1001,
+                            "username": "superuser",
+                            "email": "super@example.com",
+                            "inviteCode": "SUPER123",
+                            "downlineCount": 150,
+                            "registerTime": "2024-01-01T10:00:00",
+                            "lastInviteTime": "2024-01-20T15:30:00"
+                          },
+                          {
+                            "rank": 2,
+                            "userId": 1002,
+                            "username": "poweruser",
+                            "email": "power@example.com",
+                            "inviteCode": "POWER456",
+                            "downlineCount": 128,
+                            "registerTime": "2024-01-02T14:00:00",
+                            "lastInviteTime": "2024-01-19T20:15:00"
+                          }
+                        ],
+                        "page": 1,
+                        "size": 20,
+                        "total": 100
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteLeaderboardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "管理员未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteLeaderboardResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要ADMIN角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteLeaderboardResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteLeaderboardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/invite/inviter": {
       "get": {
         "tags": [
@@ -18189,6 +18993,128 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CommonApiResponseMyDownlinePageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/invite/codes": {
+      "get": {
+        "tags": [
+          "用户邀请管理（管理员）"
+        ],
+        "summary": "获取邀请码列表",
+        "description": "分页获取邀请码列表，支持按用户名或用户ID搜索\n\n## 功能说明\n- 分页返回所有用户的邀请码信息\n- 支持按用户名关键词搜索\n- 支持按用户ID精确搜索\n- 显示每个用户的基本信息和邀请统计\n\n## 搜索功能\n- **用户名搜索**: 模糊匹配用户名包含关键词的用户\n- **邀请码搜索**: 模糊匹配邀请码包含关键词的用户\n- **用户ID搜索**: 精确匹配指定用户ID的用户\n- **不提供关键词**: 返回所有拥有邀请码的用户\n\n## 使用场景\n- 管理员查看用户邀请码\n- 搜索特定用户的邀请信息\n- 根据邀请码快速找到对应用户\n- 分析用户推广效果\n- 邀请码管理和维护\n\n## 搜索示例\n- `keyword=john` - 搜索用户名包含\"john\"的用户\n- `keyword=ABC123` - 搜索邀请码包含\"ABC123\"的用户\n- `keyword=12345` - 搜索用户ID为12345的用户\n- 不传keyword - 获取所有邀请码列表\n",
+        "operationId": "getInviteCodeList",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "搜索关键词，可以是用户名、邀请码或用户ID",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ABC123"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从1开始",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "每页大小，最大100",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "邀请码列表示例": {
+                    "description": "邀请码列表示例",
+                    "value": {
+                      "success": true,
+                      "message": "OK",
+                      "data": {
+                        "items": [
+                          {
+                            "userId": 1001,
+                            "username": "user001",
+                            "email": "user001@example.com",
+                            "inviteCode": "ABC123XY",
+                            "downlineCount": 25,
+                            "createTime": "2024-01-01T10:00:00"
+                          }
+                        ],
+                        "page": 1,
+                        "size": 20,
+                        "total": 150
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteCodeListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "管理员未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteCodeListResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要ADMIN角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteCodeListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseInviteCodeListResponse"
                 }
               }
             }
@@ -19075,202 +20001,6 @@
                       "$ref": "#/components/schemas/Link"
                     }
                   }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/actuator/prometheus": {
-      "get": {
-        "tags": [
-          "Actuator"
-        ],
-        "summary": "Actuator web endpoint 'prometheus'",
-        "operationId": "scrape",
-        "parameters": [
-          {
-            "name": "format",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "CONTENT_TYPE_004",
-                "CONTENT_TYPE_OPENMETRICS_100",
-                "CONTENT_TYPE_PROTOBUF"
-              ]
-            }
-          },
-          {
-            "name": "includedNames",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain;version=0.0.4;charset=utf-8": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/openmetrics-text;version=1.0.0;charset=utf-8": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/actuator/metrics": {
-      "get": {
-        "tags": [
-          "Actuator"
-        ],
-        "summary": "Actuator web endpoint 'metrics'",
-        "operationId": "listNames",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.spring-boot.actuator.v3+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/vnd.spring-boot.actuator.v2+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/actuator/metrics/{requiredMetricName}": {
-      "get": {
-        "tags": [
-          "Actuator"
-        ],
-        "summary": "Actuator web endpoint 'metrics-requiredMetricName'",
-        "operationId": "metric",
-        "parameters": [
-          {
-            "name": "requiredMetricName",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tag",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.spring-boot.actuator.v3+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/vnd.spring-boot.actuator.v2+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found"
-          }
-        }
-      }
-    },
-    "/actuator/info": {
-      "get": {
-        "tags": [
-          "Actuator"
-        ],
-        "summary": "Actuator web endpoint 'info'",
-        "operationId": "info_1",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.spring-boot.actuator.v3+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/vnd.spring-boot.actuator.v2+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/actuator/health": {
-      "get": {
-        "tags": [
-          "Actuator"
-        ],
-        "summary": "Actuator web endpoint 'health'",
-        "operationId": "health_1",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.spring-boot.actuator.v3+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/vnd.spring-boot.actuator.v2+json": {
-                "schema": {
-                  "type": "object"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "object"
                 }
               }
             }
@@ -21163,11 +21893,11 @@
           "validFileSizeForFileType": {
             "type": "boolean"
           },
-          "formattedFileSize": {
-            "type": "string"
-          },
           "extensionMatchesMimeType": {
             "type": "boolean"
+          },
+          "formattedFileSize": {
+            "type": "string"
           },
           "fileExtension": {
             "type": "string"
@@ -21372,11 +22102,11 @@
             "maxItems": 3,
             "minItems": 1
           },
-          "complete": {
-            "type": "boolean"
-          },
           "multipleFilesValidationError": {
             "type": "string"
+          },
+          "complete": {
+            "type": "boolean"
           },
           "validationError": {
             "type": "string"
@@ -21764,6 +22494,83 @@
         },
         "required": [
           "reviewResult"
+        ]
+      },
+      "ManualDepositRequestDto": {
+        "type": "object",
+        "description": "手动补录充值请求参数",
+        "example": {
+          "userId": 1001,
+          "currency": "USDT",
+          "amount": "100.500000000000000000",
+          "onchainTxHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+          "onchainLogIndex": 5,
+          "externalRef": "manual_deposit_20240120_001",
+          "remark": "系统故障期间用户充值未自动到账，管理员手动补录"
+        },
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "用户ID",
+            "example": 1001,
+            "minimum": 1
+          },
+          "currency": {
+            "type": "string",
+            "description": "货币类型",
+            "enum": [
+              "USDT",
+              "VGAU"
+            ],
+            "example": "USDT"
+          },
+          "amount": {
+            "type": "string",
+            "description": "充值金额，使用显示格式（如：100.500000000000000000 表示 100.5 USDT）",
+            "example": 100.5,
+            "minLength": 1
+          },
+          "onchainTxHash": {
+            "type": "string",
+            "description": "链上交易哈希，如果有实际的链上交易记录",
+            "example": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            "maxLength": 66,
+            "minLength": 0
+          },
+          "onchainLogIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "链上日志索引，与交易哈希配合使用",
+            "example": 5,
+            "minimum": 0
+          },
+          "externalRef": {
+            "type": "string",
+            "description": "外部引用ID，用于关联外部系统或批次",
+            "example": "manual_deposit_20240120_001",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "remark": {
+            "type": "string",
+            "description": "补录原因，详细说明为什么需要手动补录充值",
+            "example": "系统故障期间用户充值未自动到账，管理员手动补录",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "parsedAmount": {
+            "type": "integer"
+          },
+          "validOnchainInfo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "remark",
+          "userId"
         ]
       },
       "FundsFreezeRequestDto": {
@@ -22405,11 +23212,11 @@
           "validationError": {
             "type": "string"
           },
-          "validRevokeReason": {
-            "type": "boolean"
-          },
           "formattedRevokeReason": {
             "type": "string"
+          },
+          "validRevokeReason": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -22436,6 +23243,9 @@
             "maxLength": 1000,
             "minLength": 0
           },
+          "statusDescription": {
+            "type": "string"
+          },
           "validationError": {
             "type": "string"
           },
@@ -22444,9 +23254,6 @@
           },
           "rejected": {
             "type": "boolean"
-          },
-          "statusDescription": {
-            "type": "string"
           },
           "validReviewStatus": {
             "type": "boolean"
@@ -22761,10 +23568,6 @@
       "IPageSavingsInterestDto": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -22781,6 +23584,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -22856,10 +23663,6 @@
       "IPageSavingsClaimDto": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -22876,6 +23679,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -23209,10 +24016,6 @@
       "IPagePointsRecordResponse": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -23229,6 +24032,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -23338,19 +24145,19 @@
             "description": "记录创建时间",
             "example": "2024-01-20T08:30:00"
           },
-          "consumeRecord": {
-            "type": "boolean"
-          },
-          "systemOperation": {
+          "earnRecord": {
             "type": "boolean"
           },
           "adminOperation": {
             "type": "boolean"
           },
-          "earnRecord": {
+          "userOperation": {
             "type": "boolean"
           },
-          "userOperation": {
+          "consumeRecord": {
+            "type": "boolean"
+          },
+          "systemOperation": {
             "type": "boolean"
           },
           "operationTypeClass": {
@@ -23592,23 +24399,23 @@
             "description": "放款时间",
             "example": "2024-01-20 10:31:00"
           },
+          "statusDescription": {
+            "type": "string"
+          },
           "actualReceiveAmount": {
             "type": "number"
           },
-          "collateralAmountStandard": {
+          "finalStatus": {
+            "type": "boolean"
+          },
+          "ltvRatioAsPercentage": {
             "type": "number"
           },
           "annualRateAsPercentage": {
             "type": "number"
           },
-          "statusDescription": {
-            "type": "string"
-          },
-          "ltvRatioAsPercentage": {
+          "collateralAmountStandard": {
             "type": "number"
-          },
-          "finalStatus": {
-            "type": "boolean"
           }
         }
       },
@@ -23687,13 +24494,10 @@
               "$ref": "#/components/schemas/LoanOrderDto"
             }
           },
-          "averageLtvRatioAsPercentage": {
+          "repaymentCompletionRate": {
             "type": "number"
           },
           "maxLtvRatioAsPercentage": {
-            "type": "number"
-          },
-          "repaymentCompletionRate": {
             "type": "number"
           },
           "riskNotice": {
@@ -23701,6 +24505,9 @@
           },
           "borrowingExperienceLevel": {
             "type": "string"
+          },
+          "averageLtvRatioAsPercentage": {
+            "type": "number"
           }
         }
       },
@@ -23733,10 +24540,6 @@
       "IPageLoanOrderDto": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -23753,6 +24556,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -23952,10 +24759,6 @@
       "IPageMapStringObject": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -23975,6 +24778,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -24010,12 +24817,12 @@
             "maxLength": 100,
             "minLength": 0
           },
+          "processedKeyword": {
+            "type": "string"
+          },
           "offset": {
             "type": "integer",
             "format": "int64"
-          },
-          "processedKeyword": {
-            "type": "string"
           }
         },
         "required": [
@@ -24212,10 +25019,10 @@
             "description": "状态描述",
             "example": "正常"
           },
-          "locked": {
+          "disabled": {
             "type": "boolean"
           },
-          "disabled": {
+          "locked": {
             "type": "boolean"
           }
         },
@@ -24401,10 +25208,6 @@
       "IPageUserFundsOperationDto": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -24421,6 +25224,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -24455,10 +25262,6 @@
       "IPageUserFundsWithdrawAuditDto": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -24475,6 +25278,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -24556,6 +25363,401 @@
           "reviewTime",
           "reviewerId"
         ]
+      },
+      "AnalysisSummary": {
+        "type": "object",
+        "description": "交易分析汇总信息",
+        "properties": {
+          "totalEvents": {
+            "type": "integer",
+            "format": "int32",
+            "description": "交易中检测到的充值事件总数",
+            "example": 2
+          },
+          "processedEvents": {
+            "type": "integer",
+            "format": "int32",
+            "description": "已经被系统处理的事件数量",
+            "example": 1
+          },
+          "unprocessedEvents": {
+            "type": "integer",
+            "format": "int32",
+            "description": "尚未被系统处理的事件数量",
+            "example": 1
+          },
+          "boundUsers": {
+            "type": "integer",
+            "format": "int32",
+            "description": "涉及已绑定用户的钱包数量",
+            "example": 1
+          },
+          "unboundWallets": {
+            "type": "integer",
+            "format": "int32",
+            "description": "涉及未绑定用户的钱包数量",
+            "example": 1
+          },
+          "supportedTokens": {
+            "type": "integer",
+            "format": "int32",
+            "description": "系统支持的Token类型数量",
+            "example": 2
+          },
+          "unsupportedTokens": {
+            "type": "integer",
+            "format": "int32",
+            "description": "系统不支持的Token类型数量",
+            "example": 0
+          }
+        }
+      },
+      "BoundUserInfo": {
+        "type": "object",
+        "description": "绑定用户信息",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "用户唯一标识",
+            "example": 1001
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "example": "user001"
+          },
+          "email": {
+            "type": "string",
+            "description": "用户邮箱",
+            "example": "user@example.com"
+          }
+        }
+      },
+      "CommonApiResponseTransactionAnalysisResponse": {
+        "type": "object",
+        "description": "统一API响应结构",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "请求是否成功",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "操作成功"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TransactionAnalysisResponse",
+            "description": "响应数据（必须使用 DTO 包装，不能是单一值）"
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "错误码",
+            "example": 0
+          }
+        }
+      },
+      "ExistingOperationInfo": {
+        "type": "object",
+        "description": "已存在的操作记录信息",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "操作记录唯一标识",
+            "example": 987654
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "关联的用户ID，如果没有绑定用户则为null",
+            "example": 1001
+          },
+          "opType": {
+            "type": "string",
+            "description": "操作类型",
+            "example": "DEPOSIT"
+          },
+          "status": {
+            "type": "string",
+            "description": "操作状态",
+            "enum": [
+              "PENDING",
+              "PROCESSING",
+              "COMPLETED",
+              "FAILED",
+              "CANCELLED"
+            ],
+            "example": "COMPLETED"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "操作记录创建时间",
+            "example": "2024-01-20T15:35:00"
+          }
+        }
+      },
+      "RechargeEventInfo": {
+        "type": "object",
+        "description": "充值事件信息",
+        "properties": {
+          "logIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "事件在交易中的日志索引",
+            "example": 5
+          },
+          "contractAddress": {
+            "type": "string",
+            "description": "Token智能合约地址",
+            "example": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+          },
+          "tokenSymbol": {
+            "type": "string",
+            "description": "Token符号标识",
+            "example": "USDT"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "Token发送方地址",
+            "example": "0x8ba1f109551bd432803012645hac136c34ad7889"
+          },
+          "toAddress": {
+            "type": "string",
+            "description": "Token接收方地址（用户钱包地址）",
+            "example": "0x742d35cc64c4232bd34c8569af334b8ab9db5890"
+          },
+          "rawAmount": {
+            "type": "string",
+            "description": "链上原始金额（最小单位）",
+            "example": 1.005e+20
+          },
+          "currency": {
+            "type": "string",
+            "description": "系统中对应的货币类型",
+            "enum": [
+              "USDT",
+              "VGAU"
+            ],
+            "example": "USDT"
+          },
+          "displayAmount": {
+            "type": "string",
+            "description": "格式化后的显示金额",
+            "example": 100.5
+          },
+          "decimals": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Token的小数位数",
+            "example": 18
+          },
+          "isProcessed": {
+            "type": "boolean",
+            "description": "该充值事件是否已经被系统处理",
+            "example": false
+          },
+          "boundUser": {
+            "$ref": "#/components/schemas/BoundUserInfo",
+            "description": "接收地址绑定的用户信息，如果未绑定则为null"
+          },
+          "existingOperation": {
+            "$ref": "#/components/schemas/ExistingOperationInfo",
+            "description": "如果已处理，对应的操作记录信息"
+          },
+          "manualDepositSuggestion": {
+            "$ref": "#/components/schemas/TxManualDepositSuggestion",
+            "description": "如果未处理且用户已绑定，提供的手动补录参数建议"
+          }
+        }
+      },
+      "TransactionAnalysisResponse": {
+        "type": "object",
+        "description": "交易分析完整响应",
+        "example": {
+          "transaction": {
+            "txHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            "blockNumber": 12345678,
+            "blockHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+            "transactionIndex": 15,
+            "status": "SUCCESS",
+            "timestamp": "2024-01-20T15:30:45",
+            "gasUsed": "65432",
+            "gasPrice": "20000000000",
+            "chainId": 1,
+            "chainName": "Ethereum"
+          },
+          "rechargeEvents": [
+            {
+              "logIndex": 5,
+              "contractAddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+              "tokenSymbol": "USDT",
+              "fromAddress": "0x8ba1f109551bd432803012645hac136c34ad7889",
+              "toAddress": "0x742d35cc64c4232bd34c8569af334b8ab9db5890",
+              "rawAmount": "100500000000000000000",
+              "currency": "USDT",
+              "displayAmount": "100.5",
+              "decimals": 18,
+              "isProcessed": false,
+              "boundUser": {
+                "userId": 1001,
+                "username": "user001",
+                "email": "user@example.com"
+              },
+              "existingOperation": null,
+              "manualDepositSuggestion": {
+                "userId": 1001,
+                "currency": "USDT",
+                "amount": "100.500000000000000000",
+                "onchainTxHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                "onchainLogIndex": 5,
+                "externalRef": "tx_analyze_20240120_001",
+                "remark": "基于交易 0x1234...cdef 日志索引 5 的充值事件补录"
+              }
+            }
+          ],
+          "summary": {
+            "totalEvents": 1,
+            "processedEvents": 0,
+            "unprocessedEvents": 1,
+            "boundUsers": 1,
+            "unboundWallets": 0,
+            "supportedTokens": 1,
+            "unsupportedTokens": 0
+          }
+        },
+        "properties": {
+          "transaction": {
+            "$ref": "#/components/schemas/TransactionInfo",
+            "description": "区块链交易的基本信息"
+          },
+          "rechargeEvents": {
+            "type": "array",
+            "description": "交易中包含的所有充值事件信息列表",
+            "items": {
+              "$ref": "#/components/schemas/RechargeEventInfo"
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AnalysisSummary",
+            "description": "对所有事件的统计汇总信息"
+          }
+        }
+      },
+      "TransactionInfo": {
+        "type": "object",
+        "description": "交易基本信息",
+        "properties": {
+          "txHash": {
+            "type": "string",
+            "description": "交易哈希",
+            "example": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+          },
+          "blockNumber": {
+            "type": "integer",
+            "format": "int64",
+            "description": "交易所在的区块高度",
+            "example": 12345678
+          },
+          "blockHash": {
+            "type": "string",
+            "description": "区块哈希",
+            "example": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+          },
+          "transactionIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "交易在区块中的索引位置",
+            "example": 15
+          },
+          "status": {
+            "type": "string",
+            "description": "交易执行状态",
+            "enum": [
+              "SUCCESS",
+              "FAILED"
+            ],
+            "example": "SUCCESS"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "交易确认时间",
+            "example": "2024-01-20T15:30:45"
+          },
+          "gasUsed": {
+            "type": "string",
+            "description": "交易消耗的Gas数量",
+            "example": 65432
+          },
+          "gasPrice": {
+            "type": "string",
+            "description": "Gas价格（wei）",
+            "example": 20000000000
+          },
+          "chainId": {
+            "type": "integer",
+            "format": "int32",
+            "description": "区块链网络ID",
+            "example": 1
+          },
+          "chainName": {
+            "type": "string",
+            "description": "区块链网络名称",
+            "example": "Ethereum"
+          }
+        }
+      },
+      "TxManualDepositSuggestion": {
+        "type": "object",
+        "description": "手动补录充值建议参数",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "建议充值到的用户ID，基于钱包绑定关系",
+            "example": 1001
+          },
+          "currency": {
+            "type": "string",
+            "description": "检测到的货币类型",
+            "enum": [
+              "USDT",
+              "VGAU"
+            ],
+            "example": "USDT"
+          },
+          "amount": {
+            "type": "string",
+            "description": "建议的充值金额（显示格式）",
+            "example": 100.5
+          },
+          "onchainTxHash": {
+            "type": "string",
+            "description": "链上交易哈希",
+            "example": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+          },
+          "onchainLogIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "交易日志索引",
+            "example": 5
+          },
+          "externalRef": {
+            "type": "string",
+            "description": "建议的外部引用ID",
+            "example": "tx_analyze_20240120_001"
+          },
+          "remark": {
+            "type": "string",
+            "description": "建议的补录原因描述",
+            "example": "基于交易 0x1234...cdef 日志索引 5 的充值事件补录"
+          }
+        }
       },
       "CommonApiResponseListFundsStatisticsDto": {
         "type": "object",
@@ -24720,10 +25922,6 @@
       "IPageUserFundsLedgerDto": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -24740,6 +25938,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -24983,10 +26185,6 @@
       "IPageRequestLog": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -25003,6 +26201,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -25483,11 +26685,20 @@
               "type": "string"
             }
           },
+          "statusDescription": {
+            "type": "string"
+          },
           "priceChangeRate": {
             "type": "number"
           },
           "rateModified": {
             "type": "boolean"
+          },
+          "currentCollateralValue": {
+            "type": "number"
+          },
+          "riskLevelDescription": {
+            "type": "string"
           },
           "collateralAmountStandard": {
             "type": "number"
@@ -25495,23 +26706,14 @@
           "initialLtvRatioAsPercentage": {
             "type": "number"
           },
-          "currentLtvRatioAsPercentage": {
+          "currentAnnualRateAsPercentage": {
             "type": "number"
           },
-          "currentAnnualRateAsPercentage": {
+          "currentLtvRatioAsPercentage": {
             "type": "number"
           },
           "annualRateAtCreationAsPercentage": {
             "type": "number"
-          },
-          "riskLevelDescription": {
-            "type": "string"
-          },
-          "currentCollateralValue": {
-            "type": "number"
-          },
-          "statusDescription": {
-            "type": "string"
           }
         }
       },
@@ -25544,10 +26746,6 @@
       "IPageAdminLoanOrderDto": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -25564,6 +26762,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -25714,6 +26916,19 @@
             "type": "integer",
             "format": "int64"
           },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
           "size": {
             "type": "integer",
             "format": "int32"
@@ -25731,19 +26946,6 @@
           "sort": {
             "$ref": "#/components/schemas/SortObject"
           },
-          "first": {
-            "type": "boolean"
-          },
-          "last": {
-            "type": "boolean"
-          },
-          "numberOfElements": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
           "empty": {
             "type": "boolean"
           }
@@ -25752,13 +26954,6 @@
       "PageableObject": {
         "type": "object",
         "properties": {
-          "offset": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "sort": {
-            "$ref": "#/components/schemas/SortObject"
-          },
           "paged": {
             "type": "boolean"
           },
@@ -25772,19 +26967,26 @@
           },
           "unpaged": {
             "type": "boolean"
+          },
+          "offset": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
           }
         }
       },
       "SortObject": {
         "type": "object",
         "properties": {
-          "empty": {
-            "type": "boolean"
-          },
           "sorted": {
             "type": "boolean"
           },
           "unsorted": {
+            "type": "boolean"
+          },
+          "empty": {
             "type": "boolean"
           }
         }
@@ -25998,6 +27200,441 @@
           }
         }
       },
+      "CommonApiResponseInviteStatisticsResponse": {
+        "type": "object",
+        "description": "统一API响应结构",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "请求是否成功",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "操作成功"
+          },
+          "data": {
+            "$ref": "#/components/schemas/InviteStatisticsResponse",
+            "description": "响应数据（必须使用 DTO 包装，不能是单一值）"
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "错误码",
+            "example": 0
+          }
+        }
+      },
+      "InviteStatisticsResponse": {
+        "type": "object",
+        "description": "邀请统计响应",
+        "properties": {
+          "totalUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "平台总用户数",
+            "example": 10000
+          },
+          "usersWithInviter": {
+            "type": "integer",
+            "format": "int64",
+            "description": "拥有邀请人的用户数（受邀用户数）",
+            "example": 6500
+          },
+          "invitationRate": {
+            "type": "number",
+            "description": "邀请率（受邀用户数 / 总用户数）",
+            "example": 0.65
+          },
+          "usersWithInviteCode": {
+            "type": "integer",
+            "format": "int64",
+            "description": "拥有邀请码的用户数",
+            "example": 8500
+          },
+          "usersWithDownline": {
+            "type": "integer",
+            "format": "int64",
+            "description": "拥有直推下家的用户数（成功邀请者数）",
+            "example": 3500
+          },
+          "totalInviteRelations": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总邀请关系数（直推关系总数）",
+            "example": 6500
+          },
+          "avgDownlinePerInviter": {
+            "type": "number",
+            "description": "平均每个邀请者的下家数",
+            "example": 1.86
+          },
+          "maxDownlineCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "单个用户的最大下家数",
+            "example": 150
+          }
+        }
+      },
+      "AdminDownlineInfo": {
+        "type": "object",
+        "description": "管理员查看的下家信息",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "下家用户ID",
+            "example": 2001
+          },
+          "username": {
+            "type": "string",
+            "description": "下家用户名（完整显示）",
+            "example": "downline_user"
+          },
+          "email": {
+            "type": "string",
+            "description": "下家邮箱",
+            "example": "downline@example.com"
+          },
+          "boundAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "邀请关系建立时间",
+            "example": "2024-01-15T10:30:00"
+          }
+        }
+      },
+      "AdminDownlinePageResponse": {
+        "type": "object",
+        "description": "管理员查看的下家分页响应",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "下家条目列表",
+            "items": {
+              "$ref": "#/components/schemas/AdminDownlineInfo"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "当前页码",
+            "example": 1
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "每页大小",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总记录数",
+            "example": 50
+          }
+        }
+      },
+      "AdminInviterInfo": {
+        "type": "object",
+        "description": "管理员查看的邀请人信息",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "邀请人用户ID",
+            "example": 1001
+          },
+          "username": {
+            "type": "string",
+            "description": "邀请人用户名（完整显示）",
+            "example": "inviter_user"
+          },
+          "email": {
+            "type": "string",
+            "description": "邀请人邮箱",
+            "example": "inviter@example.com"
+          }
+        }
+      },
+      "AdminUserInfo": {
+        "type": "object",
+        "description": "目标用户基本信息",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "用户ID",
+            "example": 1001
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "example": "target_user"
+          },
+          "email": {
+            "type": "string",
+            "description": "用户邮箱",
+            "example": "target@example.com"
+          }
+        }
+      },
+      "AdminUserRelationsResponse": {
+        "type": "object",
+        "description": "管理员查看的用户邀请关系响应",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "查询的目标用户ID",
+            "example": 1001
+          },
+          "targetUser": {
+            "$ref": "#/components/schemas/AdminUserInfo",
+            "description": "目标用户基本信息"
+          },
+          "inviter": {
+            "$ref": "#/components/schemas/AdminInviterInfo",
+            "description": "用户的邀请人信息，如果没有邀请人则为null"
+          },
+          "downline": {
+            "$ref": "#/components/schemas/AdminDownlinePageResponse",
+            "description": "用户的直推下家分页列表"
+          }
+        }
+      },
+      "CommonApiResponseAdminUserRelationsResponse": {
+        "type": "object",
+        "description": "统一API响应结构",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "请求是否成功",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "操作成功"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminUserRelationsResponse",
+            "description": "响应数据（必须使用 DTO 包装，不能是单一值）"
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "错误码",
+            "example": 0
+          }
+        }
+      },
+      "CommonApiResponseInviteLeaderboardResponse": {
+        "type": "object",
+        "description": "统一API响应结构",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "请求是否成功",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "操作成功"
+          },
+          "data": {
+            "$ref": "#/components/schemas/InviteLeaderboardResponse",
+            "description": "响应数据（必须使用 DTO 包装，不能是单一值）"
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "错误码",
+            "example": 0
+          }
+        }
+      },
+      "InviteLeaderboardResponse": {
+        "type": "object",
+        "description": "邀请排行榜响应",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "排行榜条目列表",
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardItem"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "当前页码",
+            "example": 1
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "每页大小",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总记录数",
+            "example": 100
+          }
+        }
+      },
+      "LeaderboardItem": {
+        "type": "object",
+        "description": "排行榜条目信息",
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "format": "int32",
+            "description": "排名（从1开始）",
+            "example": 1
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "用户ID",
+            "example": 1001
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "example": "user001"
+          },
+          "email": {
+            "type": "string",
+            "description": "用户邮箱",
+            "example": "user@example.com"
+          },
+          "inviteCode": {
+            "type": "string",
+            "description": "邀请码",
+            "example": "ABC123XY"
+          },
+          "downlineCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "直推下家数量",
+            "example": 150
+          },
+          "registerTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "用户注册时间",
+            "example": "2024-01-01T10:00:00"
+          },
+          "lastInviteTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "最后一次成功邀请的时间",
+            "example": "2024-01-20T15:30:00"
+          }
+        }
+      },
+      "CommonApiResponseInviteCodeListResponse": {
+        "type": "object",
+        "description": "统一API响应结构",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "请求是否成功",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "操作成功"
+          },
+          "data": {
+            "$ref": "#/components/schemas/InviteCodeListResponse",
+            "description": "响应数据（必须使用 DTO 包装，不能是单一值）"
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "错误码",
+            "example": 0
+          }
+        }
+      },
+      "InviteCodeItem": {
+        "type": "object",
+        "description": "邀请码条目信息",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "用户ID",
+            "example": 1001
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "example": "user001"
+          },
+          "email": {
+            "type": "string",
+            "description": "用户邮箱",
+            "example": "user@example.com"
+          },
+          "inviteCode": {
+            "type": "string",
+            "description": "邀请码",
+            "example": "ABC123XY"
+          },
+          "downlineCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "直推下家数量",
+            "example": 5
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "邀请码创建时间",
+            "example": "2024-01-15T10:30:00"
+          }
+        }
+      },
+      "InviteCodeListResponse": {
+        "type": "object",
+        "description": "邀请码列表响应",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "邀请码条目列表",
+            "items": {
+              "$ref": "#/components/schemas/InviteCodeItem"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "当前页码",
+            "example": 1
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "每页大小",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总记录数",
+            "example": 150
+          }
+        }
+      },
       "ContentPageSearchRequest": {
         "type": "object",
         "description": "内容页面搜索请求",
@@ -26036,15 +27673,15 @@
             "maxLength": 100,
             "minLength": 0
           },
-          "offset": {
-            "type": "integer",
-            "format": "int64"
+          "processedKeyword": {
+            "type": "string"
           },
           "processedCategory": {
             "type": "string"
           },
-          "processedKeyword": {
-            "type": "string"
+          "offset": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -26285,10 +27922,6 @@
       "IPageAdminCashoutApplicationDetailResponse": {
         "type": "object",
         "properties": {
-          "size": {
-            "type": "integer",
-            "format": "int64"
-          },
           "records": {
             "type": "array",
             "items": {
@@ -26305,6 +27938,10 @@
             "deprecated": true
           },
           "current": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
             "type": "integer",
             "format": "int64"
           }

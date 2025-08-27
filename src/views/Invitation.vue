@@ -7,44 +7,44 @@
           <image src="/static/back.png" class="back-arrow" />
         </view>
       </view>
-      <text class="title-text">Invitation</text>
+      <text class="title-text">{{ t('components.invitation.invitation') }}</text>
     </view>
 
          <!-- 邀请奖励卡片 -->
      <view class="reward-card">
        <view class="reward-info">
-         <text class="reward-value">1,580 Points</text>
-         <text class="reward-label">Invitation Rewards</text>
+         <text class="reward-value">{{ t('components.invitation.invitationRewards') }}</text>
+         <text class="reward-label">{{ t('components.invitation.invitationRewards') }}</text>
        </view>
      </view>
 
          <!-- 用户统计 -->
      <view class="stats-section">
        <view class="stat-card">
-         <text class="stat-value">12 Users</text>
-         <text class="stat-label">Number of invited people</text>
+         <text class="stat-value">{{ t('components.invitation.numberOfInvitedPeople') }}</text>
+         <text class="stat-label">{{ t('components.invitation.numberOfInvitedPeople') }}</text>
        </view>
        <view class="stat-card">
-         <text class="stat-value">6 Users</text>
-         <text class="stat-label">Number of direct push personnel</text>
+         <text class="stat-value">{{ t('components.invitation.numberOfDirectPushPersonnel') }}</text>
+         <text class="stat-label">{{ t('components.invitation.numberOfDirectPushPersonnel') }}</text>
        </view>
      </view>
 
     <!-- 邀请链接 -->
     <view class="invite-link-card">
       <view class="link-info">
-        <text class="link-label">Invitation Link</text>
+        <text class="link-label">{{ t('components.invitation.invitationLink') }}</text>
         <text class="link-url">{{ inviteLink }}</text>
       </view>
       <view class="copy-btn" @click="copyInviteLink">
-        <text class="copy-text">Copy Link</text>
+                 <text class="copy-text">{{ t('common.copy') }}</text>
       </view>
     </view>
 
     <!-- 邀请奖励详情 -->
     <view class="details-card">
              <view class="details-header">
-         <text class="details-title">Invitation Reward Details</text>
+         <text class="details-title">{{ t('components.invitation.invitationRewardDetails') }}</text>
          <view class="details-icon" @click="openRuleModal">
            <image src="/static/Person/Details.png" class="icon-img" />
          </view>
@@ -52,17 +52,17 @@
 
       <!-- 表格头部 -->
       <view class="table-header">
-        <text class="header-id">ID</text>
-        <text class="header-wallet">Wallet Addr</text>
-        <text class="header-type">Type</text>
-        <text class="header-rewards">Rewards (Pts)</text>
+        <text class="header-id">{{ t('components.invitation.id') }}</text>
+        <text class="header-wallet">{{ t('components.invitation.walletAddr') }}</text>
+        <text class="header-type">{{ t('components.invitation.type') }}</text>
+        <text class="header-rewards">{{ t('components.invitation.rewards') }}</text>
       </view>
 
       <!-- 表格内容 -->
       <view class="table-content">
         <view class="table-row" v-for="(item, index) in invitationList" :key="index">
           <text class="row-id">{{ item.id }}</text>
-          <text class="row-wallet">{{ item.wallet }}</text>
+                          <text class="row-wallet">{{ formatShortAddress(item.wallet) }}</text>
           <text class="row-type">{{ item.type }}</text>
           <text class="row-rewards">{{ item.rewards }}</text>
         </view>
@@ -70,7 +70,7 @@
 
              <!-- 底部提示 -->
        <view class="bottom-tip">
-         <text class="tip-text">All content loaded</text>
+         <text class="tip-text">{{ t('components.invitation.allContentLoaded') }}</text>
        </view>
      </view>
    </view>
@@ -79,7 +79,7 @@
    <view class="rule-modal-overlay" v-if="showRuleModal" @click="closeRuleModal">
      <view class="rule-modal-content" @click.stop>
        <view class="rule-modal-header">
-         <text class="rule-modal-title">Rule Details</text>
+         <text class="rule-modal-title">{{ t('components.invitation.ruleDetails') }}</text>
          <view class="rule-close-button" @click="closeRuleModal">
            <text class="rule-close-icon">×</text>
          </view>
@@ -87,11 +87,11 @@
        
        <view class="rule-modal-body">
          <text class="rule-content">
-           Successfully refer a user through KYC to earn points:
+           {{ t('components.invitation.successfullyReferUserThroughKYC') }}
          </text>
          <view class="rule-list">
-           <text class="rule-item">Direct Referral--2 Points/User</text>
-           <text class="rule-item">Indirect Referral--0.2 Points/User</text>
+           <text class="rule-item">{{ t('components.invitation.directReferral') }}--{{ t('components.invitation.rewardsPerUser') }}</text>
+           <text class="rule-item">{{ t('components.invitation.indirectReferral') }}--{{ t('components.invitation.rewardsPerUser') }}</text>
          </view>
        </view>
      </view>
@@ -100,105 +100,51 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatShortAddress } from '@/utils/addressUtils'
 
-// 邀请链接
-const inviteLink = ref('https://modao.cc')
+const { t } = useI18n()
 
-// 规则弹窗显示状态
+// 响应式数据
+const inviteLink = ref('https://verigold.com/invite/ABC123')
 const showRuleModal = ref(false)
 
-// 邀请列表数据
+// 模拟邀请列表数据
 const invitationList = ref([
   {
-    id: '123',
-    wallet: '0f4a515s...',
-    type: 'Direct',
-    rewards: '0.5635'
+    id: '001',
+    wallet: '0x7eCfbF2D6DEa2371ea8f237c056B024dA4Bc87af',
+    type: t('components.invitation.directReferral'),
+    rewards: '2'
   },
   {
-    id: '123',
-    wallet: '0f4a515s...',
-    type: 'Direct',
-    rewards: '0.5635'
-  },
-  {
-    id: '123',
-    wallet: '0f4a515s...',
-    type: 'Direct',
-    rewards: '0.5635'
-  },
-  {
-    id: '123',
-    wallet: '0f4a515s...',
-    type: 'Direct',
-    rewards: '0.5635'
+    id: '002',
+    wallet: '0x8fDgcC3E7Fb3482fb8f248c057B025eB5Bc98bBg',
+    type: t('components.invitation.indirectReferral'),
+    rewards: '0.2'
   }
 ])
 
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
+}
+
 // 复制邀请链接
 const copyInviteLink = () => {
-  // #ifdef H5
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(inviteLink.value).then(() => {
-      showToast('Invitation link copied!')
-    }).catch(() => {
-      fallbackCopy()
-    })
-  } else {
-    fallbackCopy()
-  }
-  // #endif
-  
-  // #ifdef APP-PLUS
   uni.setClipboardData({
     data: inviteLink.value,
     success: () => {
-      showToast('Invitation link copied!')
-    },
-    fail: () => {
-      showToast('Copy failed')
+      uni.showToast({
+        title: t('components.invitation.linkCopied'),
+        icon: 'success',
+        duration: 2000
+      })
     }
   })
-  // #endif
-  
-  // #ifdef MP
-  uni.setClipboardData({
-    data: inviteLink.value,
-    success: () => {
-      showToast('Invitation link copied!')
-    },
-    fail: () => {
-      showToast('Copy failed')
-    }
-  })
-  // #endif
 }
 
-// 备用复制方法
-const fallbackCopy = () => {
-  const textArea = document.createElement('textarea')
-  textArea.value = inviteLink.value
-  document.body.appendChild(textArea)
-  textArea.select()
-  try {
-    document.execCommand('copy')
-    showToast('Invitation link copied!')
-  } catch (err) {
-    showToast('Copy failed')
-  }
-  document.body.removeChild(textArea)
-}
-
-// 显示提示信息
-const showToast = (message) => {
-  uni.showToast({
-    title: message,
-    icon: 'success',
-    duration: 2000
-  })
-}
-
-// 显示规则弹窗
+// 打开规则弹窗
 const openRuleModal = () => {
   showRuleModal.value = true
 }
@@ -206,11 +152,6 @@ const openRuleModal = () => {
 // 关闭规则弹窗
 const closeRuleModal = () => {
   showRuleModal.value = false
-}
-
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
 }
 </script>
 
@@ -253,6 +194,7 @@ const goBack = () => {
   justify-content: center;
   width: 64rpx;
   height: 64rpx;
+  cursor: pointer;
 }
 
 .back-icon {
@@ -381,6 +323,7 @@ const goBack = () => {
   background-color: transparent;
   border-radius: 8rpx;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .copy-text {
@@ -418,6 +361,7 @@ const goBack = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 .icon-img {

@@ -6,7 +6,7 @@
         <image class="back-icon" src="/static/back.png" mode="aspectFit" />
       </view>
       <view class="page-title">
-        <text class="title-text">Borrow Order</text>
+        <text class="title-text">{{ $t('components.borrowOrder.title') }}</text>
       </view>
       <view class="header-buttons">
         <view class="header-button" @click="showRecords">
@@ -19,13 +19,13 @@
     <view class="main-content">
       <!-- 通知消息 -->
       <view class="notification-section">
-        <text class="notification-text">Borrowed USDT will immediately arrive in USDT withdrawal's borrowed funds</text>
+        <text class="notification-text">{{ $t('components.borrowOrder.borrowedUSDTArrival') }}</text>
       </view>
 
       <!-- 总负债区域 -->
       <view class="total-liabilities-section">
         <view class="liabilities-card">
-          <text class="liabilities-label">Total Liabilities (USDT)</text>
+          <text class="liabilities-label">{{ $t('components.borrowOrder.totalLiabilities') }}</text>
           <text class="liabilities-value">512.16516151</text>
         </view>
       </view>
@@ -35,31 +35,31 @@
         <!-- 第一个抵押项目 -->
         <view class="collateral-card">
           <view class="collateral-header">
-            <text class="collateral-title">Collateral Amount (VGAU)</text>
+            <text class="collateral-title">{{ $t('components.borrowOrder.collateralAmount') }}</text>
             <text class="collateral-amount">100</text>
           </view>
           
           <view class="collateral-details">
             <view class="detail-item">
-              <text class="detail-label">Pledge Ratio</text>
+              <text class="detail-label">{{ $t('components.borrowOrder.pledgeRatio') }}</text>
               <text class="detail-value">80%</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">Net Annualized Interest Rate</text>
+              <text class="detail-label">{{ $t('components.borrowOrder.netAnnualizedInterestRate') }}</text>
               <text class="detail-value positive">20.24%</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">Liquidation Reference Price (VGAU/USDT)</text>
+              <text class="detail-label">{{ $t('components.borrowOrder.liquidationReferencePrice') }}</text>
               <text class="detail-value">84.225</text>
             </view>
           </view>
           
           <view class="action-buttons">
             <view class="action-btn" @click="increaseCollateral">
-              <text class="btn-text">Increase Collateral Amount</text>
+              <text class="btn-text">{{ $t('components.borrowOrder.increaseCollateralAmount') }}</text>
             </view>
             <view class="action-btn" @click="adjustPledgeRatio">
-              <text class="btn-text">Adjust Pledge Ratio</text>
+              <text class="btn-text">{{ $t('components.borrowOrder.adjustPledgeRatio') }}</text>
             </view>
           </view>
         </view>
@@ -67,31 +67,31 @@
         <!-- 第二个抵押项目 -->
         <view class="collateral-card">
           <view class="collateral-header">
-            <text class="collateral-title">Collateral Amount (VGAU)</text>
+            <text class="collateral-title">{{ $t('components.borrowOrder.collateralAmount') }}</text>
             <text class="collateral-amount">100</text>
           </view>
           
           <view class="collateral-details">
             <view class="detail-item">
-              <text class="detail-label">Pledge Ratio</text>
+              <text class="detail-label">{{ $t('components.borrowOrder.pledgeRatio') }}</text>
               <text class="detail-value">30%</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">Net Annualized Interest Rate</text>
+              <text class="detail-label">{{ $t('components.borrowOrder.netAnnualizedInterestRate') }}</text>
               <text class="detail-value negative">-2.24%</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">Liquidation Reference Price (VGAU/USDT)</text>
+              <text class="detail-label">{{ $t('components.borrowOrder.liquidationReferencePrice') }}</text>
               <text class="detail-value">84.225</text>
             </view>
           </view>
           
           <view class="action-buttons">
             <view class="action-btn" @click="increaseCollateral">
-              <text class="btn-text">Increase Collateral Amount</text>
+              <text class="btn-text">{{ $t('components.borrowOrder.increaseCollateralAmount') }}</text>
             </view>
             <view class="action-btn" @click="adjustPledgeRatio">
-              <text class="btn-text">Adjust Pledge Ratio</text>
+              <text class="btn-text">{{ $t('components.borrowOrder.adjustPledgeRatio') }}</text>
             </view>
           </view>
         </view>
@@ -99,7 +99,7 @@
 
       <!-- 底部加载完成提示 -->
       <view class="footer-section">
-        <text class="footer-text">All loaded</text>
+        <text class="footer-text">{{ $t('components.borrowOrder.allLoaded') }}</text>
       </view>
     </view>
   </view>
@@ -107,16 +107,25 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
-}
+const { t, locale } = useI18n()
+
+// 响应式数据
+const showRecordsData = ref(false)
+
+// 调试国际化 - 验证翻译是否正常工作
+console.log('Current locale:', locale.value)
+console.log('BorrowOrder translations:', {
+  title: t('components.borrowOrder.title'),
+  totalLiabilities: t('components.borrowOrder.totalLiabilities'),
+  collateralAmount: t('components.borrowOrder.collateralAmount')
+})
 
 // 显示记录
 const showRecords = () => {
   uni.showToast({
-    title: 'Records feature coming soon',
+    title: t('components.borrowOrder.recordsFeature'),
     icon: 'none',
     duration: 2000
   })
@@ -124,19 +133,23 @@ const showRecords = () => {
 
 // 增加抵押金额
 const increaseCollateral = () => {
-  // 跳转到增加抵押金额页面
   uni.navigateTo({
     url: '/views/IncreaseCollateral'
   })
 }
 
-// 调整抵押率
+// 调整质押比率
 const adjustPledgeRatio = () => {
   uni.showToast({
-    title: 'Adjust pledge ratio feature coming soon',
+    title: t('components.borrowOrder.adjustPledgeRatioFeature'),
     icon: 'none',
     duration: 2000
   })
+}
+
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
 }
 </script>
 

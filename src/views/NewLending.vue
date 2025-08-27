@@ -6,7 +6,7 @@
         <image class="back-icon" src="/static/back.png" mode="aspectFit" />
       </view>
       <view class="page-title">
-        <text class="title-text">Lending</text>
+        <text class="title-text">{{ t('components.newLending.lending') }}</text>
       </view>
       <view class="history-button">
         <image class="history-icon" src="/static/history.png" mode="aspectFit" />
@@ -21,7 +21,7 @@
            <view class="info-button" @click="goToInfoPage">
              <text class="info-icon">!</text>
            </view>
-           <text class="notice-text">Pledged VGAU assets will not receive capital protection rewards</text>
+           <text class="notice-text">{{ t('components.newLending.pledgedVGAUAssets') }}</text>
          </view>
        </view>
 
@@ -29,7 +29,7 @@
       <!-- 借贷参数区域 -->
       <view class="parameters-section">
                  <view class="parameter-item">
-           <text class="parameter-label">Collateral Quantity</text>
+           <text class="parameter-label">{{ t('components.newLending.collateralQuantity') }}</text>
           <view class="input-container">
             <input class="amount-input" 
                    type="number" 
@@ -39,17 +39,17 @@
             <view class="input-suffix">
               <text class="currency-text">VGAU</text>
               <view class="divider"></view>
-              <text class="max-text" @click="setMaxCollateral">MAX</text>
+              <text class="max-text" @click="setMaxCollateral">{{ t('components.newLending.max') }}</text>
             </view>
           </view>
                      <view class="available-balance">
-             <text class="balance-label">Available Assets</text>
+             <text class="balance-label">{{ t('components.newLending.availableAssets') }}</text>
              <text class="balance-amount">48,456,156 VGAU</text>
            </view>
         </view>
 
                  <view class="parameter-item">
-           <text class="parameter-label">Available to Borrow</text>
+           <text class="parameter-label">{{ t('components.newLending.availableToBorrow') }}</text>
           <view class="input-container">
             <input class="amount-input" 
                    type="number" 
@@ -68,22 +68,22 @@
          <!-- 第一部分：抵押和清算相关比率 -->
          <view class="details-part">
            <view class="detail-item">
-             <text class="detail-label">Liquidation Insurance Fee</text>
+             <text class="detail-label">{{ t('components.newLending.liquidationInsuranceFee') }}</text>
              <text class="detail-value">--</text>
            </view>
            
            <view class="detail-item">
-             <text class="detail-label">Initial Collateral Ratio</text>
+             <text class="detail-label">{{ t('components.newLending.initialCollateralRatio') }}</text>
              <text class="detail-value">78%</text>
            </view>
            
            <view class="detail-item">
-             <text class="detail-label">Additional Margin</text>
+             <text class="detail-label">{{ t('components.newLending.additionalMargin') }}</text>
              <text class="detail-value">85%</text>
            </view>
            
            <view class="detail-item">
-             <text class="detail-label">Forced Liquidation Collateral Ratio</text>
+             <text class="detail-label">{{ t('components.newLending.forcedLiquidationCollateralRatio') }}</text>
              <text class="detail-value">91%</text>
            </view>
          </view>
@@ -94,22 +94,22 @@
          <!-- 第二部分：利率和参考价格 -->
          <view class="details-part">
            <view class="detail-item">
-             <text class="detail-label">Annual Interest Rate</text>
+             <text class="detail-label">{{ t('components.newLending.annualInterestRate') }}</text>
              <text class="detail-value">8.18%</text>
            </view>
            
            <view class="detail-item">
-             <text class="detail-label">Net Annualized Interest Rate</text>
+             <text class="detail-label">{{ t('components.newLending.netAnnualizedInterestRate') }}</text>
              <text class="detail-value">0.00%</text>
            </view>
            
            <view class="detail-item">
-             <text class="detail-label">Estimated Hourly Interest Rate</text>
+             <text class="detail-label">{{ t('components.newLending.estimatedHourlyInterestRate') }}</text>
              <text class="detail-value">--</text>
            </view>
            
            <view class="detail-item">
-             <text class="detail-label">Liquidation Reference Price (VGAU/USDT)</text>
+             <text class="detail-label">{{ t('components.newLending.liquidationReferencePrice') }}</text>
              <text class="detail-value">0 兑</text>
            </view>
          </view>
@@ -117,8 +117,8 @@
 
              <!-- 确认按钮 -->
        <view class="confirm-section">
-         <view class="confirm-btn" @click="handleConfirm">
-           <text class="confirm-text">Confirm Lending</text>
+         <view class="confirm-btn" @click="confirmLending">
+           <text class="confirm-text">{{ t('components.newLending.confirmLending') }}</text>
          </view>
        </view>
      </view>
@@ -126,41 +126,59 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-// 借贷金额
+const { t } = useI18n()
+
+// 响应式数据
 const collateralAmount = ref('')
 const borrowAmount = ref('')
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
+// 计算可借金额（基于抵押品数量）
+const calculatedBorrowAmount = computed(() => {
+  if (!collateralAmount.value || isNaN(collateralAmount.value)) {
+    return ''
+  }
+  const collateral = parseFloat(collateralAmount.value)
+  // 假设抵押率为80%，即1 VGAU可以借0.8 USDT
+  return (collateral * 0.8).toFixed(2)
+})
+
+// 监听抵押品数量变化，自动计算可借金额
+const handleCollateralChange = () => {
+  if (collateralAmount.value && !isNaN(collateralAmount.value)) {
+    borrowAmount.value = calculatedBorrowAmount.value
+  }
 }
 
-// 跳转到信息页面
+// 设置最大抵押品数量
+const setMaxCollateral = () => {
+  collateralAmount.value = '10000'
+  handleCollateralChange()
+}
+
+// 前往信息页面
 const goToInfoPage = () => {
   uni.navigateTo({
     url: '/views/InfoPage'
   })
 }
 
-
-
-// 设置最大抵押金额
-const setMaxCollateral = () => {
-  collateralAmount.value = '48456156'
-}
-
-// 设置最大借贷金额
-const setMaxBorrow = () => {
-  borrowAmount.value = '32304'
-}
-
-// 处理确认
-const handleConfirm = () => {
-  if (!collateralAmount.value || !borrowAmount.value) {
+// 确认借贷
+const confirmLending = () => {
+  if (!collateralAmount.value || parseFloat(collateralAmount.value) <= 0) {
     uni.showToast({
-      title: 'Please enter valid amounts',
+      title: t('common.pleaseEnterValidAmount'),
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
+  if (!borrowAmount.value || parseFloat(borrowAmount.value) <= 0) {
+    uni.showToast({
+      title: t('components.newLending.pleaseEnterBorrowAmount'),
       icon: 'none',
       duration: 2000
     })
@@ -168,14 +186,15 @@ const handleConfirm = () => {
   }
   
   uni.showToast({
-    title: 'Lending confirmed successfully',
-    icon: 'success',
+    title: t('components.newLending.lendingFeature'),
+    icon: 'none',
     duration: 2000
   })
-  
-  setTimeout(() => {
-    uni.navigateBack()
-  }, 2000)
+}
+
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
 }
 </script>
 

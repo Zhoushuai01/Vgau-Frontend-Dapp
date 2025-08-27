@@ -6,7 +6,7 @@
         <image class="back-icon" src="/static/back.png" mode="aspectFit" />
       </view>
       <view class="page-title">
-        <text class="title-text">Product Purchase</text>
+        <text class="title-text">{{ t('components.productPurchase.productPurchase') }}</text>
       </view>
       <view class="header-buttons">
         <view class="header-button" @click="showRecords">
@@ -24,147 +24,158 @@
       <view class="content-area">
         <!-- 产品选择区域 -->
         <view class="product-selection">
-          <view class="product-card active" @click="selectProduct('10days')">
-            <text class="product-term">10 Days</text>
-            <text class="product-apy">APY 5%</text>
+          <view 
+            v-for="product in products" 
+            :key="product.id" 
+            class="product-card" 
+            :class="{ active: selectedProduct === product.id }" 
+            @click="selectProduct(product.id)"
+          >
+            <text class="product-term">{{ product.lockDays }}{{ $t('stakingDetail.days') }}</text>
+            <text class="product-apy">{{ product.annualRate }}% APY</text>
           </view>
-          <view class="product-card" @click="selectProduct('30days')">
-            <text class="product-term">30 Days</text>
-            <text class="product-apy">APY 8%</text>
+          
+          <!-- 加载状态 -->
+          <view v-if="loading" class="loading-card">
+            <text class="loading-text">{{ $t('common.loading') }}</text>
           </view>
-          <view class="product-card" @click="selectProduct('90days')">
-            <text class="product-term">90 Days</text>
-            <text class="product-apy">APY 12%</text>
+          
+          <!-- 无产品时的占位 -->
+          <view v-if="!loading && products.length === 0" class="empty-card">
+            <text class="empty-text">{{ $t('common.noData') }}</text>
           </view>
         </view>
 
         <!-- 产品详情栏 -->
-        <view class="product-detail-bar" v-if="showProductDetail">
+        <view class="product-detail-bar" v-if="showProductDetail && selectedProductInfo">
           <view class="detail-header">
-            <text class="detail-title">{{ selectedProduct }} Product Details</text>
+            <text class="detail-title">{{ $t('components.productPurchase.productDetails') }} - {{ selectedProductInfo.name }}</text>
             <view class="close-button" @click="closeProductDetail">
               <text class="close-text">×</text>
             </view>
           </view>
           <view class="detail-content">
             <view class="detail-item">
-              <text class="detail-label">Term:</text>
-              <text class="detail-value">{{ getProductTerm(selectedProduct) }}</text>
+              <text class="detail-label">{{ $t('components.productPurchase.term') }}:</text>
+              <text class="detail-value">{{ selectedProductInfo.lockDays }}{{ $t('stakingDetail.days') }}</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">APY:</text>
-              <text class="detail-value">{{ getProductAPY(selectedProduct) }}</text>
+              <text class="detail-label">{{ $t('components.productPurchase.apy') }}:</text>
+              <text class="detail-value">{{ selectedProductInfo.annualRate }}%</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">Min Amount:</text>
-              <text class="detail-value">100 VGAU</text>
+              <text class="detail-label">{{ $t('components.productPurchase.minAmount') }}:</text>
+              <text class="detail-value">{{ selectedProductInfo.minAmount }} VGAU</text>
             </view>
             <view class="detail-item">
-              <text class="detail-label">Max Amount:</text>
-              <text class="detail-value">10,000 VGAU</text>
-            </view>
-            <view class="detail-item">
-              <text class="detail-label">Risk Level:</text>
-              <text class="detail-value">Low</text>
+              <text class="detail-label">{{ $t('components.productPurchase.maxAmount') }}:</text>
+              <text class="detail-value">{{ selectedProductInfo.maxAmount }} VGAU</text>
             </view>
           </view>
         </view>
 
         <!-- 金额输入区域 -->
         <view class="amount-section">
-          <text class="amount-label">Amount</text>
+          <text class="amount-label">{{ t('components.productPurchase.amount') }}</text>
           <view class="amount-input-container">
             <input class="amount-input" 
                    type="number" 
-                   placeholder="Enter staking amount" 
+                   :placeholder="$t('components.productPurchase.enterStakingAmount')" 
                    v-model="stakingAmount"
                    :adjust-position="false" />
             <view class="input-suffix">
-              <text class="currency-text">VGAU</text>
+              <text class="currency-text">{{ t('components.productPurchase.vgau') }}</text>
               <view class="max-button" @click="setMaxAmount">
-                <text class="max-text">MAX</text>
+                <text class="max-text">{{ t('components.productPurchase.max') }}</text>
               </view>
             </view>
           </view>
-          <text class="available-balance">Available <text class="balance-amount">0</text> VGAU</text>
+          <text class="available-balance">
+            {{ t('components.productPurchase.availableBalance') }} 
+            <text class="balance-amount">
+              <text v-if="balanceLoading" class="loading-text">加载中...</text>
+              <text v-else>{{ vgauBalance }}</text>
+            </text> 
+            {{ t('components.productPurchase.vgau') }}
+          </text>
         </view>
 
         <!-- 规则说明区域 -->
         <view class="rules-section" :class="{ 'product-rules-active': currentTab === 'product' }">
           <view class="rules-tabs">
             <view class="tab" :class="{ active: currentTab === 'transaction' }" @click="switchTab('transaction')">
-              <text class="tab-text">Transaction Rules</text>
+              <text class="tab-text">{{ t('components.productPurchase.transactionRules') }}</text>
             </view>
             <view class="tab" :class="{ active: currentTab === 'product' }" @click="switchTab('product')">
-              <text class="tab-text">Product Rules</text>
+              <text class="tab-text">{{ t('components.productPurchase.productRules') }}</text>
             </view>
           </view>
           
           <view class="rules-content" v-if="currentTab === 'transaction'">
             <view class="transaction-rule-item">
-              <text class="transaction-rule-label">Purchase time</text>
-              <text class="transaction-rule-value">2025-07-18 14:00</text>
+              <text class="transaction-rule-label">{{ t('components.productPurchase.purchaseTime') }}</text>
+              <text class="transaction-rule-value">{{ t('components.productPurchase.purchaseTimeValue') }}</text>
             </view>
             <view class="transaction-rule-item">
-              <text class="transaction-rule-label">Expiration Time</text>
-              <text class="transaction-rule-value">2025-07-29 08:00</text>
+              <text class="transaction-rule-label">{{ t('components.productPurchase.expirationTime') }}</text>
+              <text class="transaction-rule-value">{{ t('components.productPurchase.expirationTimeValue') }}</text>
             </view>
             <view class="transaction-rule-item">
-              <text class="transaction-rule-label">Estimated Interest (USDT)</text>
-              <text class="transaction-rule-value">--</text>
+              <text class="transaction-rule-label">{{ t('components.productPurchase.estimatedInterest') }}</text>
+              <text class="transaction-rule-value">{{ t('components.productPurchase.estimatedInterestValue') }}</text>
             </view>
             <view class="transaction-rule-item">
-              <text class="transaction-rule-label">Requires Manual Redemption</text>
-              <text class="transaction-rule-value">--</text>
+              <text class="transaction-rule-label">{{ t('components.productPurchase.requiresManualRedemption') }}</text>
+              <text class="transaction-rule-value">{{ t('components.productPurchase.requiresManualRedemptionValue') }}</text>
             </view>
           </view>
           
           <view class="rules-content" v-else>
             <view class="rule-section">
-              <text class="rule-section-title">1. Rewards</text>
+              <text class="rule-section-title">{{ t('components.productPurchase.rewards') }}</text>
               <view class="rule-item">
                 <text class="rule-bullet">•</text>
-                <text class="rule-text">The annualized yield of the fixed-term products you subscribe to may change daily.</text>
+                <text class="rule-text">{{ t('components.productPurchase.rewardsDailyChange') }}</text>
               </view>
               <view class="rule-item">
                 <text class="rule-bullet">•</text>
-                <text class="rule-text">Rewards will start to be calculated at 00:00 (UTC) on the day following the subscription, and cannot be redeemed during the staking period.</text>
+                <text class="rule-text">{{ t('components.productPurchase.rewardsStartCalculation') }}</text>
               </view>
               <view class="rule-item">
                 <text class="rule-bullet">•</text>
-                <text class="rule-text">After the staking period expires, it needs to be manually converted to flexible staking, and the corresponding income will be distributed to the account, and the distributed income can be withdrawn immediately.</text>
+                <text class="rule-text">{{ t('components.productPurchase.rewardsAfterStaking') }}</text>
               </view>
               <view class="rule-item">
                 <text class="rule-bullet">•</text>
-                <text class="rule-text">Settlement income = subscribed assets * annualized yield / 365 * fixed term (accurate to decimal places)</text>
-              </view>
-            </view>
-            
-            <view class="rule-section">
-              <text class="rule-section-title">2. Subscription and Redemption</text>
-              <view class="rule-item">
-                <text class="rule-bullet">•</text>
-                <text class="rule-text">Subscription and redemption for principal-protected fixed-term earning products are open daily between 00:10 UTC and 23:50 UTC.</text>
+                <text class="rule-text">{{ t('components.productPurchase.settlementIncome') }}</text>
               </view>
             </view>
             
             <view class="rule-section">
-              <text class="rule-section-title">3. Early Redemption</text>
+              <text class="rule-section-title">{{ t('components.productPurchase.subscriptionAndRedemption') }}</text>
               <view class="rule-item">
                 <text class="rule-bullet">•</text>
-                <text class="rule-text">For specified fixed-term products, you can redeem assets at any time in "My Finance".</text>
+                <text class="rule-text">{{ t('components.productPurchase.subscriptionAndRedemptionDaily') }}</text>
+              </view>
+            </view>
+            
+            <view class="rule-section">
+              <text class="rule-section-title">{{ t('components.productPurchase.earlyRedemption') }}</text>
+              <view class="rule-item">
+                <text class="rule-bullet">•</text>
+                <text class="rule-text">{{ t('components.productPurchase.earlyRedemptionMyFinance') }}</text>
               </view>
               <view class="rule-item">
                 <text class="rule-bullet">•</text>
-                <text class="rule-text">If you redeem early, you will lose all the income already distributed by this product.</text>
+                <text class="rule-text">{{ t('components.productPurchase.earlyRedemptionLoseIncome') }}</text>
               </view>
               <view class="rule-item">
                 <text class="rule-bullet">•</text>
-                <text class="rule-text">The entire balance of assets locked by this product, minus all income you received during this period, will be credited to your spot account within 72 hours.</text>
+                <text class="rule-text">{{ t('components.productPurchase.earlyRedemptionBalanceCredit') }}</text>
               </view>
               <view class="rule-item">
                 <text class="rule-bullet">•</text>
-                <text class="rule-text">In case of extreme market fluctuations, network delays, or an excessive number of redemption requests, redemption may be delayed.</text>
+                <text class="rule-text">{{ t('components.productPurchase.earlyRedemptionMarketFluctuations') }}</text>
               </view>
             </view>
           </view>
@@ -173,8 +184,8 @@
 
       <!-- 确认按钮 -->
       <view class="confirm-section">
-        <view class="confirm-btn" @click="handleConfirm">
-          <text class="confirm-text">Confirm</text>
+        <view class="confirm-btn" @click="confirmPurchase">
+          <text class="confirm-text">{{ t('components.productPurchase.confirm') }}</text>
         </view>
       </view>
     </view>
@@ -182,26 +193,169 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { stakeAPI, userFundsAPI } from '@/api/apiService.js'
 
-// 当前选中的产品
-const selectedProduct = ref('10days')
-// 当前选中的标签页
-const currentTab = ref('transaction')
-// 质押金额
-const stakingAmount = ref('')
-// 是否显示产品详情
+const { t } = useI18n()
+
+// 响应式数据
+const products = ref([])
+const loading = ref(false)
+const selectedProduct = ref('')
 const showProductDetail = ref(false)
+const stakingAmount = ref('')
+const currentTab = ref('transaction')
+const vgauBalance = ref('0.00')
+const balanceLoading = ref(false)
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
+// 计算属性
+const selectedProductInfo = computed(() => {
+  return products.value.find(product => product.id === selectedProduct.value)
+})
+
+// 获取VGAU余额
+const fetchVGAUBalance = async () => {
+  try {
+    balanceLoading.value = true
+    console.log('🔄 开始获取VGAU余额...')
+    
+    const response = await userFundsAPI.getBalances()
+    console.log('✅ VGAU余额获取成功:', response)
+    
+    if (response.success && response.data) {
+      // 查找VGAU余额
+      const vgauBalanceData = response.data.find(balance => balance.currency === 'VGAU')
+      
+      if (vgauBalanceData) {
+        vgauBalance.value = vgauBalanceData.availableAmount || '0.00'
+        console.log('💰 VGAU余额设置成功:', vgauBalance.value)
+      } else {
+        console.log('⚠️ 未找到VGAU余额数据')
+        vgauBalance.value = '0.00'
+      }
+    } else {
+      console.log('⚠️ 获取余额失败，使用默认值')
+      vgauBalance.value = '0.00'
+    }
+  } catch (error) {
+    console.error('❌ 获取VGAU余额失败:', error)
+    
+    // 如果API调用失败，使用默认值
+    vgauBalance.value = '0.00'
+    
+    uni.showToast({
+      title: '余额获取失败',
+      icon: 'none',
+      duration: 2000
+    })
+  } finally {
+    balanceLoading.value = false
+  }
+}
+
+// 获取产品列表
+const fetchProducts = async () => {
+  try {
+    loading.value = true
+    console.log('🔄 开始获取质押产品列表...')
+    
+    const response = await stakeAPI.getProducts()
+    console.log('✅ 质押产品列表获取成功:', response)
+    
+    if (response.success && response.data) {
+      products.value = response.data
+      
+      // 默认选中第一个产品
+      if (products.value.length > 0) {
+        selectedProduct.value = products.value[0].id
+      }
+    } else {
+      throw new Error(response.message || '获取产品列表失败')
+    }
+  } catch (error) {
+    console.error('❌ 获取质押产品列表失败:', error)
+    
+    uni.showToast({
+      title: error.message || t('common.networkError'),
+      icon: 'none',
+      duration: 3000
+    })
+    
+    // 如果API调用失败，使用模拟数据
+    products.value = [
+      {
+        id: 'mock_7d',
+        name: '7天短期质押',
+        description: '7天短期质押产品，年化收益5.5%',
+        annualRate: '5.50',
+        lockDays: 7,
+        minAmount: 100,
+        maxAmount: 10000,
+        status: 'ACTIVE'
+      },
+      {
+        id: 'mock_30d',
+        name: '30天中期质押',
+        description: '30天中期质押产品，年化收益8.0%',
+        annualRate: '8.00',
+        lockDays: 30,
+        minAmount: 500,
+        maxAmount: 50000,
+        status: 'ACTIVE'
+      }
+    ]
+    
+    if (products.value.length > 0) {
+      selectedProduct.value = products.value[0].id
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 选择产品
+const selectProduct = (productId) => {
+  selectedProduct.value = productId
+  showProductDetail.value = true
+}
+
+// 关闭产品详情
+const closeProductDetail = () => {
+  showProductDetail.value = false
+}
+
+// 设置最大金额
+const setMaxAmount = () => {
+  if (selectedProductInfo.value) {
+    // 使用产品最大金额和用户VGAU余额中的较小值
+    const maxProductAmount = selectedProductInfo.value.maxAmount
+    const userBalance = parseFloat(vgauBalance.value) || 0
+    
+    const maxAmount = Math.min(maxProductAmount, userBalance)
+    stakingAmount.value = maxAmount.toString()
+    
+    console.log('💰 设置最大金额:', {
+      productMaxAmount: maxProductAmount,
+      userBalance: userBalance,
+      finalMaxAmount: maxAmount
+    })
+  } else {
+    // 如果没有选中产品，使用用户余额
+    const userBalance = parseFloat(vgauBalance.value) || 0
+    stakingAmount.value = userBalance.toString()
+  }
+}
+
+// 切换标签页
+const switchTab = (tab) => {
+  currentTab.value = tab
 }
 
 // 显示记录
 const showRecords = () => {
   uni.showToast({
-    title: 'Records feature coming soon',
+    title: t('components.productPurchase.recordsFeature'),
     icon: 'none',
     duration: 2000
   })
@@ -214,55 +368,149 @@ const showHelp = () => {
   })
 }
 
-// 选择产品
-const selectProduct = (product) => {
-  selectedProduct.value = product
-  showProductDetail.value = true
-}
-
-// 关闭产品详情
-const closeProductDetail = () => {
-  showProductDetail.value = false
-}
-
-// 获取产品期限
-const getProductTerm = (product) => {
-  const terms = {
-    '10days': '10 Days',
-    '30days': '30 Days',
-    '90days': '90 Days'
+// 确认购买
+const confirmPurchase = async () => {
+  if (!selectedProductInfo.value) {
+    uni.showToast({
+      title: t('components.productPurchase.selectProduct'),
+      icon: 'none',
+      duration: 2000
+    })
+    return
   }
-  return terms[product] || 'Unknown'
-}
 
-// 获取产品APY
-const getProductAPY = (product) => {
-  const apys = {
-    '10days': '5%',
-    '30days': '8%',
-    '90days': '12%'
+  if (!stakingAmount.value || parseFloat(stakingAmount.value) <= 0) {
+    uni.showToast({
+      title: t('common.pleaseEnterValidAmount'),
+      icon: 'none',
+      duration: 2000
+    })
+    return
   }
-  return apys[product] || 'Unknown'
+  
+  const amount = parseFloat(stakingAmount.value)
+  const minAmount = selectedProductInfo.value.minAmount
+  const maxAmount = selectedProductInfo.value.maxAmount
+  
+  if (amount < minAmount || amount > maxAmount) {
+    uni.showToast({
+      title: `${t('components.productPurchase.amountOutOfRange')} (${minAmount}-${maxAmount} VGAU)`,
+      icon: 'none',
+      duration: 3000
+    })
+    return
+  }
+  
+  // 检查用户VGAU余额是否充足
+  const userBalance = parseFloat(vgauBalance.value) || 0
+  if (amount > userBalance) {
+    uni.showToast({
+      title: `余额不足，当前可用余额: ${userBalance} VGAU`,
+      icon: 'none',
+      duration: 3000
+    })
+    return
+  }
+  
+  // 创建质押订单
+  await createStakeOrder()
 }
 
-// 设置最大金额
-const setMaxAmount = () => {
-  stakingAmount.value = '1000'
+// 创建质押订单
+const createStakeOrder = async () => {
+  try {
+    // 显示加载提示
+    uni.showLoading({
+      title: t('components.productPurchase.processing'),
+      mask: true
+    })
+    
+    console.log('🔄 开始创建质押订单...', {
+      productId: selectedProductInfo.value.id,
+      stakeAmount: parseInt(stakingAmount.value)
+    })
+    
+    const orderData = {
+      productId: selectedProductInfo.value.id,
+      stakeAmount: parseInt(stakingAmount.value)
+    }
+    
+    const response = await stakeAPI.createOrder(orderData)
+    console.log('✅ 质押订单创建成功:', response)
+    
+    uni.hideLoading()
+    
+    if (response.success && response.data) {
+      // 显示成功提示
+      uni.showToast({
+        title: response.message || t('components.productPurchase.orderCreateSuccess'),
+        icon: 'success',
+        duration: 3000
+      })
+      
+      // 清空输入
+      stakingAmount.value = ''
+      showProductDetail.value = false
+      
+      // 刷新VGAU余额
+      await fetchVGAUBalance()
+      
+      // 延迟跳转到订单详情或历史页面
+      setTimeout(() => {
+        uni.navigateTo({
+          url: `/views/StakingDetail?orderId=${response.data.orderId}&status=staking`
+        })
+      }, 2000)
+      
+    } else {
+      throw new Error(response.message || '创建订单失败')
+    }
+    
+  } catch (error) {
+    console.error('❌ 创建质押订单失败:', error)
+    
+    uni.hideLoading()
+    
+    let errorMessage = t('components.productPurchase.orderCreateFailed')
+    
+    // 根据错误类型显示不同的提示
+    if (error.message) {
+      if (error.message.includes('余额不足') || error.message.includes('insufficient')) {
+        errorMessage = t('common.insufficientBalance')
+      } else if (error.message.includes('产品不存在') || error.message.includes('product not found')) {
+        errorMessage = t('components.productPurchase.productNotFound')
+      } else if (error.message.includes('金额') || error.message.includes('amount')) {
+        errorMessage = t('components.productPurchase.invalidAmount')
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
+    uni.showToast({
+      title: errorMessage,
+      icon: 'none',
+      duration: 4000
+    })
+  }
 }
 
-// 切换标签页
-const switchTab = (tab) => {
-  currentTab.value = tab
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
 }
 
-// 处理确认
-const handleConfirm = () => {
-  uni.showToast({
-    title: 'Purchase confirmed',
-    icon: 'none',
-    duration: 2000
-  })
-}
+// 页面初始化
+onMounted(async () => {
+  console.log('📱 ProductPurchase 页面初始化开始...')
+  
+  // 并行获取产品列表和VGAU余额
+  await Promise.all([
+    fetchProducts(),
+    fetchVGAUBalance()
+  ])
+  
+  console.log('✅ ProductPurchase 页面初始化完成')
+})
 </script>
 
 <style lang="scss" scoped>
@@ -405,6 +653,44 @@ const handleConfirm = () => {
 
 .product-card.active .product-apy {
   color: rgba(255, 165, 0, 0.8);
+}
+
+/* 加载状态卡片 */
+.loading-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  padding: 40rpx 24rpx;
+  min-height: 120rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+}
+
+/* 空状态卡片 */
+.empty-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  padding: 40rpx 24rpx;
+  min-height: 120rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
 }
 
 /* 产品详情栏 */
@@ -563,6 +849,11 @@ const handleConfirm = () => {
 .balance-amount {
   color: #FFA500;
   font-weight: 500;
+}
+
+.loading-text {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
 }
 
 /* 规则说明区域 */

@@ -15,6 +15,14 @@ class ApiService {
       url: this.baseURL + url
     }
 
+    // 禁用缓存，确保每次都从后端获取最新数据
+    if (config.method === 'GET') {
+      config.data = {
+        ...config.data,
+        _t: Date.now() // 添加时间戳防止缓存
+      }
+    }
+
     console.log('🌐 API请求配置:', {
       method: config.method || 'GET',
       url: config.url,
@@ -187,6 +195,30 @@ class ApiService {
     // 获取邀请关系
     getRelations: (params) => this.get(this.endpoints.INVITE.RELATIONS, params)
   }
+
+  // 质押管理相关API
+  stake = {
+    // 获取可用产品列表
+    getProducts: () => this.get(this.endpoints.STAKE.PRODUCTS),
+    
+    // 创建质押订单
+    createOrder: (data) => this.post(this.endpoints.STAKE.ORDERS, data),
+    
+    // 获取用户订单列表
+    getOrders: () => this.get(this.endpoints.STAKE.ORDERS),
+    
+    // 获取质押历史
+    getHistory: (params) => this.get(this.endpoints.STAKE.HISTORY, params),
+    
+    // 获取质押详情
+    getDetails: (id) => this.get(this.endpoints.STAKE.DETAILS, { id })
+  }
+  
+  // 用户资金余额相关API
+  userFunds = {
+    // 获取用户资金余额
+    getBalances: () => this.get(this.endpoints.USER_FUNDS.BALANCES)
+  }
 }
 
 // 创建API服务实例
@@ -203,6 +235,8 @@ export const userAPI = apiService.user
 export const totpAPI = apiService.totp
 export const fileAPI = apiService.file
 export const inviteAPI = apiService.invite
+export const stakeAPI = apiService.stake
+export const userFundsAPI = apiService.userFunds
 
 // 导出基础配置
 export { BASE_URL, API_ENDPOINTS } 

@@ -57,6 +57,11 @@ export const API_ENDPOINTS = {
     DEPOSIT: '/wallet/deposit'
   },
   
+  // 用户资金余额
+  USER_FUNDS: {
+    BALANCES: '/user-funds/balances'
+  },
+  
   // 用户管理
   USER: {
     PROFILE: '/user/profile',
@@ -83,6 +88,14 @@ export const API_ENDPOINTS = {
     CODE: '/invite/code',
     BIND: '/invite/bind',
     RELATIONS: '/invite/relations'
+  },
+  
+  // 质押管理
+  STAKE: {
+    PRODUCTS: '/stake/products',
+    ORDERS: '/stake/orders',
+    HISTORY: '/stake/history',
+    DETAILS: '/stake/details'
   }
 }
 

@@ -7,13 +7,13 @@
           <image src="/static/back.png" class="back-arrow" />
         </view>
       </view>
-      <text class="title-text">Points Details</text>
+      <text class="title-text">{{ t('components.pointsDetails.pointsDetails') }}</text>
     </view>
 
     <!-- 总积分卡片 -->
     <view class="total-points-card">
       <view class="points-info">
-        <text class="points-label">Total Points</text>
+        <text class="points-label">{{ t('components.pointsDetails.totalPoints') }}</text>
         <text class="points-value">123.156</text>
       </view>
     </view>
@@ -22,22 +22,22 @@
     <scroll-view class="filter-tabs" scroll-x="true" show-scrollbar="false" enhanced="true">
       <view class="tabs-container">
         <view class="tab-item" :class="{ active: activeTab === 'all' }" @click="setActiveTab('all')">
-          <text class="tab-text">All</text>
+          <text class="tab-text">{{ t('components.pointsDetails.all') }}</text>
         </view>
         <view class="tab-item" :class="{ active: activeTab === 'staking' }" @click="setActiveTab('staking')">
-          <text class="tab-text">Staking</text>
+          <text class="tab-text">{{ t('components.pointsDetails.staking') }}</text>
         </view>
         <view class="tab-item" :class="{ active: activeTab === 'invite' }" @click="setActiveTab('invite')">
-          <text class="tab-text">Invite</text>
+          <text class="tab-text">{{ t('components.pointsDetails.invite') }}</text>
         </view>
         <view class="tab-item" :class="{ active: activeTab === 'lending' }" @click="setActiveTab('lending')">
-          <text class="tab-text">Lending</text>
+          <text class="tab-text">{{ t('components.pointsDetails.lending') }}</text>
         </view>
         <view class="tab-item" :class="{ active: activeTab === 'exchange' }" @click="setActiveTab('exchange')">
-          <text class="tab-text">Exchange</text>
+          <text class="tab-text">{{ t('components.pointsDetails.exchange') }}</text>
         </view>
         <view class="tab-item" :class="{ active: activeTab === 'ecosystem' }" @click="setActiveTab('ecosystem')">
-          <text class="tab-text">Ecosystem</text>
+          <text class="tab-text">{{ t('components.pointsDetails.ecosystem') }}</text>
         </view> 
       </view>
     </scroll-view>
@@ -57,13 +57,16 @@
 
     <!-- 底部提示 -->
     <view class="bottom-tip">
-      <text class="tip-text">All loaded</text>
+      <text class="tip-text">{{ t('components.pointsDetails.allLoaded') }}</text>
     </view>
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 当前激活的标签
 const activeTab = ref('all')
@@ -71,44 +74,38 @@ const activeTab = ref('all')
 // 积分明细数据
 const pointsList = ref([
   {
-    title: 'Staking Rewards',
+    title: t('components.pointsDetails.stakingRewards'),
     time: '2025-07-01 10:30',
     points: '1.3',
     type: 'staking'
   },
   {
-    title: 'Invitation',
+    title: t('components.pointsDetails.invitation'),
     time: '2025-07-01 10:30',
     points: '0.5',
     type: 'invite'
   },
   {
-    title: 'Ecosystem Participation',
+    title: t('components.pointsDetails.ecosystemParticipation'),
     time: '2025-07-01 10:30',
     points: '0.3',
     type: 'ecosystem'
   },
   {
-    title: 'Lending',
+    title: t('components.pointsDetails.lending'),
     time: '2025-07-01 10:30',
     points: '2',
     type: 'lending'
   },
   {
-    title: 'Exchange VGT',
+    title: t('components.pointsDetails.exchangeVGT'),
     time: '2025-07-01 10:30',
     points: '3.6',
     type: 'exchange'
-  },
-  {
-    title: 'Lending',
-    time: '2025-07-01 10:30',
-    points: '3',
-    type: 'lending'
   }
 ])
 
-// 筛选后的积分明细列表
+// 计算属性：根据筛选条件过滤积分明细
 const filteredPointsList = computed(() => {
   if (activeTab.value === 'all') {
     return pointsList.value
@@ -116,7 +113,7 @@ const filteredPointsList = computed(() => {
   return pointsList.value.filter(item => item.type === activeTab.value)
 })
 
-// 设置激活的标签
+// 设置活动标签
 const setActiveTab = (tab) => {
   activeTab.value = tab
 }

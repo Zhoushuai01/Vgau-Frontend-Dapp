@@ -6,7 +6,7 @@
         <image class="back-icon" src="/static/back.png" mode="aspectFit" />
       </view>
       <view class="page-title">
-        <text class="title-text">Financial Products</text>
+        <text class="title-text">{{ t('financialProducts') }}</text>
       </view>
     </view>
 
@@ -16,10 +16,10 @@
       <view class="tab-section">
         <view class="tab-container">
           <view class="tab-item" :class="{ active: activeTab === 'glossary' }" @click="switchTab('glossary')">
-            <text class="tab-text">Glossary</text>
+            <text class="tab-text">{{ t('glossary') }}</text>
           </view>
           <view class="tab-item" :class="{ active: activeTab === 'rules' }" @click="switchTab('rules')">
-            <text class="tab-text">Repayment Rules</text>
+            <text class="tab-text">{{ t('repaymentRules') }}</text>
           </view>
         </view>
       </view>
@@ -29,36 +29,36 @@
         <!-- 强平保险费 -->
         <view class="info-item">
           <view class="item-header">
-            <text class="item-title">Forced Liquidation Insurance Fee</text>
+            <text class="item-title">{{ t('forcedLiquidationInsuranceFee') }}</text>
           </view>
           <view class="item-content">
-            <text class="content-text">When borrowing, the platform will calculate a forced liquidation insurance fee of 2% of the maximum borrowable amount based on the initial pledge rate. This fee will be deducted from the borrowable amount.</text>
-            <text class="content-text">After the borrower fully repays the loan, the platform will refund the corresponding forced liquidation insurance fee to their USDT lending account.</text>
-            <text class="content-text">If a crypto borrowing order undergoes forced liquidation, the platform will charge this forced liquidation insurance fee.</text>
+            <text class="content-text">{{ t('forcedLiquidationInsuranceFeeDescription') }}</text>
+            <text class="content-text">{{ t('forcedLiquidationInsuranceFeeAfterRepayment') }}</text>
+            <text class="content-text">{{ t('forcedLiquidationInsuranceFeeOnForcedLiquidation') }}</text>
           </view>
         </view>
 
         <!-- 质押率注释 -->
         <view class="info-item">
           <view class="item-header">
-            <text class="item-title">Pledge Rate Annotation</text>
+            <text class="item-title">{{ t('pledgeRateAnnotation') }}</text>
           </view>
           <view class="item-content">
                          <view class="sub-item">
-               <text class="sub-title">Current Pledge Rate</text>
-               <text class="content-text">Pledge rate, or LTV (Loan-to-Value), represents the ratio between the borrowed digital assets and the value of the collateral (calculated based on the collateral). Asset value is calculated based on price indices of different cryptocurrencies.</text>
+               <text class="sub-title">{{ t('currentPledgeRate') }}</text>
+               <text class="content-text">{{ t('pledgeRateDescription') }}</text>
              </view>
              <view class="sub-item">
-               <text class="sub-title">Initial Pledge Rate <text class="percentage">78%</text></text>
-               <text class="content-text">Initial pledge rate is the initial ratio between the value of the collateral you need to provide and your loan amount.</text>
+               <text class="sub-title">{{ t('initialPledgeRate') }} <text class="percentage">{{ t('initialPledgeRatePercentage') }}</text></text>
+               <text class="content-text">{{ t('initialPledgeRateDescription') }}</text>
              </view>
              <view class="sub-item">
-               <text class="sub-title">Margin Call <text class="percentage">85%</text></text>
-               <text class="content-text">Margin call pledge rate is the warning line when the loan contract approaches the forced liquidation pledge rate.</text>
+               <text class="sub-title">{{ t('marginCall') }} <text class="percentage">{{ t('marginCallPercentage') }}</text></text>
+               <text class="content-text">{{ t('marginCallDescription') }}</text>
              </view>
              <view class="sub-item">
-               <text class="sub-title">Forced Liquidation Pledge Rate <text class="percentage">91%</text></text>
-               <text class="content-text">If your pledge rate reaches the forced liquidation pledge rate, the system will immediately execute forced liquidation, using your collateral assets to repay your money market loan, and will charge a 2% forced liquidation fee on the loan amount.</text>
+               <text class="sub-title">{{ t('forcedLiquidationPledgeRate') }} <text class="percentage">{{ t('forcedLiquidationPledgeRatePercentage') }}</text></text>
+               <text class="content-text">{{ t('forcedLiquidationPledgeRateDescription') }}</text>
              </view>
           </view>
         </view>
@@ -66,20 +66,20 @@
         <!-- 净年化利率 -->
         <view class="info-item">
           <view class="item-header">
-            <text class="item-title">Net Annualized Interest Rate</text>
+            <text class="item-title">{{ t('netAnnualizedInterestRate') }}</text>
           </view>
           <view class="item-content">
-            <text class="content-text">Collateral assets will continue to earn real-time annualized interest rewards, helping to offset crypto borrowing costs. Net Annualized Interest Rate = Annual Interest Rate - (Real-time Annual Interest Rate of Collateral / Initial Pledge Rate)</text>
+            <text class="content-text">{{ t('netAnnualizedInterestRateDescription') }}</text>
           </view>
         </view>
 
         <!-- 年利率 -->
         <view class="info-item">
           <view class="item-header">
-            <text class="item-title">Annual Interest Rate</text>
+            <text class="item-title">{{ t('annualInterestRate') }}</text>
           </view>
           <view class="item-content">
-            <text class="content-text">Interest will be calculated using compound interest. Interest accrues from the successful borrowing of crypto, calculated once per minute. If the borrowing duration is less than one minute, it will also be calculated as one minute.</text>
+            <text class="content-text">{{ t('annualInterestRateDescription') }}</text>
           </view>
         </view>
       </view>
@@ -88,12 +88,14 @@
         <view class="content-section" v-if="activeTab === 'rules'">
           <view class="info-item">
             <view class="item-content">
-                           <text class="content-text">The collateral required for lending originates from the VGAU current account. Once transferred as collateral, this portion will no longer generate current income.</text>
-              <text class="content-text">The default initial pledge rate is <text class="percentage">78%</text>. When creating a loan order, the pledge rate can be adjusted based on the loan amount.</text>
-              <text class="content-text">When disbursing the loan, <text class="percentage">2%</text> of the loan amount is first frozen as a forced liquidation insurance fee, and the remaining <text class="percentage">98%</text> USDT is issued to the USDT account.</text>
-              <text class="content-text">Only after the loan order is fully repaid, the system will automatically redeem the corresponding VGAU collateral to the VGAU account, and refund the original <text class="percentage">2%</text> forced liquidation insurance fee for that order to the USDT account.</text>
-              <text class="content-text">If forced liquidation is triggered, the <text class="percentage">2%</text> forced liquidation insurance fee belongs to the platform as a liquidation fee; if the value of the collateral assets falls below the total debt due to drastic market fluctuations, the borrower must immediately make up the remaining outstanding amount. The platform supports multiple loan orders, each independently priced and risk-controlled, without mutual influence.</text>
-              <text class="content-text">Repayment using account balance: Collateral cannot be redeemed before full repayment. Users can add more VGAU to reduce the pledge rate and avoid liquidation.</text>
+                           <text class="content-text">{{ t('collateralRequiredForLending') }}</text>
+              <text class="content-text">{{ t('defaultInitialPledgeRate') }} <text class="percentage">{{ t('defaultInitialPledgeRatePercentage') }}</text></text>
+              <text class="content-text">{{ t('loanAmountDescription') }}</text>
+              <text class="content-text">{{ t('forcedLiquidationInsuranceFeeDescription') }}</text>
+              <text class="content-text">{{ t('forcedLiquidationInsuranceFeeAfterRepayment') }}</text>
+              <text class="content-text">{{ t('forcedLiquidationInsuranceFeeOnForcedLiquidation') }}</text>
+              <text class="content-text">{{ t('forcedLiquidationInsuranceFeeOnForcedLiquidationDescription') }}</text>
+              <text class="content-text">{{ t('repaymentUsingAccountBalance') }}</text>
            </view>
          </view>
        </view>
@@ -103,18 +105,21 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 当前激活的标签页
 const activeTab = ref('glossary')
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
-}
-
 // 切换标签页
 const switchTab = (tab) => {
   activeTab.value = tab
+}
+
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
 }
 </script>
 

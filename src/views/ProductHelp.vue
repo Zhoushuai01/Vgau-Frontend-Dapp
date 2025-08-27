@@ -6,7 +6,7 @@
         <image class="back-icon" src="/static/back.png" mode="aspectFit" />
       </view>
       <view class="page-title">
-        <text class="title-text">Financial Products</text>
+        <text class="title-text">{{ t('financialProducts') }}</text>
       </view>
     </view>
 
@@ -16,11 +16,11 @@
       <view class="tab-section">
         <view class="tab-container">
           <view class="tab-item" :class="{ active: currentTab === 'profit-risk' }" @click="switchTab('profit-risk')">
-            <text class="tab-text">Returns & Risks</text>
+            <text class="tab-text">{{ t('returnsAndRisks') }}</text>
             <view class="tab-line" v-if="currentTab === 'profit-risk'"></view>
           </view>
           <view class="tab-item" :class="{ active: currentTab === 'profit-source' }" @click="switchTab('profit-source')">
-            <text class="tab-text">Return Sources</text>
+            <text class="tab-text">{{ t('returnSources') }}</text>
             <view class="tab-line" v-if="currentTab === 'profit-source'"></view>
           </view>
         </view>
@@ -31,10 +31,16 @@
         <!-- 产品介绍 -->
         <view class="product-intro">
                   <text class="intro-text">
-          What are financial products?
-          This is a digital asset appreciation scheme anchored to gold. When users purchase and hold VGAU Tokens, they represent deposits of equivalent physical gold, and asset values fluctuate with market conditions.
-          In their accounts, users can participate in different term and rule-based yield schemes with VGAU, and the system will generate rewards according to the rules. Rewards in the account need to be claimed manually.
-          Rewards in financial products accumulate in real-time to meet different asset management needs.
+          {{ t('whatAreFinancialProducts') }}
+          {{ t('thisIsADigitalAssetAppreciationSchemeAnchoredToGold') }}
+          {{ t('whenUsersPurchaseAndHoldVGAUTokens') }}
+          {{ t('theyRepresentDepositsOfEquivalentPhysicalGold') }}
+          {{ t('andAssetValuesFluctuateWithMarketConditions') }}
+          {{ t('inTheirAccounts') }}
+          {{ t('usersCanParticipateInDifferentTermAndRuleBasedYieldSchemesWithVGAU') }}
+          {{ t('andTheSystemWillGenerateRewardsAccordingToTheRules') }}
+          {{ t('rewardsInTheAccountNeedToBeClaimedManually') }}
+          {{ t('rewardsInFinancialProductsAccumulateInRealTimeToMeetDifferentAssetManagementNeeds') }}
         </text>
         </view>
                  <!-- 优势部分 -->
@@ -43,7 +49,7 @@
              <view class="advantage-icon">
                <image class="icon-image" src="/static/DiFi/youshi.png" mode="aspectFit" />
              </view>
-             <text class="section-title">Advantages</text>
+             <text class="section-title">{{ t('advantages') }}</text>
            </view>
 
            <view class="advantages-list">
@@ -55,8 +61,8 @@
                      <image class="advantage-icon-image" src="/static/DiFi/huoqi.png" mode="aspectFit" />
                    </view>
                    <view class="advantage-text">
-                     <text class="advantage-title">Flexible Products Available for Redemption</text>
-                     <text class="advantage-desc">Users can subscribe and redeem flexible products at any time.</text>
+                     <text class="advantage-title">{{ t('flexibleProductsAvailableForRedemption') }}</text>
+                     <text class="advantage-desc">{{ t('usersCanSubscribeAndRedeemFlexibleProductsAtAnyTime') }}</text>
                    </view>
                  </view>
                </view>
@@ -70,8 +76,8 @@
                      <image class="advantage-icon-image" src="/static/DiFi/dingqi.png" mode="aspectFit" />
                    </view>
                    <view class="advantage-text">
-                     <text class="advantage-title">Fixed-term Products Offer Higher APY</text>
-                     <text class="advantage-desc">Fixed-term products have fixed terms, but their annualized yields are typically higher than flexible products.</text>
+                     <text class="advantage-title">{{ t('fixedTermProductsOfferHigherAPY') }}</text>
+                     <text class="advantage-desc">{{ t('fixedTermProductsHaveFixedTermsButTheirAnnualizedYieldsAreTypicallyHigherThanFlexibleProducts') }}</text>
                    </view>
                  </view>
                </view>
@@ -85,8 +91,8 @@
                      <image class="advantage-icon-image" src="/static/DiFi/shuhui.png" mode="aspectFit" />
                    </view>
                    <view class="advantage-text">
-                     <text class="advantage-title">Manual Redemption of Interest Earnings</text>
-                     <text class="advantage-desc">Daily USDT earnings will automatically go to the withdrawal balance, which needs to be manually withdrawn.</text>
+                     <text class="advantage-title">{{ t('manualRedemptionOfInterestEarnings') }}</text>
+                     <text class="advantage-desc">{{ t('dailyUSDTEarningsWillAutomaticallyGoToTheWithdrawalBalanceWhichNeedsToBeManuallyWithdrawn') }}</text>
                    </view>
                  </view>
                </view>
@@ -100,7 +106,7 @@
              <view class="risk-icon">
                <image class="icon-image" src="/static/DiFi/fengxian.png" mode="aspectFit" />
              </view>
-             <text class="section-title">Risks</text>
+             <text class="section-title">{{ t('risks') }}</text>
            </view>
 
            <view class="risk-item">
@@ -110,8 +116,8 @@
                    <image class="advantage-icon-image" src="/static/DiFi/fengxain2.png" mode="aspectFit" />
                  </view>
                  <view class="risk-text">
-                   <text class="risk-title">Very Low Risk</text>
-                   <text class="risk-desc">Digital asset prices may fluctuate. If there are too many redemption requests, it may lead to temporarily insufficient available redemption balance, resulting in delayed redemption. Rest assured, your assets are always safe and secure.</text>
+                   <text class="risk-title">{{ t('veryLowRisk') }}</text>
+                   <text class="risk-desc">{{ t('digitalAssetPricesMayFluctuateIfThereAreTooManyRedemptionRequestsItMayLeadToTemporarilyInsufficientAvailableRedemptionBalanceResultingInDelayedRedemptionRestAssuredYourAssetsAreAlwaysSafeAndSecure') }}</text>
                  </view>
                </view>
              </view>
@@ -122,18 +128,15 @@
        <!-- 收益来源内容 -->
        <view v-if="currentTab === 'profit-source'" class="profit-source-section">
          <text class="source-content-text">
-           Each of your tokens (1 VGAU = 1g physical gold) corresponds to
-           the physical gold held in our African mining areas and audited by
-           authoritative institutions. The stable returns you earn through
-           staking come from the project team's active management and
-           operation of the underlying gold assets.
+           {{ t('eachOfYourTokensCorrespondsToPhysicalGoldHeldInOurAfricanMiningAreasAndAuditedByAuthoritativeInstitutions') }}
+           {{ t('theStableReturnsYouEarnThroughStakingComeFromTheProjectTeamsActiveManagementAndOperationOfTheUnderlyingGoldAssets') }}
          </text>
        </view>
 
        <!-- 确认按钮 -->
        <view v-if="currentTab === 'profit-risk'" class="confirm-section">
          <view class="confirm-btn" @click="handleConfirm">
-           <text class="confirm-text">Confirm</text>
+           <text class="confirm-text">{{ t('confirm') }}</text>
          </view>
        </view>
     </view>
@@ -142,18 +145,21 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-// 当前选中的标签页
+const { t } = useI18n()
+
+// 当前标签页
 const currentTab = ref('profit-risk')
-
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
-}
 
 // 切换标签页
 const switchTab = (tab) => {
   currentTab.value = tab
+}
+
+// 返回上一页
+const goBack = () => {
+  uni.navigateBack()
 }
 
 // 处理确认

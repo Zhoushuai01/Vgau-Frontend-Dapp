@@ -6,7 +6,7 @@
         <image class="back-icon" src="/static/back.png" mode="aspectFit" />
       </view>
       <view class="page-title">
-        <text class="title-text">My Finance</text>
+        <text class="title-text">{{ t('components.myFinance.title') }}</text>
       </view>
       <view class="history-button" @click="viewHistory">
         <image class="history-icon" src="/static/history.png" mode="aspectFit" />
@@ -17,30 +17,30 @@
     <view class="main-content">
       <!-- 赎回说明 -->
       <view class="redemption-notice">
-        <text class="notice-text">Selected assets will be immediately redeemed to your account</text>
+        <text class="notice-text">{{ t('components.myFinance.redemptionNotice') }}</text>
       </view>
       <!-- 可赎回资产卡片 -->
       <view class="asset-card">
         <view class="asset-info">
           <view class="info-row">
-            <text class="info-label">Asset</text>
+            <text class="info-label">{{ t('components.myFinance.asset') }}</text>
             <text class="info-value">2 VGAU</text>
           </view>
           <view class="info-row">
-            <text class="info-label">Maturity Yield</text>
+            <text class="info-label">{{ t('components.myFinance.maturityYield') }}</text>
             <text class="info-value">1 USDT</text>
           </view>
           <view class="info-row">
-            <text class="info-label">Start Time</text>
+            <text class="info-label">{{ t('components.myFinance.startTime') }}</text>
             <text class="info-value">2025-07-16</text>
           </view>
           <view class="info-row">
-            <text class="info-label">End Time</text>
+            <text class="info-label">{{ t('components.myFinance.endTime') }}</text>
             <text class="info-value">2025-07-18</text>
           </view>
         </view>
         <view class="status-button redeemable-btn">
-          <text class="status-text">Redeemable</text>
+          <text class="status-text">{{ t('components.myFinance.redeemable') }}</text>
         </view>
       </view>
 
@@ -48,37 +48,37 @@
       <view class="asset-card">
         <view class="asset-info">
           <view class="info-row">
-            <text class="info-label">Asset</text>
+            <text class="info-label">{{ t('components.myFinance.asset') }}</text>
             <text class="info-value">2 VGAU</text>
           </view>
           <view class="info-row">
-            <text class="info-label">Maturity Yield</text>
+            <text class="info-label">{{ t('components.myFinance.maturityYield') }}</text>
             <text class="info-value">1 USDT</text>
           </view>
           <view class="info-row">
-            <text class="info-label">Start Time</text>
+            <text class="info-label">{{ t('components.myFinance.startTime') }}</text>
             <text class="info-value">2025-07-16</text>
           </view>
           <view class="info-row">
-            <text class="info-label">End Time</text>
+            <text class="info-label">{{ t('components.myFinance.endTime') }}</text>
             <text class="info-value">2025-07-18</text>
           </view>
         </view>
         <view class="status-button staking-btn">
-          <text class="status-text">Staking</text>
+          <text class="status-text">{{ t('components.myFinance.staking') }}</text>
         </view>
       </view>
 
       <!-- 加载状态 -->
       <view class="loading-status">
-        <text class="loading-text">All loaded</text>
+        <text class="loading-text">{{ t('components.myFinance.allLoaded') }}</text>
       </view>
     </view>
 
     <!-- 底部赎回按钮 -->
     <view class="bottom-button-section">
       <view class="redeem-button" @click="handleRedeem">
-        <text class="redeem-text">Redeem</text>
+        <text class="redeem-text">{{ t('components.myFinance.redeem') }}</text>
       </view>
     </view>
   </view>
@@ -86,6 +86,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 返回上一页
 const goBack = () => {
@@ -102,7 +105,7 @@ const viewHistory = () => {
 // 处理赎回
 const handleRedeem = () => {
   uni.showToast({
-    title: 'Redeem feature coming soon',
+    title: t('components.myFinance.redeemFeature'),
     icon: 'none',
     duration: 2000
   })

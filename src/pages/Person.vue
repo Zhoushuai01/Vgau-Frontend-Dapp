@@ -10,6 +10,9 @@
         <view class="header-btn">
           <image src="/static/Person/Service.png" class="header-icon" />
         </view>
+        <view class="header-btn logout-btn" @click="handleLogout">
+          <text class="logout-text">logout</text>
+        </view>
       </view>
     </view>
 
@@ -31,7 +34,7 @@
         <view class="wallet-section">
           <view class="wallet-info">
             <text class="wallet-label">{{ $t('person.walletAddress') }}</text>
-            <text class="wallet-address">{{ walletAddress }}</text>
+            <text class="wallet-address">{{ formatShortAddress(walletAddress) }}</text>
           </view>
           <view class="copy-btn" @click="copyWalletAddress">
             <image src="/static/fuzhi.png" class="copy-icon" />
@@ -139,6 +142,19 @@
       </view>
     </view>
 
+    <!-- 登出确认弹窗 -->
+    <view v-if="showLogoutConfirmModal" class="modal-overlay" @click="showLogoutConfirmModal = false">
+      <view class="modal-content" @click.stop>
+        <view class="modal-text">
+          <text class="logout-title">{{ t('person.logoutConfirm.title') }}</text>
+          <text class="logout-desc">{{ t('person.logoutConfirm.content') }}</text>
+        </view>
+        <view class="modal-actions">
+          <view class="modal-btn outline" @click="showLogoutConfirmModal = false">{{ t('person.logoutConfirm.cancel') }}</view>
+          <view class="modal-btn solid" @click="confirmLogout">{{ t('person.logoutConfirm.confirm') }}</view>
+        </view>
+      </view>
+    </view>
 
   </view>
 </template>
@@ -146,6 +162,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatShortAddress } from '@/utils/addressUtils'
+import { authAPI } from '@/api/apiService.js'
 
 const { t, locale } = useI18n()
 
@@ -165,6 +183,7 @@ const assets = reactive({
 })
 
 const points = ref('235')
+const showLogoutConfirmModal = ref(false)
 
 // 复制钱包地址
 const copyWalletAddress = () => {
@@ -304,10 +323,436 @@ const goToSettings = () => {
   })
 }
 
+// 处理登出
+const handleLogout = async () => {
+  try {
+    // 显示自定义确认弹窗
+    showLogoutConfirmModal.value = true
+  } catch (error) {
+    console.error('登出确认失败:', error)
+  }
+}
+
+// 确认登出
+const confirmLogout = async () => {
+  try {
+    // 关闭弹窗
+    showLogoutConfirmModal.value = false
+    // 执行登出
+    await performLogout()
+  } catch (error) {
+    console.error('确认登出失败:', error)
+  }
+}
+
+// 执行登出
+const performLogout = async () => {
+  try {
+    console.log('🚀 开始执行登出流程...')
+    
+    // 显示加载提示
+    uni.showLoading({
+      title: t('person.logout.loading')
+    })
+
+    // 检查网络连接
+    const networkStatus = await checkNetworkStatus()
+    if (!networkStatus.isConnected) {
+      throw new Error('NETWORK_ERROR: 网络连接失败')
+    }
+
+    // 检查用户登录状态
+    const loginStatus = await checkCurrentLoginStatus()
+    if (!loginStatus.isLoggedIn) {
+      console.log('⚠️ 用户未登录，直接清除本地数据')
+      clearUserData()
+      uni.hideLoading()
+      uni.showToast({
+        title: '用户未登录，已清除本地数据',
+        icon: 'success',
+        duration: 2000
+      })
+      setTimeout(() => {
+        uni.reLaunch({ url: '/pages/Home' })
+      }, 2000)
+      return
+    }
+
+    console.log('📡 调用登出接口...')
+    
+    // 调用登出接口
+    const response = await authAPI.logout()
+    
+    console.log('📡 登出接口响应:', response)
+
+    // 隐藏加载提示
+    uni.hideLoading()
+
+    if (response && response.success) {
+      console.log('✅ 登出接口调用成功')
+      
+      // 登出成功
+      uni.showToast({
+        title: t('person.logout.success'),
+        icon: 'success',
+        duration: 2000
+      })
+
+      // 清除本地用户数据
+      clearUserData()
+
+      // 延迟跳转到首页
+      setTimeout(() => {
+        uni.reLaunch({
+          url: '/pages/Home'
+        })
+      }, 2000)
+    } else {
+      // 登出失败 - 分析失败原因
+      const failureReason = analyzeLogoutFailure(response)
+      throw new Error(failureReason)
+    }
+  } catch (error) {
+    console.error('❌ 登出失败:', error)
+    
+    // 隐藏加载提示
+    uni.hideLoading()
+    
+    // 分析错误原因并显示详细错误信息
+    const errorInfo = analyzeError(error)
+    showDetailedError(errorInfo)
+  }
+}
+
+// 检查网络状态
+const checkNetworkStatus = async () => {
+  try {
+    console.log('🌐 开始检测网络状态...')
+    
+    // 尝试发送一个简单的请求来检测网络
+    const testResponse = await uni.request({
+      url: '/api/health',
+      method: 'GET',
+      timeout: 5000
+    })
+    
+    console.log('✅ 网络检测成功:', testResponse)
+    
+    return {
+      isConnected: true,
+      status: 'connected',
+      responseTime: Date.now(),
+      statusCode: testResponse.statusCode
+    }
+  } catch (error) {
+    console.log('❌ 网络检测失败:', error)
+    
+    // 尝试备用网络检测方法
+    try {
+      const backupResponse = await uni.request({
+        url: 'https://httpbin.org/get',
+        method: 'GET',
+        timeout: 3000
+      })
+      
+      console.log('✅ 备用网络检测成功:', backupResponse)
+      
+      return {
+        isConnected: true,
+        status: 'connected_via_backup',
+        responseTime: Date.now(),
+        statusCode: backupResponse.statusCode
+      }
+    } catch (backupError) {
+      console.log('❌ 备用网络检测也失败:', backupError)
+      
+      return {
+        isConnected: false,
+        status: 'disconnected',
+        error: error.message,
+        backupError: backupError.message
+      }
+    }
+  }
+}
+
+// 检查当前登录状态
+const checkCurrentLoginStatus = async () => {
+  try {
+    const response = await authAPI.getMe()
+    return {
+      isLoggedIn: response && response.success,
+      userData: response?.data || null
+    }
+  } catch (error) {
+    console.log('🔍 检查登录状态失败:', error)
+    return {
+      isLoggedIn: false,
+      userData: null,
+      error: error.message
+    }
+  }
+}
+
+// 分析登出失败原因
+const analyzeLogoutFailure = (response) => {
+  console.log('🔍 分析登出失败原因:', response)
+  
+  if (!response) {
+    return 'RESPONSE_MISSING: 接口返回数据为空'
+  }
+  
+  if (response.statusCode) {
+    switch (response.statusCode) {
+      case 401:
+        return 'UNAUTHORIZED: 用户未授权或token已过期'
+      case 403:
+        return 'FORBIDDEN: 权限不足'
+      case 404:
+        return 'NOT_FOUND: 登出接口不存在'
+      case 500:
+        return 'SERVER_ERROR: 服务器内部错误'
+      case 502:
+        return 'BAD_GATEWAY: 网关错误'
+      case 503:
+        return 'SERVICE_UNAVAILABLE: 服务不可用'
+      case 504:
+        return 'GATEWAY_TIMEOUT: 网关超时'
+      default:
+        return `HTTP_ERROR_${response.statusCode}: ${response.statusText || '未知错误'}`
+    }
+  }
+  
+  if (response.error) {
+    return `API_ERROR: ${response.error}`
+  }
+  
+  if (response.message) {
+    return `MESSAGE: ${response.message}`
+  }
+  
+  return 'UNKNOWN_ERROR: 未知错误'
+}
+
+// 分析错误详情
+const analyzeError = (error) => {
+  console.log('🔍 分析错误详情:', error)
+  
+  const errorInfo = {
+    type: 'UNKNOWN',
+    message: error.message || '未知错误',
+    details: {},
+    suggestions: []
+  }
+  
+  // 根据错误类型分类
+  if (error.message) {
+    if (error.message.includes('NETWORK_ERROR')) {
+      errorInfo.type = 'NETWORK'
+      errorInfo.suggestions = [
+        '检查网络连接',
+        '检查VPN设置',
+        '稍后重试'
+      ]
+    } else if (error.message.includes('UNAUTHORIZED')) {
+      errorInfo.type = 'AUTH'
+      errorInfo.suggestions = [
+        '重新登录',
+        '检查token是否过期',
+        '清除浏览器缓存'
+      ]
+    } else if (error.message.includes('SERVER_ERROR')) {
+      errorInfo.type = 'SERVER'
+      errorInfo.suggestions = [
+        '服务器维护中，请稍后重试',
+        '联系客服',
+        '检查服务状态'
+      ]
+    } else if (error.message.includes('TIMEOUT')) {
+      errorInfo.type = 'TIMEOUT'
+      errorInfo.suggestions = [
+        '网络较慢，请稍后重试',
+        '检查网络连接',
+        '尝试切换网络'
+      ]
+    }
+  }
+  
+  // 添加错误详情
+  if (error.response) {
+    errorInfo.details.response = {
+      status: error.response.status,
+      statusText: error.response.statusText,
+      data: error.response.data
+    }
+  }
+  
+  if (error.request) {
+    errorInfo.details.request = {
+      method: error.request.method,
+      url: error.request.url,
+      headers: error.request.headers
+    }
+  }
+  
+  return errorInfo
+}
+
+// 显示详细错误信息
+const showDetailedError = (errorInfo) => {
+  console.log('📋 显示详细错误信息:', errorInfo)
+  
+  // 记录错误日志
+  logLogoutError(errorInfo)
+  
+  // 构建错误详情文本
+  let errorContent = `错误类型: ${errorInfo.type}\n错误信息: ${errorInfo.message}`
+  
+  if (errorInfo.suggestions.length > 0) {
+    errorContent += '\n\n建议解决方案:\n' + errorInfo.suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')
+  }
+  
+  // 显示详细错误对话框
+  uni.showModal({
+    title: '登出失败 - 错误详情',
+    content: errorContent,
+    confirmText: '重试',
+    cancelText: '关闭',
+    success: (res) => {
+      if (res.confirm) {
+        // 用户选择重试
+        console.log('🔄 用户选择重试登出')
+        performLogout()
+      }
+    }
+  })
+}
+
+// 记录登出错误日志
+const logLogoutError = (errorInfo) => {
+  const errorLog = {
+    timestamp: new Date().toISOString(),
+    type: 'LOGOUT_ERROR',
+    errorInfo: errorInfo,
+    userAgent: navigator.userAgent,
+    url: window.location.href,
+    timestamp: Date.now()
+  }
+  
+  console.log('📝 登出错误日志:', errorLog)
+  
+  // 保存到本地存储，方便调试
+  try {
+    const existingLogs = JSON.parse(localStorage.getItem('logout_error_logs') || '[]')
+    existingLogs.push(errorLog)
+    
+    // 只保留最近10条错误日志
+    if (existingLogs.length > 10) {
+      existingLogs.splice(0, existingLogs.length - 10)
+    }
+    
+    localStorage.setItem('logout_error_logs', JSON.stringify(existingLogs))
+    console.log('💾 错误日志已保存到本地存储')
+  } catch (error) {
+    console.error('保存错误日志失败:', error)
+  }
+  
+  // 可以在这里添加发送错误日志到服务器的逻辑
+  // sendErrorLogToServer(errorLog)
+}
+
+// 清除用户数据
+const clearUserData = () => {
+  // 清除本地存储的用户数据
+  if (typeof window !== 'undefined') {
+    // 清除 localStorage 中的用户相关数据
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.includes('user') || key.includes('auth') || key.includes('login'))) {
+        keysToRemove.push(key)
+      }
+    }
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key)
+    })
+    
+    // 清除 sessionStorage 中的用户相关数据
+    const sessionKeysToRemove = []
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i)
+      if (key && (key.includes('user') || key.includes('auth') || key.includes('login'))) {
+        sessionKeysToRemove.push(key)
+      }
+    }
+    
+    sessionKeysToRemove.forEach(key => {
+      sessionStorage.removeItem(key)
+    })
+  }
+  
+  // 重置页面数据
+  Object.assign(userInfo, {
+    username: '',
+    userId: ''
+  })
+  
+  Object.assign(assets, {
+    stakedVGAU: '0',
+    stakingYield: '0',
+    collateralVGAU: '0',
+    remainingDebt: '0'
+  })
+  
+  points.value = '0'
+  walletAddress.value = ''
+}
+
 // 页面加载时获取数据
 onMounted(() => {
   getUserInfo()
   getAssetsInfo()
+  
+  // 开发环境下显示调试信息
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 开发环境 - 登出错误日志查看工具已启用')
+    console.log('📋 查看登出错误日志: window.viewLogoutErrorLogs()')
+    
+    // 添加全局调试方法
+    if (typeof window !== 'undefined') {
+      window.viewLogoutErrorLogs = () => {
+        try {
+          const logs = JSON.parse(localStorage.getItem('logout_error_logs') || '[]')
+          console.log('📋 登出错误日志:', logs)
+          
+          if (logs.length === 0) {
+            console.log('✅ 暂无登出错误日志')
+          } else {
+            console.log(`📊 共 ${logs.length} 条错误日志`)
+            logs.forEach((log, index) => {
+              console.log(`--- 错误日志 ${index + 1} ---`)
+              console.log('时间:', log.timestamp)
+              console.log('类型:', log.errorInfo.type)
+              console.log('错误:', log.errorInfo.message)
+              console.log('建议:', log.errorInfo.suggestions)
+            })
+          }
+        } catch (error) {
+          console.error('查看错误日志失败:', error)
+        }
+      }
+      
+      window.clearLogoutErrorLogs = () => {
+        try {
+          localStorage.removeItem('logout_error_logs')
+          console.log('🗑️ 登出错误日志已清除')
+        } catch (error) {
+          console.error('清除错误日志失败:', error)
+        }
+      }
+    }
+  }
 })
 </script>
 
@@ -333,6 +778,7 @@ onMounted(() => {
   padding: 28rpx 32rpx 12rpx;
   background-color: #0A0A0A;
   height: 80rpx;
+  min-height: 80rpx;
 }
 
 .header-title {
@@ -345,6 +791,134 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 16rpx;
+  align-items: center;
+}
+
+.logout-btn {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20rpx;
+  padding: 8rpx 16rpx;
+  min-width: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:active {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: scale(0.95);
+}
+
+.logout-text {
+  color: #FFFFFF;
+  font-size: 24rpx;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* 响应式设计 - 小屏幕适配 */
+@media screen and (max-width: 750rpx) {
+  .header {
+    padding: 24rpx 24rpx 12rpx;
+  }
+  
+  .header-title {
+    font-size: 36rpx;
+  }
+  
+  .logout-btn {
+    padding: 6rpx 12rpx;
+    min-width: 70rpx;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  
+  .logout-text {
+    font-size: 22rpx;
+  }
+}
+
+/* 登出确认弹窗样式（参考USDTRecharge.vue） */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #1A1A1A;
+  border-radius: 24rpx;
+  padding: 80rpx 32rpx;
+  margin: 0 48rpx;
+  max-width: 600rpx;
+  width: 100%;
+}
+
+.modal-text {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  margin-bottom: 48rpx;
+  height: 240rpx;
+  justify-content: center;
+  align-items: center;
+}
+
+.logout-title {
+  font-size: 32rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.logout-desc {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.modal-btn.solid {
+  background: linear-gradient(90deg, #FEDA78 0%, #B07920 100%);
+  color: #000;
+  font-weight: 500;
+}
+
+.modal-btn.outline {
+  background: transparent;
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+}
+
+.modal-btn:active {
+  transform: scale(0.98);
 }
 
 .header-btn {

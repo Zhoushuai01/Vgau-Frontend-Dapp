@@ -8,9 +8,9 @@
         </view>
       </view>
              <text class="title-text">{{ 
-         showServiceAgreement ? 'Terms of Service' : 
-         showLiquidationRules ? 'Liquidation Alert & Repayment Rules' : 
-         'Settings' 
+         showServiceAgreement ? t('settings.termsOfService') : 
+         showLiquidationRules ? t('settings.liquidationAlertRepaymentRules') : 
+         t('settings.settings') 
        }}</text>
     </view>
 
@@ -26,7 +26,7 @@
                 <image src="/static/Person/xieyi.png" class="agreement-icon" />
               </view>
             </view>
-            <text class="item-text">Service Agreement</text>
+            <text class="item-text">{{ t('settings.serviceAgreement') }}</text>
           </view>
         </view>
 
@@ -38,7 +38,7 @@
                 <image src="/static/Person/Details.png" class="details-icon" />
               </view>
             </view>
-            <text class="item-text">Liquidation Alert & Repayment Rules</text>
+            <text class="item-text">{{ t('settings.liquidationAlertRepaymentRules') }}</text>
           </view>
         </view>
 
@@ -50,7 +50,7 @@
                 <image src="/static/Person/inviter.png" class="inviter-icon" />
               </view>
             </view>
-            <text class="item-text">Inviter</text>
+            <text class="item-text">{{ t('settings.inviter') }}</text>
           </view>
         </view>
       </view>
@@ -58,31 +58,33 @@
       <!-- 清算预警与还款规则区域 -->
       <view v-if="showLiquidationRules" class="liquidation-rules-section">
         <view class="rules-header">
-          <view class="rules-title">Liquidation Alert</view>
+          <view class="rules-title">{{ t('settings.liquidationAlert') }}</view>
           <view class="rules-content">
             <text class="rules-text">
-              When the collateral ratio reaches 85%, users will be notified via email for margin call reminders.
-              When the collateral ratio reaches 88%, users will be notified via email and personal page popup to alert them that they are approaching the liquidation collateral ratio.
+              {{ t('settings.liquidationAlertReminder') }}
+              {{ t('settings.liquidationAlertApproaching') }}
             </text>
           </view>
         </view>
         
         <view class="rules-section">
-          <view class="section-title">Repayment Rules</view>
+          <view class="section-title">{{ t('settings.repaymentRules') }}</view>
           <view class="section-content">
-            <text class="section-text">Only full repayment is allowed.</text>
+            <text class="section-text">{{ t('settings.fullRepaymentOnly') }}</text>
           </view>
         </view>
         
         <view class="rules-section">
-          <view class="section-title">Forced Liquidation</view>
+          <view class="section-title">{{ t('settings.forcedLiquidation') }}</view>
           <view class="section-content">
             <text class="section-text">
-              When disbursing loans, 2% of the loan amount is first frozen as liquidation insurance, with the remaining 98% USDT distributed to the USDT account.
+              {{ t('settings.forcedLiquidationDisbursement') }}
 
-              Only after the loan is fully repaid, the system automatically redeems the corresponding VGAU collateral to the VGAU account and returns the original 2% liquidation insurance for that loan to the USDT account.
+              {{ t('settings.forcedLiquidationRedemption') }}
 
-              If forced liquidation is triggered, the 2% liquidation insurance becomes the platform's liquidation fee; if market volatility causes the collateral asset value to be less than the total debt, the borrower must immediately make up the remaining debt. The platform supports multiple loan orders, with each order independently priced and risk-controlled without mutual interference.
+              {{ t('settings.forcedLiquidationPlatformFee') }}
+              {{ t('settings.forcedLiquidationRemainingDebt') }}
+              {{ t('settings.forcedLiquidationMultipleLoans') }}
             </text>
           </view>
         </view>
@@ -90,7 +92,7 @@
 
       <!-- 邀请人信息区域 -->
       <view v-if="showInviterSection" class="inviter-section">
-        <view class="inviter-title">Inviter</view>
+        <view class="inviter-title">{{ t('settings.inviter') }}</view>
         
         <view class="invite-input-container">
           <input 
@@ -103,46 +105,46 @@
         </view>
         
         <view class="invite-description">
-          <text class="description-text">Fill in the invite code to help your friends complete the invitation task</text>
+          <text class="description-text">{{ t('settings.inviteDescription') }}</text>
         </view>
         
-        <view class="submit-btn" @click="submitInviteCode">
-          <text class="submit-text">Submit</text>
+        <view class="submit-btn" @click="bindInviteCode">
+          <text class="submit-text">{{ t('settings.submit') }}</text>
         </view>
       </view>
 
              <!-- 服务协议区域 -->
        <view v-if="showServiceAgreement" class="service-agreement-section">
          <view class="agreement-header">
-           <view class="agreement-title">Terms of Service</view>
-           <view class="agreement-date">Last updated: August 31, 2025</view>
+           <view class="agreement-title">{{ t('settings.termsOfService') }}</view>
+           <view class="agreement-date">{{ t('settings.lastUpdated') }}</view>
          </view>
          
          <view class="agreement-content">
            <text class="agreement-text">
-             This agreement (hereinafter referred to as the "Agreement") is jointly established by you (the "User") and Verigold (the "Platform") to clarify the terms and conditions for users to use related services on the platform. By accessing or using any services provided by the platform, you agree to comply with all terms of this Agreement.
+             {{ t('settings.serviceAgreementText') }}
            </text>
          </view>
          
          <view class="agreement-section">
-           <view class="section-title">Service Content</view>
+           <view class="section-title">{{ t('settings.serviceContent') }}</view>
                        <view class="section-content">
               <view class="section-paragraph">
-                <text class="section-text">1. VGAU Staking: Users can deposit VGAU tokens into the platform and earn USDT returns based on the selected staking period and annual percentage yield (APY). The staking return calculation method is as follows:</text>
-                <text class="section-text">(1) Fixed-term staking return = Staking amount × Annual interest rate × Staking days / 365</text>
-                <text class="section-text">(2) Flexible staking return = Staking amount × Current VGAU price × Annual interest rate × Staking days / 365</text>
+                <text class="section-text">{{ t('settings.stakingReturnCalculation') }}</text>
+                <text class="section-text">{{ t('settings.fixedTermStakingReturn') }}</text>
+                <text class="section-text">{{ t('settings.flexibleStakingReturn') }}</text>
               </view>
               
               <view class="section-paragraph">
-                <text class="section-text">2. Lending Services: Users can use VGAU tokens as collateral to borrow USDT. During the lending process, parameters such as collateral ratio, margin call line, and liquidation line will be dynamically adjusted based on market price fluctuations.</text>
+                <text class="section-text">{{ t('settings.lendingServices') }}</text>
               </view>
               
               <view class="section-paragraph">
-                <text class="section-text">3. Redemption Services: Users can redeem staked or borrowed assets through the redemption function provided by the platform. The redemption amount is calculated based on real-time exchange rates and staking conditions.</text>
+                <text class="section-text">{{ t('settings.redemptionServices') }}</text>
               </view>
               
               <view class="section-paragraph">
-                <text class="section-text">4. Exchange Services: Users can exchange USDT for VGAU tokens or exchange VGAU tokens for USDT within the platform.</text>
+                <text class="section-text">{{ t('settings.exchangeServices') }}</text>
               </view>
             </view>
          </view>
@@ -153,46 +155,49 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 响应式数据
-const showInviterSection = ref(false)
 const showServiceAgreement = ref(false)
 const showLiquidationRules = ref(false)
+const showInviterSection = ref(false)
 const inviteCode = ref('')
 
 // 返回上一页
 const goBack = () => {
-  if (showInviterSection.value) {
-    showInviterSection.value = false
-  } else if (showServiceAgreement.value) {
+  if (showServiceAgreement.value || showLiquidationRules.value || showInviterSection.value) {
+    // 如果在子页面，返回主设置页面
     showServiceAgreement.value = false
-  } else if (showLiquidationRules.value) {
     showLiquidationRules.value = false
+    showInviterSection.value = false
   } else {
+    // 如果在主设置页面，返回上一页
     uni.navigateBack()
   }
 }
 
-// 跳转到服务协议页面
+// 前往服务协议
 const goToServiceAgreement = () => {
   showServiceAgreement.value = true
 }
 
-// 跳转到清算规则页面
+// 前往清算规则
 const goToLiquidationRules = () => {
   showLiquidationRules.value = true
 }
 
-// 显示邀请人信息
+// 前往邀请人
 const goToInviter = () => {
   showInviterSection.value = true
 }
 
-// 提交邀请码
-const submitInviteCode = () => {
+// 绑定邀请码
+const bindInviteCode = () => {
   if (!inviteCode.value.trim()) {
     uni.showToast({
-      title: 'Please enter invite code',
+      title: t('common.pleaseEnterValidAmount'),
       icon: 'none',
       duration: 2000
     })
@@ -200,12 +205,12 @@ const submitInviteCode = () => {
   }
   
   uni.showToast({
-    title: 'Invite code submitted!',
+    title: t('components.invitation.bindSuccess'),
     icon: 'success',
     duration: 2000
   })
   
-  // 清空输入框
+  // 清空输入
   inviteCode.value = ''
 }
 </script>

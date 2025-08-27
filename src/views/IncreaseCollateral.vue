@@ -6,7 +6,7 @@
         <image class="back-icon" src="/static/back.png" mode="aspectFit" />
       </view>
       <view class="page-title">
-        <text class="title-text">Increase Collateral Amount</text>
+        <text class="title-text">{{ t('components.increaseCollateral.increaseCollateralAmount') }}</text>
       </view>
       <view class="header-buttons">
         <view class="header-button" @click="showHelp">
@@ -23,20 +23,20 @@
         <view class="current-collateral-section">
           <view class="collateral-info-card">
             <view class="info-header">
-              <text class="info-title">Collateral Amount(VGAU)</text>
+              <text class="info-title">{{ t('components.increaseCollateral.collateralAmount') }}</text>
               <text class="info-value">100 </text>
             </view>
             <view class="info-details">
               <view class="detail-item">
-                <text class="detail-label">Initial Collateral Ratio</text>
+                <text class="detail-label">{{ t('components.increaseCollateral.initialCollateralRatio') }}</text>
                 <text class="detail-value">80%</text>
               </view>
               <view class="detail-item">
-                <text class="detail-label">Staking Ratio</text>
+                <text class="detail-label">{{ t('components.increaseCollateral.stakingRatio') }}</text>
                 <text class="detail-value">80%</text>
               </view>
               <view class="detail-item">
-                <text class="detail-label">Staking Ratio After Increase</text>
+                <text class="detail-label">{{ t('components.increaseCollateral.stakingRatioAfterIncrease') }}</text>
                 <text class="detail-value">--</text>
               </view>
             </view>
@@ -45,7 +45,7 @@
 
         <!-- 增加抵押金额输入区域 -->
         <view class="increase-amount-section">
-          <text class="section-label">Increase Amount</text>
+          <text class="section-label">{{ t('components.increaseCollateral.increaseAmount') }}</text>
           <view class="amount-input-container">
             <input class="amount-input" 
                    type="number" 
@@ -55,11 +55,11 @@
             <view class="input-suffix">
               <text class="currency-text">VGAU</text>
               <view class="vertical-divider"></view>
-              <text class="max-text" @click="setMaxAmount">MAX</text>
+              <text class="max-text" @click="setMaxAmount">{{ t('components.increaseCollateral.max') }}</text>
             </view>
           </view>
           <view class="available-balance-container">
-            <text class="available-balance">Available Assets</text>
+            <text class="available-balance">{{ t('components.increaseCollateral.availableAssets') }}</text>
             <text class="balance-amount">48,456,156 VGAU</text>
           </view>
         </view>
@@ -71,7 +71,7 @@
       <!-- 确认按钮 -->
       <view class="confirm-section">
         <view class="confirm-btn" @click="handleConfirm">
-          <text class="confirm-text">Confirm Operation</text>
+          <text class="confirm-text">{{ t('components.increaseCollateral.confirmOperation') }}</text>
         </view>
       </view>
     </view>
@@ -81,16 +81,16 @@
   <view v-if="showConfirmModal" class="modal-overlay" @click="showConfirmModal = false">
     <view class="modal-content" @click.stop>
       <view class="modal-text">
-        <text v-if="modalStep === 1" class="warning-text">If the collateral ratio is not 0% or full repayment has not been completed, your collateral assets cannot be redeemed.</text>
-        <text v-if="modalStep === 1" class="instruction-text">Please ensure that all repayments have been completed, and the collateral ratio is 0%. The system will automatically return your collateral assets to the bound wallet address.</text>
-        <text v-if="modalStep === 2" class="repayment-amount">You are repaying <text class="highlight">77.74 USDT</text></text>
-        <text v-if="modalStep === 2" class="repayment-after">After repayment is completed</text>
-        <text v-if="modalStep === 2" class="repayment-result">Will return <text class="white-text">100 VGAU</text> and refund <text class="white-text">1.56 USDT</text></text>
-        <text v-if="modalStep === 3" class="success-amount">Repayment successful <text class="highlight">77.74 USDT</text></text>
-        <text v-if="modalStep === 3" class="success-result">Will redeem <text class="white-text">100 VGAU</text>, refund <text class="white-text">1.56 USDT</text></text>
+        <text v-if="modalStep === 1" class="warning-text">{{ t('components.increaseCollateral.collateralRatioWarning') }}</text>
+        <text v-if="modalStep === 1" class="instruction-text">{{ t('components.increaseCollateral.collateralRatioInstruction') }}</text>
+        <text v-if="modalStep === 2" class="repayment-amount">{{ t('components.increaseCollateral.repaymentAmount') }} <text class="highlight">{{ t('components.increaseCollateral.repaymentAmountValue') }}</text></text>
+        <text v-if="modalStep === 2" class="repayment-after">{{ t('components.increaseCollateral.repaymentAfter') }}</text>
+        <text v-if="modalStep === 2" class="repayment-result">{{ t('components.increaseCollateral.repaymentResult') }} <text class="white-text">{{ t('components.increaseCollateral.repaymentResultRedeem') }}</text> {{ t('components.increaseCollateral.repaymentResultRefund') }}</text>
+        <text v-if="modalStep === 3" class="success-amount">{{ t('components.increaseCollateral.repaymentSuccessful') }} <text class="highlight">{{ t('components.increaseCollateral.repaymentAmountValue') }}</text></text>
+        <text v-if="modalStep === 3" class="success-result">{{ t('components.increaseCollateral.successResult') }} <text class="white-text">{{ t('components.increaseCollateral.successResultRedeem') }}</text>, {{ t('components.increaseCollateral.successResultRefund') }}</text>
       </view>
       <view class="modal-btn" @click="confirmModalAction">
-        <text class="modal-btn-text">Confirm</text>
+        <text class="modal-btn-text">{{ t('components.increaseCollateral.confirm') }}</text>
       </view>
     </view>
   </view>
@@ -98,6 +98,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 增加金额
 const increaseAmount = ref('')
@@ -110,7 +113,7 @@ const goBack = () => {
 // 显示帮助
 const showHelp = () => {
   uni.showToast({
-    title: 'Help feature coming soon',
+    title: t('components.productHelp.helpContent'),
     icon: 'none',
     duration: 2000
   })
@@ -121,8 +124,6 @@ const setMaxAmount = () => {
   increaseAmount.value = '1000'
 }
 
-
-
 // 显示确认弹窗
 const showConfirmModal = ref(false)
 const modalStep = ref(1) // 1: 初始确认, 2: 还款提示, 3: 成功提示
@@ -131,7 +132,7 @@ const modalStep = ref(1) // 1: 初始确认, 2: 还款提示, 3: 成功提示
 const handleConfirm = () => {
   if (!increaseAmount.value || parseFloat(increaseAmount.value) <= 0) {
     uni.showToast({
-      title: 'Please enter valid amount',
+      title: t('common.pleaseEnterValidAmount'),
       icon: 'none',
       duration: 2000
     })
@@ -142,7 +143,7 @@ const handleConfirm = () => {
   const amount = parseFloat(increaseAmount.value)
   if (!Number.isInteger(amount) || amount <= 0) {
     uni.showToast({
-      title: 'Please enter a positive integer',
+      title: t('common.pleaseEnterPositiveInteger'),
       icon: 'none',
       duration: 2000
     })
@@ -168,7 +169,7 @@ const confirmModalAction = () => {
     modalStep.value = 1
     
     uni.showToast({
-      title: 'Collateral increased successfully',
+      title: t('components.increaseCollateral.collateralIncreased'),
       icon: 'success',
       duration: 2000
     })

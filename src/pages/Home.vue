@@ -16,7 +16,7 @@
         <!-- 右侧钱包连接和语言选择 -->
         <view class="right-controls">
           <view class="connect-wallet-btn" @click="walletConnected ? showWalletModal = true : connectWallet()" :class="{ connected: walletConnected }">
-            <text class="btn-text">{{ walletConnected ? `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}` : $t('wallet.connect') }}</text>
+            <text class="btn-text">{{ walletConnected ? formatShortAddress(currentAccount) : $t('wallet.connect') }}</text>
           </view>
           <view class="language-container">
             <view class="language-btn" @click="toggleLanguageDropdown">
@@ -26,19 +26,19 @@
             <view class="language-dropdown" v-if="showLanguageDropdown">
               <!-- 语言选项 -->
               <view class="dropdown-item" @click="selectLanguage('ar')">
-                <text class="language-text">اللغة العربية</text>
+                <text class="language-text">{{ $t('languageNames.ar') }}</text>
               </view>
               <view class="dropdown-item" @click="selectLanguage('en')">
-                <text class="language-text">English</text>
+                <text class="language-text">{{ $t('languageNames.en') }}</text>
               </view>
               <view class="dropdown-item" @click="selectLanguage('fr')">
-                <text class="language-text">Français</text>
+                <text class="language-text">{{ $t('languageNames.fr') }}</text>
               </view>
               <view class="dropdown-item" @click="selectLanguage('zh')">
-                <text class="language-text">繁體中文</text>
+                <text class="language-text">{{ $t('languageNames.zh') }}</text>
               </view>
               <view class="dropdown-item" @click="selectLanguage('pt')">
-                <text class="language-text">português</text>
+                <text class="language-text">{{ $t('languageNames.pt') }}</text>
               </view>
             </view>
           </view>
@@ -104,7 +104,7 @@
         <view class="contract-info">
           <text class="contract-label">{{ walletConnected ? $t('home.walletAddress') : $t('home.contractAddress') }}</text>
           <text class="contract-address" @click="walletConnected ? copyWalletAddress() : copyContractAddress()">
-            {{ walletConnected ? `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}` : '' }}
+            {{ walletConnected ? formatShortAddress(currentAccount) : '' }}
           </text>
           <image class="copy-icon" src="/static/fuzhi.png" mode="aspectFit" @click="walletConnected ? copyWalletAddress() : copyContractAddress()" />
         </view>
@@ -177,13 +177,48 @@
       <view class="wallet-modal-content" @click.stop>
         <!-- 钱包地址和复制按钮 -->
         <view class="wallet-address-section" @click="copyWalletAddress">
-          <text class="wallet-address">{{ `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}` }}</text>
+          <text class="wallet-address">{{ formatShortAddress(currentAccount) }}</text>
           <image class="copy-icon" src="/static/fuzhi.png" mode="aspectFit" />
         </view>
         
         <!-- 断开连接按钮 -->
         <view class="disconnect-btn" @click="disconnectWallet">
           <text class="disconnect-text">{{ $t('wallet.disconnect') }}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 钱包错误模态框 -->
+    <view class="error-modal" v-if="showErrorModal" @click="showErrorModal = false">
+      <view class="error-modal-content" @click.stop>
+        <!-- 错误标题 -->
+        <view class="error-header">
+          <text class="error-title">⚠️ 钱包连接失败</text>
+          <view class="close-btn" @click="showErrorModal = false">×</view>
+        </view>
+        
+        <!-- 错误详情 -->
+        <view class="error-details">
+          <text class="error-message">{{ currentError.message }}</text>
+          <text class="error-description">{{ currentError.details }}</text>
+        </view>
+        
+        <!-- 解决建议 -->
+        <view class="error-suggestions" v-if="currentError.suggestions && currentError.suggestions.length > 0">
+          <text class="suggestions-title">解决建议：</text>
+          <view class="suggestion-item" v-for="(suggestion, index) in currentError.suggestions" :key="index">
+            <text class="suggestion-text">{{ index + 1 }}. {{ suggestion }}</text>
+          </view>
+        </view>
+        
+        <!-- 操作按钮 -->
+        <view class="error-actions">
+          <view class="retry-btn" @click="retryWalletConnection">
+            <text class="retry-text">重试</text>
+          </view>
+          <view class="close-error-btn" @click="showErrorModal = false">
+            <text class="close-error-text">关闭</text>
+          </view>
         </view>
       </view>
     </view>
@@ -197,6 +232,7 @@
   import { setLocale } from '@/i18n/i18n.js'
   import web3Service from '../utils/web3.js'
   import vgauService from '../utils/vgauService.js'
+  import { formatShortAddress } from '@/utils/addressUtils'
   
   const { t, locale } = useI18n()
   
@@ -222,6 +258,14 @@
   const vgauPrice = ref('123.4561')
   const aprData = ref('1%')
   const showWalletModal = ref(false)
+  
+  // 错误模态框相关状态
+  const showErrorModal = ref(false)
+  const currentError = ref({
+    message: '',
+    details: '',
+    suggestions: []
+  })
   
   // 复制合同地址到剪贴板
   const copyContractAddress = () => {
@@ -286,18 +330,18 @@
           }
         }, 100)
       } else {
-        uni.showToast({
-          title: result.error || t('wallet.connectionFailed'),
-          icon: 'error',
-          duration: 1000
-        })
+        // 显示详细的错误信息和解决建议
+        showWalletErrorModal(result)
       }
     } catch (error) {
       console.error('连接钱包失败:', error)
-      uni.showToast({
-        title: t('wallet.connectionFailed'),
-        icon: 'error',
-        duration: 1000
+      // 显示详细的错误信息和解决建议
+      showWalletErrorModal({
+        success: false,
+        error: 'CONNECTION_FAILED',
+        message: '连接失败',
+        details: error.message || '钱包连接过程中发生未知错误',
+        suggestions: ['刷新页面后重试', '检查钱包状态', '联系技术支持']
       })
     }
   }
@@ -384,6 +428,25 @@
       icon: 'success',
       duration: 1000
     })
+  }
+
+  // 显示钱包错误模态框
+  const showWalletErrorModal = (errorData) => {
+    currentError.value = {
+      message: errorData.message || '连接失败',
+      details: errorData.details || '钱包连接过程中发生未知错误',
+      suggestions: errorData.suggestions || ['刷新页面后重试', '检查钱包状态', '联系技术支持']
+    }
+    showErrorModal.value = true
+  }
+
+  // 重试钱包连接
+  const retryWalletConnection = async () => {
+    showErrorModal.value = false
+    // 延迟一下再重试，避免用户连续点击
+    setTimeout(() => {
+      connectWallet()
+    }, 500)
   }
   
   // 语言选择相关
@@ -1176,6 +1239,160 @@
 .disconnect-text {
   color: #000000;
   font-size: 28rpx;
+  font-weight: 500;
+}
+
+/* 错误模态框样式 */
+.error-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+}
+
+.error-modal-content {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-radius: 20rpx;
+  padding: 32rpx;
+  max-width: 600rpx;
+  width: 100%;
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.6);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.error-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.error-title {
+  color: #FF6B6B;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.close-btn {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 40rpx;
+  cursor: pointer;
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.error-details {
+  margin-bottom: 24rpx;
+}
+
+.error-message {
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.error-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 26rpx;
+  line-height: 1.5;
+  display: block;
+}
+
+.error-suggestions {
+  margin-bottom: 32rpx;
+}
+
+.suggestions-title {
+  color: #FFD700;
+  font-size: 26rpx;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.suggestion-item {
+  margin-bottom: 12rpx;
+  padding-left: 20rpx;
+  position: relative;
+}
+
+.suggestion-item::before {
+  content: '•';
+  color: #FFD700;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.suggestion-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+.error-actions {
+  display: flex;
+  gap: 16rpx;
+  justify-content: flex-end;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  border-radius: 12rpx;
+  padding: 16rpx 24rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-btn:active {
+  transform: scale(0.95);
+}
+
+.retry-text {
+  color: #FFFFFF;
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+.close-error-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12rpx;
+  padding: 16rpx 24rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-error-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.close-error-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 26rpx;
   font-weight: 500;
 }
 </style> 

@@ -7,22 +7,22 @@
           <image src="/static/back.png" class="back-arrow" />
         </view>
       </view>
-      <text class="title-text">Exchange</text>
+      <text class="title-text">{{ t('components.exchange.title') }}</text>
     </view>
 
     <!-- 品牌信息区域 -->
     <view class="brand-section">
       <view class="brand-info">
-        <text class="brand-title">Verifood</text>
-        <text class="brand-subtitle">1g Gold = 1 Token</text>
-        <text class="brand-description">Blockchain-based physical gold digitalization solution</text>
+        <text class="brand-title">{{ t('components.exchange.brandTitle') }}</text>
+        <text class="brand-subtitle">{{ t('components.exchange.brandSubtitle') }}</text>
+        <text class="brand-description">{{ t('components.exchange.brandDescription') }}</text>
       </view>
       
       <!-- 兑换比率信息 -->
       <view class="rate-info">
         <view class="rate-info-content">
-          <text class="rate-text">1 VGAU = 120 USDT</text>
-          <text class="apr-text">15% APR</text>
+          <text class="rate-text">{{ t('components.exchange.rateText') }}</text>
+          <text class="apr-text">{{ t('components.exchange.aprText') }}</text>
         </view>
         <!-- 分隔线 -->
         <view class="divider-line"></view>
@@ -33,11 +33,11 @@
     <view class="exchange-section">
       <!-- 币种选择 -->
       <view class="currency-selector">
-        <text class="currency-text">USDT</text>
+        <text class="currency-text">{{ t('components.exchange.currency1') }}</text>
                  <view class="exchange-icon">
            <image src="/static/zhuanhuan.png" class="icon-img" />
          </view>
-        <text class="currency-text">VGAU</text>
+        <text class="currency-text">{{ t('components.exchange.currency2') }}</text>
       </view>
 
       <!-- 输入框 -->
@@ -47,26 +47,26 @@
             class="input-text" 
             type="number" 
             v-model="exchangeAmount"
-            placeholder="Enter the quantity to be redeemed"
+            :placeholder="t('components.exchange.exchangeAmountPlaceholder')"
             placeholder-class="placeholder-text"
             :adjust-position="false"
             :hold-keyboard="true"
             :cursor-spacing="200"
           />
-          <text class="currency-label">VGAU</text>
+          <text class="currency-label">{{ t('components.exchange.currency2') }}</text>
         </view>
       </view>
 
       <!-- 所需USDT显示 -->
       <view class="required-info">
-        <text class="required-label">Required USDT</text>
+        <text class="required-label">{{ t('components.exchange.requiredUSDT') }}</text>
         <text class="required-value">{{ requiredUSDT }}</text>
       </view>
     </view>
     
     <!-- 确认兑换按钮 -->
     <view class="confirm-btn" @click="confirmExchange">
-      <text class="confirm-text">Confirm Exchange</text>
+      <text class="confirm-text">{{ t('components.exchange.confirmExchange') }}</text>
     </view>
   </view>
   
@@ -75,6 +75,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 兑换数量
 const exchangeAmount = ref('')
@@ -92,7 +95,7 @@ const requiredUSDT = computed(() => {
 const confirmExchange = () => {
   if (!exchangeAmount.value || parseFloat(exchangeAmount.value) <= 0) {
     uni.showToast({
-      title: 'Please enter a valid amount',
+      title: t('common.pleaseEnterValidAmount'),
       icon: 'none',
       duration: 2000
     })
@@ -100,8 +103,8 @@ const confirmExchange = () => {
   }
   
   uni.showToast({
-    title: 'Exchange confirmed!',
-    icon: 'success',
+    title: t('components.exchange.exchangeFeature'),
+    icon: 'none',
     duration: 2000
   })
 }

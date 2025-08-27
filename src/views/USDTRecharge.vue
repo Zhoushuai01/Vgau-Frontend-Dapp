@@ -7,7 +7,7 @@
       </view>
              <view class="page-title">
          <image class="title-icon" src="/static/USDT.png" mode="aspectFit" />
-                   <text class="title-text">USDT Recharge</text>
+                   <text class="title-text">{{ $t('rechargePage.usdtRecharge') }}</text>
        </view>
     </view>
 
@@ -16,7 +16,7 @@
       <!-- 数量输入区域 -->
       <view class="input-section">
                  <view class="input-label">
-           <text class="label-text">Amount</text>
+           <text class="label-text">{{ $t('rechargePage.amount') }}</text>
          </view>
         
                  <view class="input-container">
@@ -26,20 +26,20 @@
                                      <input 
                      class="input-field-text" 
                      type="number" 
-                     placeholder="Minimum 0" 
+                     :placeholder="$t('rechargePage.minimumAmount')" 
                      placeholder-style="color: rgba(255, 255, 255, 0.2); font-size: 32rpx;"
                      v-model="inputAmount"
                    />
                 </view>
                                <view class="input-currency">
-                  <text class="currency-text">USDT |Max</text>
+                  <text class="currency-text">USDT |{{ $t('rechargePage.max') }}</text>
                 </view>
              </view>
            </view>
           
                      <view class="balance-info">
              <view class="balance-label">
-               <text class="balance-text">Available Balance</text>
+               <text class="balance-text">{{ $t('rechargePage.availableBalance') }}</text>
              </view>
              <view class="balance-amount">
                <text class="amount-text">{{ usdtBalance }} USDT</text>
@@ -55,8 +55,22 @@
       <!-- 确认按钮 -->
       <view class="confirm-section">
                  <view class="confirm-button" :class="{ disabled: isLoading }" @click="handleConfirm">
-           <text class="confirm-text">{{ isLoading ? 'Processing...' : 'Confirm' }}</text>
+           <text class="confirm-text">{{ isLoading ? $t('rechargePage.processing') : $t('rechargePage.confirm') }}</text>
          </view>
+      </view>
+
+      <!-- 自定义确认弹窗（半透明白色、i18n） -->
+      <view v-if="showConfirmModal" class="modal-overlay" @click="showConfirmModal = false">
+        <view class="modal-content" @click.stop>
+          <view class="modal-text">
+            <text class="recharge-title">{{ t('recharge.modal.title') }}</text>
+            <text class="recharge-desc">{{ t('recharge.modal.content', { amount: pendingAmount, symbol: 'USDT' }) }}</text>
+          </view>
+          <view class="modal-actions">
+            <view class="modal-btn outline" @click="showConfirmModal = false">{{ t('recharge.modal.cancel') }}</view>
+            <view class="modal-btn solid" :class="{ disabled: isLoading }" @click="onConfirmModal">{{ t('recharge.modal.confirm') }}</view>
+          </view>
+        </view>
       </view>
     </view>
   </view>
@@ -64,6 +78,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import contractService from '@/utils/contractService.js'
 
 // 响应式数据
@@ -71,6 +86,9 @@ const inputAmount = ref('')
 const usdtBalance = ref('0.000000')
 const isLoading = ref(false)
 const walletAddress = ref('')
+const showConfirmModal = ref(false)
+const pendingAmount = ref('')
+const { t } = useI18n()
 
 // 页面加载时初始化
 onMounted(async () => {
@@ -91,7 +109,7 @@ const initContractService = async () => {
   } catch (error) {
     console.error('❌ 合约服务初始化失败:', error)
     uni.showToast({
-      title: '合约服务初始化失败',
+      title: t('rechargePage.contractInitFailed'),
       icon: 'none',
       duration: 3000
     })
@@ -126,7 +144,7 @@ const goBack = () => {
 const handleConfirm = async () => {
   if (!inputAmount.value || parseFloat(inputAmount.value) <= 0) {
     uni.showToast({
-      title: '请输入有效的充值金额',
+      title: t('rechargePage.pleaseEnterValidAmount'),
       icon: 'none',
       duration: 2000
     })
@@ -137,23 +155,13 @@ const handleConfirm = async () => {
   
   try {
     isLoading.value = true
-    
-    // 显示确认弹窗
-    uni.showModal({
-      title: '确认充值',
-      content: `确定要充值 ${amount} USDT 吗？`,
-      confirmText: '确认',
-      cancelText: '取消',
-      success: async (res) => {
-        if (res.confirm) {
-          await executeRecharge(amount)
-        }
-      }
-    })
+    // 打开自定义确认弹窗
+    pendingAmount.value = amount.toString()
+    showConfirmModal.value = true
   } catch (error) {
     console.error('充值操作失败:', error)
     uni.showToast({
-      title: '充值操作失败',
+      title: t('rechargePage.rechargeFailed'),
       icon: 'none',
       duration: 3000
     })
@@ -168,7 +176,7 @@ const executeRecharge = async (amount) => {
     isLoading.value = true
     
     uni.showLoading({
-      title: '正在充值...',
+      title: t('recharge.loading'),
       mask: true
     })
     
@@ -179,7 +187,7 @@ const executeRecharge = async (amount) => {
     
     if (result && result.transactionHash) {
       uni.showToast({
-        title: '充值成功！',
+        title: t('rechargePage.rechargeSuccess'),
         icon: 'success',
         duration: 3000
       })
@@ -190,22 +198,20 @@ const executeRecharge = async (amount) => {
       // 清空输入
       inputAmount.value = ''
       
-      // 延迟返回上一页
-      setTimeout(() => {
-        uni.navigateBack()
-      }, 2000)
+      // 立即返回上一页
+      uni.navigateBack()
     }
   } catch (error) {
     uni.hideLoading()
     console.error('❌ 充值执行失败:', error)
     
-    let errorMessage = '充值失败'
+    let errorMessage = t('rechargePage.rechargeFailed')
     if (error.message.includes('insufficient funds')) {
-      errorMessage = '余额不足'
+      errorMessage = t('rechargePage.insufficientFunds')
     } else if (error.message.includes('user rejected')) {
-      errorMessage = '用户取消操作'
+      errorMessage = t('rechargePage.userRejected')
     } else if (error.message.includes('gas')) {
-      errorMessage = 'Gas费用不足'
+      errorMessage = t('rechargePage.gasInsufficient')
     }
     
     uni.showToast({
@@ -216,6 +222,13 @@ const executeRecharge = async (amount) => {
   } finally {
     isLoading.value = false
   }
+}
+
+// 弹窗确认执行
+const onConfirmModal = async () => {
+  const amount = pendingAmount.value
+  showConfirmModal.value = false
+  await executeRecharge(amount)
 }
 </script>
 
@@ -460,6 +473,91 @@ const executeRecharge = async (amount) => {
   font-size: 32rpx;
   color: #000000;
   font-weight: 400;
+}
+
+/* 充值确认弹窗样式（与IncreaseCollateral.vue一致） */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #1A1A1A;
+  border-radius: 24rpx;
+  padding: 80rpx 32rpx;
+  margin: 0 48rpx;
+  max-width: 600rpx;
+  width: 100%;
+}
+
+.modal-text {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  margin-bottom: 48rpx;
+  height: 320rpx;
+  justify-content: center;
+  align-items: center;
+}
+
+.recharge-title {
+  font-size: 32rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.recharge-desc {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.modal-btn.solid {
+  background: linear-gradient(90deg, #FEDA78 0%, #B07920 100%);
+  color: #000;
+  font-weight: 500;
+}
+
+.modal-btn.outline {
+  background: transparent;
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+}
+
+.modal-btn:active {
+  transform: scale(0.98);
+}
+
+.modal-btn.disabled {
+  opacity: .6;
+  pointer-events: none;
 }
 
 /* 自定义Toast样式 */

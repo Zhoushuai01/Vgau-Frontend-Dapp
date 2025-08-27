@@ -7,7 +7,7 @@
       </view>
       <view class="page-title">
         <image class="title-icon" src="/static/VGAU.png" mode="aspectFit" />
-        <text class="title-text">VGAU Withdraw</text>
+        <text class="title-text">{{ t('vgauWithdraw') }}</text>
       </view>
     </view>
 
@@ -15,16 +15,16 @@
     <view class="main-content">
       <!-- 赎回说明 -->
       <view class="redeem-notice">
-        <text class="notice-text">Selected assets will be fully redeemed to your wallet after T+1 days.</text>
+        <text class="notice-text">{{ t('selectedAssetsWillBeFullyRedeemedToYourWalletAfterT1Days') }}</text>
       </view>
       
       <!-- 内容区域 -->
       <view class="content-area">
         <!-- 数量输入区域 -->
         <view class="input-section">
-                     <view class="input-label">
-             <text class="label-text">Total Redemption Amount</text>
-           </view>
+          <view class="input-label">
+            <text class="label-text">{{ t('totalRedemptionAmount') }}</text>
+          </view>
           
           <view class="input-container">
             <view class="input-field">
@@ -33,59 +33,59 @@
                   <input 
                     class="input-field-text" 
                     type="number" 
-                    placeholder="Minimum 0" 
+                    :placeholder="t('minimum0')" 
                     placeholder-style="color: rgba(255, 255, 255, 0.2); font-size: 32rpx;"
                     v-model="inputAmount"
                   />
                 </view>
                 <view class="input-currency">
-                  <text class="currency-text">VGAU |Max</text>
+                  <text class="currency-text">{{ t('vgauMax') }}</text>
                 </view>
               </view>
             </view>
             
-                         <view class="balance-info">
-               <view class="balance-label">
-                 <text class="balance-text">Available Balance</text>
-               </view>
-               <view class="balance-amount">
-                 <text class="amount-text">48,456.156 VGAU</text>
-               </view>
-             </view>
-             
-             <view class="fee-info">
-               <view class="fee-label">
-                 <text class="fee-text">Estimated Fee</text>
-               </view>
-               <view class="fee-amount">
-                 <text class="fee-amount-text">0.001 VGAU</text>
-               </view>
-             </view>
+            <view class="balance-info">
+              <view class="balance-label">
+                <text class="balance-text">{{ t('availableBalance') }}</text>
+              </view>
+              <view class="balance-amount">
+                <text class="amount-text">48,456.156 VGAU</text>
+              </view>
+            </view>
+            
+            <view class="fee-info">
+              <view class="fee-label">
+                <text class="fee-text">{{ t('estimatedFee') }}</text>
+              </view>
+              <view class="fee-amount">
+                <text class="fee-amount-text">0.001 VGAU</text>
+              </view>
+            </view>
             
             <view class="divider"></view>
           </view>
         </view>
 
-                 <!-- 提现至区域 -->
-         <view class="withdraw-section">
-           <view class="withdraw-content">
-             <view class="withdraw-label">
-               <text class="withdraw-text">Withdraw To</text>
-             </view>
-             <view class="wallet-info">
-               <text class="wallet-text">Bound Wallet Address</text>
-             </view>
-           </view>
-           <view class="daily-limit-section">
-             <text class="daily-limit-text">Daily Maximum Redemption Limit: 5000000000 VGAU</text>
-           </view>
-         </view>
+        <!-- 提现至区域 -->
+        <view class="withdraw-section">
+          <view class="withdraw-content">
+            <view class="withdraw-label">
+              <text class="withdraw-text">{{ t('withdrawTo') }}</text>
+            </view>
+            <view class="wallet-info">
+              <text class="wallet-text">{{ t('boundWalletAddress') }}</text>
+            </view>
+          </view>
+          <view class="daily-limit-section">
+            <text class="daily-limit-text">{{ t('dailyMaximumRedemptionLimitVGAU') }}</text>
+          </view>
+        </view>
       </view>
 
       <!-- 确认按钮 -->
       <view class="confirm-section">
         <view class="confirm-button" @click="handleConfirm">
-          <text class="confirm-text">Confirm</text>
+          <text class="confirm-text">{{ t('confirm') }}</text>
         </view>
       </view>
     </view>
@@ -94,6 +94,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 输入金额
 const inputAmount = ref('')
@@ -107,7 +110,7 @@ const goBack = () => {
 const handleConfirm = () => {
   if (!inputAmount.value) {
     uni.showToast({
-      title: 'Please enter withdraw amount',
+      title: t('pleaseEnterWithdrawAmount'),
       icon: 'none',
       duration: 2000
     })
@@ -115,7 +118,7 @@ const handleConfirm = () => {
   }
   
   uni.showToast({
-    title: 'Withdraw feature coming soon',
+    title: t('withdrawFeatureComingSoon'),
     icon: 'none',
     duration: 2000
   })
