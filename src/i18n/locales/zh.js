@@ -170,7 +170,6 @@ export default {
       settings: '設置',
       notice: '通知'
     },
-    logout: '登出',
     logoutConfirm: {
       title: '確認登出',
       content: '確定要登出當前賬戶嗎？登出後需要重新登錄。',
@@ -178,6 +177,7 @@ export default {
       cancel: '取消'
     },
     logout: {
+      button: '登出',
       loading: '正在登出...',
       success: '登出成功',
       failed: '登出失敗'

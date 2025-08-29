@@ -205,19 +205,19 @@ class ApiService {
     createOrder: (data) => this.post(this.endpoints.STAKE.ORDERS, data),
     
     // 获取用户订单列表
-    getOrders: () => this.get(this.endpoints.STAKE.ORDERS),
-    
-    // 获取质押历史
-    getHistory: (params) => this.get(this.endpoints.STAKE.HISTORY, params),
-    
-    // 获取质押详情
-    getDetails: (id) => this.get(this.endpoints.STAKE.DETAILS, { id })
+    getOrders: () => this.get(this.endpoints.STAKE.ORDERS)
   }
   
   // 用户资金余额相关API
   userFunds = {
     // 获取用户资金余额
     getBalances: () => this.get(this.endpoints.USER_FUNDS.BALANCES)
+  }
+  
+  // 借贷配置相关API
+  loan = {
+    // 获取借贷配置
+    getConfig: () => this.get(this.endpoints.LOAN.CONFIG)
   }
 }
 
@@ -237,6 +237,7 @@ export const fileAPI = apiService.file
 export const inviteAPI = apiService.invite
 export const stakeAPI = apiService.stake
 export const userFundsAPI = apiService.userFunds
+export const loanAPI = apiService.loan
 
 // 导出基础配置
 export { BASE_URL, API_ENDPOINTS } 

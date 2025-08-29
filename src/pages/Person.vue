@@ -11,7 +11,7 @@
           <image src="/static/Person/Service.png" class="header-icon" />
         </view>
         <view class="header-btn logout-btn" @click="handleLogout">
-          <text class="logout-text">logout</text>
+          <text class="logout-text">{{ t('person.logout.button') }}</text>
         </view>
       </view>
     </view>
@@ -370,11 +370,9 @@ const performLogout = async () => {
       uni.showToast({
         title: '用户未登录，已清除本地数据',
         icon: 'success',
-        duration: 2000
+        duration: 1000
       })
-      setTimeout(() => {
-        uni.reLaunch({ url: '/pages/Home' })
-      }, 2000)
+      uni.reLaunch({ url: '/pages/Home' })
       return
     }
 
@@ -395,18 +393,16 @@ const performLogout = async () => {
       uni.showToast({
         title: t('person.logout.success'),
         icon: 'success',
-        duration: 2000
+        duration: 1000
       })
 
       // 清除本地用户数据
       clearUserData()
 
-      // 延迟跳转到首页
-      setTimeout(() => {
-        uni.reLaunch({
-          url: '/pages/Home'
-        })
-      }, 2000)
+      // 立即跳转到首页
+      uni.reLaunch({
+        url: '/pages/Home'
+      })
     } else {
       // 登出失败 - 分析失败原因
       const failureReason = analyzeLogoutFailure(response)

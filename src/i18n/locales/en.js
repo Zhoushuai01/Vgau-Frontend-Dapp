@@ -170,7 +170,6 @@ export default {
       settings: 'Settings',
       notice: 'Notice'
     },
-    logout: 'Logout',
     logoutConfirm: {
       title: 'Confirm Logout',
       content: 'Are you sure you want to logout? You will need to login again after logout.',
@@ -178,6 +177,7 @@ export default {
       cancel: 'Cancel'
     },
     logout: {
+      button: 'Logout',
       loading: 'Logging out...',
       success: 'Logout successful',
       failed: 'Logout failed'

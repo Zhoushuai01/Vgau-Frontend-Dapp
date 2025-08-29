@@ -22,7 +22,6 @@
       <view class="rate-info">
         <view class="rate-info-content">
           <text class="rate-text">{{ t('components.exchange.rateText') }}</text>
-          <text class="apr-text">{{ t('components.exchange.aprText') }}</text>
         </view>
         <!-- 分隔线 -->
         <view class="divider-line"></view>
@@ -34,9 +33,9 @@
       <!-- 币种选择 -->
       <view class="currency-selector">
         <text class="currency-text">{{ t('components.exchange.currency1') }}</text>
-                 <view class="exchange-icon">
-           <image src="/static/zhuanhuan.png" class="icon-img" />
-         </view>
+        <view class="exchange-icon">
+          <text class="arrow-icon">→</text>
+        </view>
         <text class="currency-text">{{ t('components.exchange.currency2') }}</text>
       </view>
 
@@ -231,12 +230,7 @@ const goBack = () => {
   line-height: 1.56;
 }
 
-.apr-text {
-  color: #E78B1B;
-  font-size: 32rpx;
-  font-weight: 400;
-  line-height: 1.5;
-}
+
 
 /* 分隔线 */
 .divider-line {
@@ -278,9 +272,10 @@ const goBack = () => {
   justify-content: center;
 }
 
-.icon-img {
-  width: 48rpx;
-  height: 48rpx;
+.arrow-icon {
+  color: #E78B1B;
+  font-size: 32rpx;
+  font-weight: bold;
 }
 
 /* 输入框 */
@@ -382,10 +377,6 @@ const goBack = () => {
   
   .rate-text {
     font-size: 32rpx;
-  }
-  
-  .apr-text {
-    font-size: 28rpx;
   }
 }
 

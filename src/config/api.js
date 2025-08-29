@@ -62,6 +62,11 @@ export const API_ENDPOINTS = {
     BALANCES: '/user-funds/balances'
   },
   
+  // 借贷配置
+  LOAN: {
+    CONFIG: '/loan/config'
+  },
+  
   // 用户管理
   USER: {
     PROFILE: '/user/profile',
@@ -93,9 +98,7 @@ export const API_ENDPOINTS = {
   // 质押管理
   STAKE: {
     PRODUCTS: '/stake/products',
-    ORDERS: '/stake/orders',
-    HISTORY: '/stake/history',
-    DETAILS: '/stake/details'
+    ORDERS: '/stake/orders'
   }
 }
 

@@ -22,7 +22,6 @@
       <view class="rate-info">
         <view class="rate-info-content">
           <text class="rate-text">{{ t('components.redeem.rateText') }}</text>
-          <text class="apr-text">{{ t('components.redeem.aprText') }}</text>
         </view>
         <!-- 分隔线 -->
         <view class="divider-line"></view>
@@ -35,7 +34,7 @@
       <view class="currency-selector">
         <text class="currency-text">{{ t('components.redeem.currency1') }}</text>
         <view class="exchange-icon">
-          <image src="/static/zhuanhuan.png" class="icon-img" />
+          <text class="arrow-icon">→</text>
         </view>
         <text class="currency-text">{{ t('components.redeem.currency2') }}</text>
       </view>
@@ -247,12 +246,7 @@ const closeModal = () => {
   line-height: 1.56;
 }
 
-.apr-text {
-  color: #E78B1B;
-  font-size: 32rpx;
-  font-weight: 400;
-  line-height: 1.5;
-}
+
 
 /* 分隔线 */
 .divider-line {
@@ -294,9 +288,10 @@ const closeModal = () => {
   justify-content: center;
 }
 
-.icon-img {
-  width: 48rpx;
-  height: 48rpx;
+.arrow-icon {
+  color: #E78B1B;
+  font-size: 32rpx;
+  font-weight: bold;
 }
 
 /* 输入框 */
@@ -467,9 +462,7 @@ const closeModal = () => {
     font-size: 32rpx;
   }
   
-  .apr-text {
-    font-size: 28rpx;
-  }
+
 }
 
 /* 小屏幕适配 */

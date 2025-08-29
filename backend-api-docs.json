@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "ABT Platform Backend API",
-    "description": "ABT Platform Backend Service\n\n## Authentication\n- Most APIs require login to access\n- Uses Session authentication, authentication info is automatically carried after login\n- Public APIs do not require authentication\n\n## Default Account\n- Username: admin\n- Password: admin123\n\n## Core Modules\n### 文件存储 (File Storage)\n- **核心API**: 文件上传确认等基础功能\n- **管理API**: 系统管理和监控功能，需要管理员权限\n- **支持功能**: 多存储策略、客户端直传、事件监听\n\n### 用户钱包 (User Wallet)\n- **用户API**: 个人钱包管理功能\n- **管理API**: 系统级钱包管理，需要管理员权限\n- **支持功能**: 多链钱包、状态管理、权限控制",
+    "title": "Verigold Platform API",
+    "description": "Verigold Platform Backend Service\n\n## Authentication\n- Most APIs require login to access\n- Uses Session authentication, authentication info is automatically carried after login\n- Public APIs do not require authentication\n\n## Default Account\n- Username: admin\n- Password: admin123\n\n## Core Modules\n### 文件存储 (File Storage)\n- **核心API**: 文件上传确认等基础功能\n- **管理API**: 系统管理和监控功能，需要管理员权限\n- **支持功能**: 多存储策略、客户端直传、事件监听\n\n### 用户钱包 (User Wallet)\n- **用户API**: 个人钱包管理功能\n- **管理API**: 系统级钱包管理，需要管理员权限\n- **支持功能**: 多链钱包、状态管理、权限控制",
     "contact": {
       "name": "ABT Platform Team",
       "email": "admin@example.com"
@@ -104,14 +104,6 @@
     {
       "name": "管理员激活管理",
       "description": "# 管理员激活管理API\n\n## 概述\n提供系统初始化时的管理员身份激活功能，确保系统至少有一个管理员用户。\n\n## 功能特性\n- **一次性激活**: 激活码仅可使用一次，使用后自动销毁\n- **安全验证**: 32位随机激活码，永久有效直至被使用或系统重启\n- **并发安全**: 使用分布式锁防止多用户同时激活\n- **自动禁用**: 系统存在管理员后自动禁用激活功能\n\n## 使用场景\n- 系统首次部署后创建第一个管理员\n- 紧急情况下恢复管理员权限（需要先清除所有管理员）\n\n## 安全措施\n- 激活码通过服务器日志输出，不通过API返回\n- 需要用户已登录才能使用激活码\n- 激活后立即销毁激活码\n- 系统存在管理员时完全禁用功能\n"
-    },
-    {
-      "name": "Actuator",
-      "description": "Monitor and interact",
-      "externalDocs": {
-        "description": "Spring Boot Actuator Web API Documentation",
-        "url": "https://docs.spring.io/spring-boot/docs/current/actuator-api/html/"
-      }
     },
     {
       "name": "管理员 KYC 管理",
@@ -5670,6 +5662,62 @@
         }
       }
     },
+    "/api/admin/user-funds/platform/funds-overview/refresh": {
+      "post": {
+        "tags": [
+          "管理员资金管理"
+        ],
+        "summary": "刷新平台资金总览缓存",
+        "description": "强制刷新平台资金总览的缓存数据\n\n## 功能说明\n- 清除现有的缓存数据\n- 下次访问时将重新计算所有统计指标\n- 适用于需要获取最新数据的场景\n\n## 使用场景\n- 系统配置变更后需要立即更新统计数据\n- 发现数据异常需要强制刷新\n- 重要业务操作后需要确保数据准确性\n",
+        "operationId": "refreshPlatformFundsOverviewCache",
+        "responses": {
+          "200": {
+            "description": "刷新成功",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "成功响应": {
+                    "description": "成功响应",
+                    "value": {
+                      "success": true,
+                      "message": "平台资金总览缓存刷新成功"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/user-funds/platform-overview/refresh": {
+      "post": {
+        "tags": [
+          "管理员资金管理"
+        ],
+        "summary": "刷新用户资金平台总览缓存",
+        "description": "强制刷新用户资金平台总览的缓存数据\n\n## 功能说明\n- 清除现有的缓存数据\n- 下次访问时将重新计算所有统计指标\n- 适用于需要获取最新数据的场景\n\n## 使用场景\n- 业务配置变更后需要立即更新统计数据\n- 发现数据异常需要强制刷新\n- 重要业务操作后需要确保数据准确性\n",
+        "operationId": "refreshUserFundsPlatformOverviewCache",
+        "responses": {
+          "200": {
+            "description": "刷新成功",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "成功响应": {
+                    "description": "成功响应",
+                    "value": {
+                      "success": true,
+                      "message": "用户资金平台总览缓存刷新成功"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/user-funds/deposit/manual": {
       "post": {
         "tags": [
@@ -6058,14 +6106,47 @@
         "tags": [
           "管理员质押管理"
         ],
-        "summary": "获取产品列表",
-        "description": "获取所有质押产品列表，支持按状态筛选。\n\n## 业务说明\n- 不传状态参数时返回所有状态的产品\n- 可按产品状态筛选: ACTIVE（活跃）、ARCHIVED（已归档）\n- 返回产品的完整信息，包括创建时间、更新时间等\n\n## 权限要求\n- 需要管理员权限 (ROLE_ADMIN)\n",
+        "summary": "分页获取产品列表（支持搜索和过滤）",
+        "description": "分页获取质押产品列表，支持多种查询条件和完整的产品统计信息。\n\n## 功能特性\n- ✅ **分页支持**: 支持分页查询，避免数据量过大\n- ✅ **搜索功能**: 支持按产品名称和描述进行模糊搜索\n- ✅ **状态过滤**: 可按产品状态筛选（ACTIVE、ARCHIVED）\n- ✅ **订单统计**: 显示每个产品的订单数量和质押金额统计\n\n## 查询参数\n- `page`: 页码，从1开始（默认值：1）\n- `size`: 每页大小（默认值：10，最大值：100）\n- `keyword`: 搜索关键词，会在产品名称和描述中进行模糊匹配\n- `status`: 产品状态过滤，可选值：ACTIVE、ARCHIVED\n\n## 返回数据\n- 产品基本信息：ID、名称、描述、利率、期限、投资限额等\n- 订单统计：总订单数、活跃订单数、已完成订单数、已取消订单数\n- 质押统计：该产品的总质押金额\n- 分页信息：总记录数、当前页、总页数等\n\n## 权限要求\n- 需要管理员权限 (ROLE_ADMIN)\n\n## 使用示例\n- 获取所有产品：`GET /products?page=1&size=10`\n- 搜索产品：`GET /products?keyword=短期&page=1&size=10`\n- 过滤状态：`GET /products?status=ACTIVE&page=1&size=10`\n- 组合查询：`GET /products?keyword=短期&status=ACTIVE&page=1&size=10`\n",
         "operationId": "getProducts",
         "parameters": [
           {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从1开始计数",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "每页显示的记录数量，最小1，最大100",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 10
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "搜索关键词，将在产品名称和描述中进行模糊匹配。支持中文、英文和数字。",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "短期"
+          },
+          {
             "name": "status",
             "in": "query",
-            "description": "产品状态筛选（可选）",
+            "description": "产品状态过滤器，只返回指定状态的产品。ACTIVE=活跃产品，ARCHIVED=已归档产品。不传此参数则返回所有状态的产品。",
             "required": false,
             "schema": {
               "type": "string",
@@ -6079,39 +6160,22 @@
         ],
         "responses": {
           "200": {
-            "description": "获取产品列表成功",
+            "description": "空列表响应",
             "content": {
               "application/json": {
                 "examples": {
-                  "获取成功示例": {
-                    "description": "获取成功示例",
+                  "空列表示例": {
+                    "description": "没有符合条件的产品时的响应",
                     "value": {
                       "success": true,
                       "message": "获取产品列表成功",
-                      "data": [
-                        {
-                          "id": "stake_prod_abc123def456ghi789jkl",
-                          "name": "7天短期质押",
-                          "description": "7天短期质押产品，年化收益5.5%",
-                          "annualRate": "5.50",
-                          "lockDays": 7,
-                          "minAmount": 100,
-                          "maxAmount": 10000,
-                          "status": "ACTIVE",
-                          "createTime": "2024-01-20T10:30:00"
-                        },
-                        {
-                          "id": "stake_prod_def456ghi789jkl012mno",
-                          "name": "30天中期质押",
-                          "description": "30天中期质押产品，年化收益8.0%",
-                          "annualRate": "8.00",
-                          "lockDays": 30,
-                          "minAmount": 500,
-                          "maxAmount": 50000,
-                          "status": "ACTIVE",
-                          "createTime": "2024-01-19T15:20:00"
-                        }
-                      ]
+                      "data": {
+                        "records": [],
+                        "total": 0,
+                        "current": 1,
+                        "pages": 0,
+                        "size": 10
+                      }
                     }
                   }
                 }
@@ -6119,16 +6183,49 @@
             }
           },
           "400": {
-            "description": "状态参数错误",
+            "description": "参数错误",
             "content": {
               "application/json": {
                 "examples": {
-                  "状态错误示例": {
-                    "description": "状态错误示例",
+                  "页码参数错误": {
+                    "description": "页码小于1时的错误响应",
                     "value": {
                       "success": false,
-                      "message": "无效的产品状态: INVALID_STATUS",
+                      "message": "页码必须大于0",
                       "code": 400
+                    }
+                  },
+                  "每页大小参数错误": {
+                    "description": "每页大小超出范围时的错误响应",
+                    "value": {
+                      "success": false,
+                      "message": "每页大小必须在1-100之间",
+                      "code": 400
+                    }
+                  },
+                  "状态参数错误": {
+                    "description": "产品状态无效时的错误响应",
+                    "value": {
+                      "success": false,
+                      "message": "无效的产品状态：INVALID",
+                      "code": 400
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "权限不足示例": {
+                    "description": "非管理员访问时的错误响应",
+                    "value": {
+                      "success": false,
+                      "message": "权限不足",
+                      "code": 403
                     }
                   }
                 }
@@ -6254,6 +6351,34 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CommonApiResponseProductResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/stake/platform-statistics/refresh": {
+      "post": {
+        "tags": [
+          "管理员质押管理"
+        ],
+        "summary": "刷新质押业务统计缓存",
+        "description": "强制刷新质押业务统计的缓存数据\n\n## 功能说明\n- 清除现有的缓存数据\n- 下次访问时将重新计算所有统计指标\n- 适用于需要获取最新数据的场景\n\n## 使用场景\n- 产品配置变更后需要立即更新统计数据\n- 发现数据异常需要强制刷新\n- 重要业务操作后需要确保数据准确性\n",
+        "operationId": "refreshPlatformStatisticsCache",
+        "responses": {
+          "200": {
+            "description": "刷新成功",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "成功响应": {
+                    "description": "成功响应",
+                    "value": {
+                      "success": true,
+                      "message": "质押业务统计缓存刷新成功"
+                    }
+                  }
                 }
               }
             }
@@ -7099,6 +7224,34 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CommonApiResponseRiskCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/loan/platform-statistics/refresh": {
+      "post": {
+        "tags": [
+          "借贷管理"
+        ],
+        "summary": "刷新借贷业务统计缓存",
+        "description": "强制刷新借贷业务统计的缓存数据\n\n## 功能说明\n- 清除现有的缓存数据\n- 下次访问时将重新计算所有统计指标\n- 适用于需要获取最新数据的场景\n\n## 使用场景\n- 配置变更后需要立即更新统计数据\n- 发现数据异常需要强制刷新\n- 重要业务操作后需要确保数据准确性\n",
+        "operationId": "refreshPlatformStatisticsCache_1",
+        "responses": {
+          "200": {
+            "description": "刷新成功",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "成功响应": {
+                    "description": "成功响应",
+                    "value": {
+                      "success": true,
+                      "message": "借贷业务统计缓存刷新成功"
+                    }
+                  }
                 }
               }
             }
@@ -15513,6 +15666,146 @@
         }
       }
     },
+    "/api/admin/user-funds/platform/funds-overview": {
+      "get": {
+        "tags": [
+          "管理员资金管理"
+        ],
+        "summary": "获取平台资金总览统计",
+        "description": "获取资金总览页面的核心统计数据\n\n## 功能说明\n- 聚合质押、借贷、用户资金等多个模块的数据\n- 提供平台级别的资金统计和分析指标\n- 支持缓存优化，数据更新频率为5分钟\n\n## 包含数据\n- **核心业务统计**: 总质押量、总抵押量、总借出量、用户总资金\n- **订单统计**: 活跃订单数量、产品数量等\n- **价值统计**: 按USDT计价的总价值\n- **利用率统计**: 各类资金的利用率指标\n- **风险指标**: 平均质押率、风险预警订单数等\n- **收益统计**: 利息收支、平台总收益等\n\n## 管理员用途\n- 平台资金状况总览和监控\n- 业务发展趋势分析\n- 风险管理和决策支持\n- 运营效率评估\n",
+        "operationId": "getPlatformFundsOverview",
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformFundsOverviewDto"
+                },
+                "examples": {
+                  "成功响应": {
+                    "description": "成功响应",
+                    "value": {
+                      "success": true,
+                      "message": "获取平台资金总览统计成功",
+                      "data": {
+                        "totalVgauStaked": "1250000.0",
+                        "totalVgauCollateral": "800000.0",
+                        "totalUsdtLent": "1500000.123456789012345678",
+                        "totalUserVgauFunds": "2000000.0",
+                        "totalUserUsdtFunds": "3000000.123456789012345678",
+                        "totalActiveStakeOrders": 245,
+                        "totalActiveLoanOrders": 156,
+                        "totalStakeProducts": 12,
+                        "vgauStakeUtilization": "62.5",
+                        "averageLtvRatio": "67.5",
+                        "totalPlatformRevenue": "15000.123456789012345678",
+                        "lastUpdatedAt": "2024-01-20T10:30:00Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "错误响应": {
+                    "description": "错误响应",
+                    "value": {
+                      "success": false,
+                      "message": "获取平台资金总览统计失败",
+                      "errorCode": "INTERNAL_SERVER_ERROR"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/user-funds/platform-overview": {
+      "get": {
+        "tags": [
+          "管理员资金管理"
+        ],
+        "summary": "获取用户资金平台总览统计（增强版）",
+        "description": "获取用户资金的平台级统计数据（现有统计接口的增强版）\n\n## 功能说明\n- 基于现有统计接口进行功能增强\n- 提供更详细的用户资金分析数据\n- 支持缓存优化，数据更新频率为5分钟\n\n## 包含数据\n- **币种统计**: 按币种分组的详细持有情况\n- **资金分布**: 质押冻结、抵押冻结、提现冻结等分类\n- **用户活跃度**: 总用户数、活跃用户数、业务参与用户数\n\n## 管理员用途\n- 用户资金状况深度分析\n- 业务参与度评估\n- 资金流动性监控\n- 用户行为分析\n",
+        "operationId": "getUserFundsPlatformOverview",
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserFundsPlatformOverviewDto"
+                },
+                "examples": {
+                  "成功响应": {
+                    "description": "成功响应",
+                    "value": {
+                      "success": true,
+                      "message": "获取用户资金平台总览统计成功",
+                      "data": {
+                        "currencyStats": [
+                          {
+                            "currency": "USDT",
+                            "totalAmount": "3000000.123456789012345678",
+                            "availableAmount": "2500000.123456789012345678",
+                            "frozenAmount": "500000.123456789012345678",
+                            "userCount": 1245
+                          },
+                          {
+                            "currency": "VGAU",
+                            "totalAmount": "2000000.0",
+                            "availableAmount": "1700000.0",
+                            "frozenAmount": "300000.0",
+                            "userCount": 892
+                          }
+                        ],
+                        "fundDistribution": {
+                          "stakingFrozen": "300000.0",
+                          "collateralFrozen": "800000.0",
+                          "withdrawalFrozen": "50000.123456789012345678",
+                          "savingsFrozen": "0.0"
+                        },
+                        "userActivity": {
+                          "totalUsers": 2500,
+                          "activeUsers": 1245,
+                          "stakingUsers": 245,
+                          "lendingUsers": 156
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "错误响应": {
+                    "description": "错误响应",
+                    "value": {
+                      "success": false,
+                      "message": "获取用户资金平台总览统计失败",
+                      "errorCode": "INTERNAL_SERVER_ERROR"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/user-funds/operations/{userId}": {
       "get": {
         "tags": [
@@ -16196,6 +16489,78 @@
                       "success": false,
                       "message": "获取统计信息失败: 数据库连接超时",
                       "code": 500
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/stake/platform-statistics": {
+      "get": {
+        "tags": [
+          "管理员质押管理"
+        ],
+        "summary": "获取质押业务平台统计",
+        "description": "获取质押业务的详细统计数据\n\n## 功能说明\n- 提供质押业务的全面统计信息\n- 包含基础统计、产品分析、期限分析等\n- 支持缓存优化，数据更新频率为5分钟\n\n## 包含数据\n- **基础统计**: 总质押量、订单数、利息支出等\n- **产品统计**: 按产品分组的质押情况\n- **期限统计**: 按锁定期限分组的质押情况\n- **平均值**: 平均质押金额、平均持续时间等\n\n## 管理员用途\n- 质押业务发展分析\n- 产品表现评估\n- 业务决策支持\n- 风险监控和评估\n",
+        "operationId": "getPlatformStatistics",
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StakePlatformStatisticsDto"
+                },
+                "examples": {
+                  "成功响应": {
+                    "description": "成功响应",
+                    "value": {
+                      "success": true,
+                      "message": "获取质押业务平台统计成功",
+                      "data": {
+                        "totalStakedAmount": "1250000.0",
+                        "totalActiveOrders": 245,
+                        "totalCompletedOrders": 1234,
+                        "totalInterestPaid": "125000.123456789012345678",
+                        "averageStakeAmount": "5102.04",
+                        "averageStakeDuration": 15.6,
+                        "productStats": [
+                          {
+                            "productId": "stake_prod_7d_001",
+                            "productName": "7天短期质押",
+                            "totalStaked": "300000.0",
+                            "activeOrders": 65,
+                            "annualRate": "8.50"
+                          }
+                        ],
+                        "durationStats": [
+                          {
+                            "lockDays": 7,
+                            "totalStaked": "400000.0",
+                            "orderCount": 89
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "错误响应": {
+                    "description": "错误响应",
+                    "value": {
+                      "success": false,
+                      "message": "获取质押业务平台统计失败",
+                      "errorCode": "INTERNAL_SERVER_ERROR"
                     }
                   }
                 }
@@ -17506,6 +17871,72 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CommonApiResponseIPageAdminLoanOrderDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/loan/platform-statistics": {
+      "get": {
+        "tags": [
+          "借贷管理"
+        ],
+        "summary": "获取借贷业务平台统计",
+        "description": "获取借贷业务的详细统计数据\n\n## 功能说明\n- 提供借贷业务的全面统计信息\n- 包含基础统计、风险分析、利率分析等\n- 支持缓存优化，数据更新频率为5分钟\n\n## 包含数据\n- **基础统计**: 总抵押量、总借出量、活跃订单数等\n- **利息统计**: 累计利息收入等\n- **风险统计**: 各风险等级的订单分布\n- **利率统计**: 平均利率、利率区间等\n- **平均值**: 平均质押率、平均借贷金额等\n\n## 管理员用途\n- 借贷业务发展分析\n- 风险状况监控\n- 业务决策支持\n- 收益状况评估\n",
+        "operationId": "getPlatformStatistics_1",
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanPlatformStatisticsDto"
+                },
+                "examples": {
+                  "成功响应": {
+                    "description": "成功响应",
+                    "value": {
+                      "success": true,
+                      "message": "获取借贷业务平台统计成功",
+                      "data": {
+                        "totalCollateralAmount": "800000.0",
+                        "totalLentAmount": "1500000.123456789012345678",
+                        "totalActiveOrders": 156,
+                        "totalInterestReceived": "85000.123456789012345678",
+                        "averageLtvRatio": "67.5",
+                        "averageLoanAmount": "9615.38",
+                        "riskStats": {
+                          "safeOrders": 120,
+                          "warningOrders": 28,
+                          "riskOrders": 8
+                        },
+                        "rateStats": {
+                          "averageAnnualRate": "12.50",
+                          "minAnnualRate": "10.00",
+                          "maxAnnualRate": "15.00"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "错误响应": {
+                    "description": "错误响应",
+                    "value": {
+                      "success": false,
+                      "message": "获取借贷业务平台统计失败",
+                      "errorCode": "INTERNAL_SERVER_ERROR"
+                    }
+                  }
                 }
               }
             }
@@ -19959,55 +20390,6 @@
         }
       }
     },
-    "/actuator": {
-      "get": {
-        "tags": [
-          "Actuator"
-        ],
-        "summary": "Actuator root web endpoint",
-        "operationId": "links",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.spring-boot.actuator.v3+json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "$ref": "#/components/schemas/Link"
-                    }
-                  }
-                }
-              },
-              "application/vnd.spring-boot.actuator.v2+json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "$ref": "#/components/schemas/Link"
-                    }
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "$ref": "#/components/schemas/Link"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/nationality/blacklist/remove/{countryCode}": {
       "delete": {
         "tags": [
@@ -21887,17 +22269,17 @@
             "maxLength": 500,
             "minLength": 0
           },
-          "validMimeTypeForFileType": {
-            "type": "boolean"
-          },
-          "validFileSizeForFileType": {
-            "type": "boolean"
-          },
           "extensionMatchesMimeType": {
             "type": "boolean"
           },
           "formattedFileSize": {
             "type": "string"
+          },
+          "validFileSizeForFileType": {
+            "type": "boolean"
+          },
+          "validMimeTypeForFileType": {
+            "type": "boolean"
           },
           "fileExtension": {
             "type": "string"
@@ -22102,14 +22484,17 @@
             "maxItems": 3,
             "minItems": 1
           },
-          "multipleFilesValidationError": {
-            "type": "string"
-          },
           "complete": {
             "type": "boolean"
           },
+          "multipleFilesValidationError": {
+            "type": "string"
+          },
           "validationError": {
             "type": "string"
+          },
+          "otherDocumentDescriptionRequired": {
+            "type": "boolean"
           },
           "allFileIds": {
             "type": "array",
@@ -22118,9 +22503,6 @@
             }
           },
           "usingMultipleFileMode": {
-            "type": "boolean"
-          },
-          "otherDocumentDescriptionRequired": {
             "type": "boolean"
           }
         },
@@ -23212,11 +23594,11 @@
           "validationError": {
             "type": "string"
           },
-          "formattedRevokeReason": {
-            "type": "string"
-          },
           "validRevokeReason": {
             "type": "boolean"
+          },
+          "formattedRevokeReason": {
+            "type": "string"
           }
         },
         "required": [
@@ -23243,16 +23625,16 @@
             "maxLength": 1000,
             "minLength": 0
           },
-          "statusDescription": {
-            "type": "string"
-          },
           "validationError": {
             "type": "string"
           },
-          "approved": {
-            "type": "boolean"
+          "statusDescription": {
+            "type": "string"
           },
           "rejected": {
+            "type": "boolean"
+          },
+          "approved": {
             "type": "boolean"
           },
           "validReviewStatus": {
@@ -23568,6 +23950,10 @@
       "IPageSavingsInterestDto": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -23584,10 +23970,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -23663,6 +24045,10 @@
       "IPageSavingsClaimDto": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -23679,10 +24065,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -24016,6 +24398,10 @@
       "IPagePointsRecordResponse": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -24032,10 +24418,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -24145,26 +24527,26 @@
             "description": "记录创建时间",
             "example": "2024-01-20T08:30:00"
           },
-          "earnRecord": {
-            "type": "boolean"
-          },
-          "adminOperation": {
-            "type": "boolean"
-          },
-          "userOperation": {
-            "type": "boolean"
-          },
-          "consumeRecord": {
-            "type": "boolean"
-          },
-          "systemOperation": {
-            "type": "boolean"
-          },
           "operationTypeClass": {
             "type": "string"
           },
           "operatorTypeClass": {
             "type": "string"
+          },
+          "systemOperation": {
+            "type": "boolean"
+          },
+          "earnRecord": {
+            "type": "boolean"
+          },
+          "consumeRecord": {
+            "type": "boolean"
+          },
+          "userOperation": {
+            "type": "boolean"
+          },
+          "adminOperation": {
+            "type": "boolean"
           }
         }
       },
@@ -24399,22 +24781,22 @@
             "description": "放款时间",
             "example": "2024-01-20 10:31:00"
           },
+          "actualReceiveAmount": {
+            "type": "number"
+          },
           "statusDescription": {
             "type": "string"
           },
-          "actualReceiveAmount": {
+          "annualRateAsPercentage": {
+            "type": "number"
+          },
+          "collateralAmountStandard": {
             "type": "number"
           },
           "finalStatus": {
             "type": "boolean"
           },
           "ltvRatioAsPercentage": {
-            "type": "number"
-          },
-          "annualRateAsPercentage": {
-            "type": "number"
-          },
-          "collateralAmountStandard": {
             "type": "number"
           }
         }
@@ -24494,10 +24876,7 @@
               "$ref": "#/components/schemas/LoanOrderDto"
             }
           },
-          "repaymentCompletionRate": {
-            "type": "number"
-          },
-          "maxLtvRatioAsPercentage": {
+          "averageLtvRatioAsPercentage": {
             "type": "number"
           },
           "riskNotice": {
@@ -24506,7 +24885,10 @@
           "borrowingExperienceLevel": {
             "type": "string"
           },
-          "averageLtvRatioAsPercentage": {
+          "repaymentCompletionRate": {
+            "type": "number"
+          },
+          "maxLtvRatioAsPercentage": {
             "type": "number"
           }
         }
@@ -24540,6 +24922,10 @@
       "IPageLoanOrderDto": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -24556,10 +24942,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -24759,6 +25141,10 @@
       "IPageMapStringObject": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -24778,10 +25164,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -24817,12 +25199,12 @@
             "maxLength": 100,
             "minLength": 0
           },
-          "processedKeyword": {
-            "type": "string"
-          },
           "offset": {
             "type": "integer",
             "format": "int64"
+          },
+          "processedKeyword": {
+            "type": "string"
           }
         },
         "required": [
@@ -25019,10 +25401,10 @@
             "description": "状态描述",
             "example": "正常"
           },
-          "disabled": {
+          "locked": {
             "type": "boolean"
           },
-          "locked": {
+          "disabled": {
             "type": "boolean"
           }
         },
@@ -25208,6 +25590,10 @@
       "IPageUserFundsOperationDto": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -25224,10 +25610,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -25262,6 +25644,10 @@
       "IPageUserFundsWithdrawAuditDto": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -25278,10 +25664,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -25893,6 +26275,321 @@
           }
         }
       },
+      "PlatformFundsOverviewDto": {
+        "type": "object",
+        "description": "平台资金总览统计信息",
+        "example": {
+          "totalVgauStaked": "1250000.0",
+          "totalVgauCollateral": "800000.0",
+          "totalUsdtLent": "1500000.123456789012345678",
+          "totalUserVgauFunds": "2000000.0",
+          "totalUserUsdtFunds": "3000000.123456789012345678",
+          "totalActiveStakeOrders": 245,
+          "totalActiveLoanOrders": 156,
+          "totalStakeProducts": 12,
+          "totalStakeValue": "1662500.0",
+          "totalCollateralValue": "1064000.0",
+          "vgauStakeUtilization": "62.5",
+          "vgauCollateralUtilization": "40.0",
+          "usdtLendingUtilization": "50.0",
+          "averageLtvRatio": "67.5",
+          "riskWarningOrders": 8,
+          "liquidationRiskOrders": 2,
+          "totalStakeInterestPaid": "125000.123456789012345678",
+          "totalLoanInterestReceived": "85000.123456789012345678",
+          "totalPlatformRevenue": "15000.123456789012345678",
+          "lastUpdatedAt": "2024-01-20T10:30:00Z"
+        },
+        "properties": {
+          "totalVgauStaked": {
+            "type": "string",
+            "description": "平台总VGAU质押量",
+            "example": 1250000
+          },
+          "totalVgauCollateral": {
+            "type": "string",
+            "description": "平台总VGAU抵押量",
+            "example": 800000
+          },
+          "totalUsdtLent": {
+            "type": "string",
+            "description": "平台总USDT借出量",
+            "example": 1500000.12345679
+          },
+          "totalUserVgauFunds": {
+            "type": "string",
+            "description": "用户总VGAU资金",
+            "example": 2000000
+          },
+          "totalUserUsdtFunds": {
+            "type": "string",
+            "description": "用户总USDT资金",
+            "example": 3000000.12345679
+          },
+          "totalActiveStakeOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "活跃质押订单数量",
+            "example": 245
+          },
+          "totalActiveLoanOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "活跃借贷订单数量",
+            "example": 156
+          },
+          "totalStakeProducts": {
+            "type": "integer",
+            "format": "int64",
+            "description": "质押产品数量",
+            "example": 12
+          },
+          "totalStakeValue": {
+            "type": "string",
+            "description": "质押总价值（USDT计价）",
+            "example": 1662500
+          },
+          "totalCollateralValue": {
+            "type": "string",
+            "description": "抵押总价值（USDT计价）",
+            "example": 1064000
+          },
+          "vgauStakeUtilization": {
+            "type": "string",
+            "description": "VGAU质押利用率（百分比）",
+            "example": 62.5
+          },
+          "vgauCollateralUtilization": {
+            "type": "string",
+            "description": "VGAU抵押利用率（百分比）",
+            "example": 40
+          },
+          "usdtLendingUtilization": {
+            "type": "string",
+            "description": "USDT借贷利用率（百分比）",
+            "example": 50
+          },
+          "averageLtvRatio": {
+            "type": "string",
+            "description": "平均质押率（百分比）",
+            "example": 67.5
+          },
+          "riskWarningOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "风险预警订单数量",
+            "example": 8
+          },
+          "liquidationRiskOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "清算风险订单数量",
+            "example": 2
+          },
+          "totalStakeInterestPaid": {
+            "type": "string",
+            "description": "累计质押利息支出",
+            "example": 125000.123456789
+          },
+          "totalLoanInterestReceived": {
+            "type": "string",
+            "description": "累计借贷利息收入",
+            "example": 85000.123456789
+          },
+          "totalPlatformRevenue": {
+            "type": "string",
+            "description": "平台总收益",
+            "example": 15000.123456789
+          },
+          "lastUpdatedAt": {
+            "type": "string",
+            "description": "数据最后更新时间（ISO 8601格式）",
+            "example": "2024-01-20T10:30:00Z"
+          }
+        },
+        "required": [
+          "averageLtvRatio",
+          "lastUpdatedAt",
+          "liquidationRiskOrders",
+          "riskWarningOrders",
+          "totalActiveLoanOrders",
+          "totalActiveStakeOrders",
+          "totalCollateralValue",
+          "totalLoanInterestReceived",
+          "totalPlatformRevenue",
+          "totalStakeInterestPaid",
+          "totalStakeProducts",
+          "totalStakeValue",
+          "totalUsdtLent",
+          "totalUserUsdtFunds",
+          "totalUserVgauFunds",
+          "totalVgauCollateral",
+          "totalVgauStaked",
+          "usdtLendingUtilization",
+          "vgauCollateralUtilization",
+          "vgauStakeUtilization"
+        ]
+      },
+      "CurrencyStatDto": {
+        "type": "object",
+        "description": "币种统计明细",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "description": "货币类型",
+            "enum": [
+              "USDT",
+              "VGAU"
+            ],
+            "example": "USDT"
+          },
+          "totalAmount": {
+            "type": "string",
+            "description": "用户总持有量",
+            "example": 3000000.12345679
+          },
+          "availableAmount": {
+            "type": "string",
+            "description": "可用总量",
+            "example": 2500000.12345679
+          },
+          "frozenAmount": {
+            "type": "string",
+            "description": "冻结总量",
+            "example": 500000.123456789
+          },
+          "userCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "持有该币种的用户数",
+            "example": 1245
+          }
+        },
+        "required": [
+          "availableAmount",
+          "currency",
+          "frozenAmount",
+          "totalAmount",
+          "userCount"
+        ]
+      },
+      "FundDistributionDto": {
+        "type": "object",
+        "description": "资金分布明细",
+        "properties": {
+          "stakingFrozen": {
+            "type": "string",
+            "description": "质押冻结的VGAU数量",
+            "example": 300000
+          },
+          "collateralFrozen": {
+            "type": "string",
+            "description": "抵押冻结的VGAU数量",
+            "example": 800000
+          },
+          "withdrawalFrozen": {
+            "type": "string",
+            "description": "提现冻结的USDT金额",
+            "example": 50000.123456789
+          },
+          "savingsFrozen": {
+            "type": "string",
+            "description": "活期冻结金额",
+            "example": 0
+          }
+        },
+        "required": [
+          "collateralFrozen",
+          "savingsFrozen",
+          "stakingFrozen",
+          "withdrawalFrozen"
+        ]
+      },
+      "UserActivityDto": {
+        "type": "object",
+        "description": "用户活跃度明细",
+        "properties": {
+          "totalUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "平台总用户数",
+            "example": 2500
+          },
+          "activeUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "有余额的用户数",
+            "example": 1245
+          },
+          "stakingUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "有质押订单的用户数",
+            "example": 245
+          },
+          "lendingUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "有借贷订单的用户数",
+            "example": 156
+          }
+        },
+        "required": [
+          "activeUsers",
+          "lendingUsers",
+          "stakingUsers",
+          "totalUsers"
+        ]
+      },
+      "UserFundsPlatformOverviewDto": {
+        "type": "object",
+        "description": "用户资金平台总览统计信息",
+        "example": {
+          "currencyStats": [
+            {
+              "currency": "USDT",
+              "totalAmount": "3000000.123456789012345678",
+              "availableAmount": "2500000.123456789012345678",
+              "frozenAmount": "500000.123456789012345678",
+              "userCount": 1245
+            }
+          ],
+          "fundDistribution": {
+            "stakingFrozen": "300000.0",
+            "collateralFrozen": "800000.0",
+            "withdrawalFrozen": "50000.123456789012345678",
+            "savingsFrozen": "0.0"
+          },
+          "userActivity": {
+            "totalUsers": 2500,
+            "activeUsers": 1245,
+            "stakingUsers": 245,
+            "lendingUsers": 156
+          }
+        },
+        "properties": {
+          "currencyStats": {
+            "type": "array",
+            "description": "按币种分组的资金统计",
+            "items": {
+              "$ref": "#/components/schemas/CurrencyStatDto"
+            }
+          },
+          "fundDistribution": {
+            "$ref": "#/components/schemas/FundDistributionDto",
+            "description": "资金分布详情"
+          },
+          "userActivity": {
+            "$ref": "#/components/schemas/UserActivityDto",
+            "description": "用户活跃度统计"
+          }
+        },
+        "required": [
+          "currencyStats",
+          "fundDistribution",
+          "userActivity"
+        ]
+      },
       "CommonApiResponseIPageUserFundsLedgerDto": {
         "type": "object",
         "description": "统一API响应结构",
@@ -25922,6 +26619,10 @@
       "IPageUserFundsLedgerDto": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -25938,10 +26639,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -26156,6 +26853,160 @@
           }
         }
       },
+      "DurationStakeStatDto": {
+        "type": "object",
+        "description": "期限质押统计明细",
+        "properties": {
+          "lockDays": {
+            "type": "integer",
+            "format": "int32",
+            "description": "锁定天数",
+            "example": 7
+          },
+          "totalStaked": {
+            "type": "string",
+            "description": "该期限总质押金额",
+            "example": 400000
+          },
+          "orderCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "该期限订单数量",
+            "example": 89
+          }
+        },
+        "required": [
+          "lockDays",
+          "orderCount",
+          "totalStaked"
+        ]
+      },
+      "ProductStakeStatDto": {
+        "type": "object",
+        "description": "产品质押统计明细",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "description": "产品ID",
+            "example": "stake_prod_7d_001"
+          },
+          "productName": {
+            "type": "string",
+            "description": "产品名称",
+            "example": "7天短期质押"
+          },
+          "totalStaked": {
+            "type": "string",
+            "description": "该产品总质押金额",
+            "example": 300000
+          },
+          "activeOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "该产品活跃订单数",
+            "example": 65
+          },
+          "annualRate": {
+            "type": "string",
+            "description": "年化利率",
+            "example": 8.5
+          }
+        },
+        "required": [
+          "activeOrders",
+          "annualRate",
+          "productId",
+          "productName",
+          "totalStaked"
+        ]
+      },
+      "StakePlatformStatisticsDto": {
+        "type": "object",
+        "description": "质押业务平台统计信息",
+        "example": {
+          "totalStakedAmount": "1250000.0",
+          "totalActiveOrders": 245,
+          "totalCompletedOrders": 1234,
+          "totalInterestPaid": "125000.123456789012345678",
+          "averageStakeAmount": "5102.04",
+          "averageStakeDuration": 15.6,
+          "productStats": [
+            {
+              "productId": "stake_prod_7d_001",
+              "productName": "7天短期质押",
+              "totalStaked": "300000.0",
+              "activeOrders": 65,
+              "annualRate": "8.50"
+            }
+          ],
+          "durationStats": [
+            {
+              "lockDays": 7,
+              "totalStaked": "400000.0",
+              "orderCount": 89
+            }
+          ]
+        },
+        "properties": {
+          "totalStakedAmount": {
+            "type": "string",
+            "description": "总质押VGAU金额",
+            "example": 1250000
+          },
+          "totalActiveOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "活跃质押订单数量",
+            "example": 245
+          },
+          "totalCompletedOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "已完成质押订单数量",
+            "example": 1234
+          },
+          "totalInterestPaid": {
+            "type": "string",
+            "description": "累计质押利息支出（USDT）",
+            "example": 125000.123456789
+          },
+          "averageStakeAmount": {
+            "type": "string",
+            "description": "平均质押金额",
+            "example": 5102.04
+          },
+          "averageStakeDuration": {
+            "type": "number",
+            "format": "double",
+            "description": "平均质押持续天数",
+            "example": 15.6
+          },
+          "productStats": {
+            "type": "array",
+            "description": "按产品分组的质押统计",
+            "items": {
+              "$ref": "#/components/schemas/ProductStakeStatDto"
+            }
+          },
+          "durationStats": {
+            "type": "array",
+            "description": "按期限分组的质押统计",
+            "items": {
+              "$ref": "#/components/schemas/DurationStakeStatDto"
+            }
+          }
+        },
+        "required": [
+          "averageStakeAmount",
+          "averageStakeDuration",
+          "durationStats",
+          "productStats",
+          "totalActiveOrders",
+          "totalCompletedOrders",
+          "totalInterestPaid",
+          "totalStakedAmount"
+        ]
+      },
       "CommonApiResponseIPageRequestLog": {
         "type": "object",
         "description": "统一API响应结构",
@@ -26185,6 +27036,10 @@
       "IPageRequestLog": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -26201,10 +27056,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -26694,25 +27545,25 @@
           "rateModified": {
             "type": "boolean"
           },
+          "annualRateAtCreationAsPercentage": {
+            "type": "number"
+          },
           "currentCollateralValue": {
             "type": "number"
           },
           "riskLevelDescription": {
             "type": "string"
           },
-          "collateralAmountStandard": {
+          "currentAnnualRateAsPercentage": {
             "type": "number"
           },
           "initialLtvRatioAsPercentage": {
             "type": "number"
           },
-          "currentAnnualRateAsPercentage": {
-            "type": "number"
-          },
           "currentLtvRatioAsPercentage": {
             "type": "number"
           },
-          "annualRateAtCreationAsPercentage": {
+          "collateralAmountStandard": {
             "type": "number"
           }
         }
@@ -26746,6 +27597,10 @@
       "IPageAdminLoanOrderDto": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -26764,12 +27619,136 @@
           "current": {
             "type": "integer",
             "format": "int64"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int64"
           }
         }
+      },
+      "LoanPlatformStatisticsDto": {
+        "type": "object",
+        "description": "借贷业务平台统计信息",
+        "example": {
+          "totalCollateralAmount": "800000.0",
+          "totalLentAmount": "1500000.123456789012345678",
+          "totalActiveOrders": 156,
+          "totalInterestReceived": "85000.123456789012345678",
+          "averageLtvRatio": "67.5",
+          "averageLoanAmount": "9615.38",
+          "riskStats": {
+            "safeOrders": 120,
+            "warningOrders": 28,
+            "riskOrders": 8
+          },
+          "rateStats": {
+            "averageAnnualRate": "12.50",
+            "minAnnualRate": "10.00",
+            "maxAnnualRate": "15.00"
+          }
+        },
+        "properties": {
+          "totalCollateralAmount": {
+            "type": "string",
+            "description": "总抵押VGAU数量",
+            "example": 800000
+          },
+          "totalLentAmount": {
+            "type": "string",
+            "description": "总借出USDT金额",
+            "example": 1500000.12345679
+          },
+          "totalActiveOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "活跃借贷订单数",
+            "example": 156
+          },
+          "totalInterestReceived": {
+            "type": "string",
+            "description": "累计借贷利息收入（USDT）",
+            "example": 85000.123456789
+          },
+          "averageLtvRatio": {
+            "type": "string",
+            "description": "平均质押率（百分比）",
+            "example": 67.5
+          },
+          "averageLoanAmount": {
+            "type": "string",
+            "description": "平均借贷金额",
+            "example": 9615.38
+          },
+          "riskStats": {
+            "$ref": "#/components/schemas/RiskStatisticsDto",
+            "description": "风险等级统计"
+          },
+          "rateStats": {
+            "$ref": "#/components/schemas/RateStatisticsDto",
+            "description": "利率统计"
+          }
+        },
+        "required": [
+          "averageLoanAmount",
+          "averageLtvRatio",
+          "rateStats",
+          "riskStats",
+          "totalActiveOrders",
+          "totalCollateralAmount",
+          "totalInterestReceived",
+          "totalLentAmount"
+        ]
+      },
+      "RateStatisticsDto": {
+        "type": "object",
+        "description": "利率统计明细",
+        "properties": {
+          "averageAnnualRate": {
+            "type": "string",
+            "description": "平均年利率（百分比）",
+            "example": 12.5
+          },
+          "minAnnualRate": {
+            "type": "string",
+            "description": "最低年利率（百分比）",
+            "example": 10
+          },
+          "maxAnnualRate": {
+            "type": "string",
+            "description": "最高年利率（百分比）",
+            "example": 15
+          }
+        },
+        "required": [
+          "averageAnnualRate",
+          "maxAnnualRate",
+          "minAnnualRate"
+        ]
+      },
+      "RiskStatisticsDto": {
+        "type": "object",
+        "description": "风险等级统计明细",
+        "properties": {
+          "safeOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "安全订单数（LTV \u003C 70%）",
+            "example": 120
+          },
+          "warningOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "预警订单数（70% \u003C= LTV \u003C 85%）",
+            "example": 28
+          },
+          "riskOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "风险订单数（LTV \u003E= 85%）",
+            "example": 8
+          }
+        },
+        "required": [
+          "riskOrders",
+          "safeOrders",
+          "warningOrders"
+        ]
       },
       "CommonApiResponseAdminLoanOrderDto": {
         "type": "object",
@@ -26916,19 +27895,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "numberOfElements": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "first": {
-            "type": "boolean"
-          },
-          "last": {
-            "type": "boolean"
-          },
           "size": {
             "type": "integer",
             "format": "int32"
@@ -26946,6 +27912,19 @@
           "sort": {
             "$ref": "#/components/schemas/SortObject"
           },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
           "empty": {
             "type": "boolean"
           }
@@ -26954,12 +27933,19 @@
       "PageableObject": {
         "type": "object",
         "properties": {
-          "paged": {
-            "type": "boolean"
+          "offset": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
           },
           "pageNumber": {
             "type": "integer",
             "format": "int32"
+          },
+          "paged": {
+            "type": "boolean"
           },
           "pageSize": {
             "type": "integer",
@@ -26967,26 +27953,19 @@
           },
           "unpaged": {
             "type": "boolean"
-          },
-          "offset": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "sort": {
-            "$ref": "#/components/schemas/SortObject"
           }
         }
       },
       "SortObject": {
         "type": "object",
         "properties": {
+          "empty": {
+            "type": "boolean"
+          },
           "sorted": {
             "type": "boolean"
           },
           "unsorted": {
-            "type": "boolean"
-          },
-          "empty": {
             "type": "boolean"
           }
         }
@@ -27673,15 +28652,15 @@
             "maxLength": 100,
             "minLength": 0
           },
+          "offset": {
+            "type": "integer",
+            "format": "int64"
+          },
           "processedKeyword": {
             "type": "string"
           },
           "processedCategory": {
             "type": "string"
-          },
-          "offset": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -27922,6 +28901,10 @@
       "IPageAdminCashoutApplicationDetailResponse": {
         "type": "object",
         "properties": {
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
           "records": {
             "type": "array",
             "items": {
@@ -27938,10 +28921,6 @@
             "deprecated": true
           },
           "current": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "size": {
             "type": "integer",
             "format": "int64"
           }
@@ -27970,17 +28949,6 @@
             "format": "int32",
             "description": "错误码",
             "example": 0
-          }
-        }
-      },
-      "Link": {
-        "type": "object",
-        "properties": {
-          "href": {
-            "type": "string"
-          },
-          "templated": {
-            "type": "boolean"
           }
         }
       }

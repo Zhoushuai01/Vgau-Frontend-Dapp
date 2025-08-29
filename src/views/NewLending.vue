@@ -44,7 +44,9 @@
           </view>
                      <view class="available-balance">
              <text class="balance-label">{{ t('components.newLending.availableAssets') }}</text>
-             <text class="balance-amount">48,456,156 VGAU</text>
+             <text class="balance-amount" :class="{ 'loading': isLoadingBalance }">
+               {{ isLoadingBalance ? '加载中...' : `${vgauBalance} VGAU` }}
+             </text>
            </view>
         </view>
 
@@ -67,25 +69,25 @@
        <view class="details-section">
          <!-- 第一部分：抵押和清算相关比率 -->
          <view class="details-part">
-           <view class="detail-item">
-             <text class="detail-label">{{ t('components.newLending.liquidationInsuranceFee') }}</text>
-             <text class="detail-value">--</text>
-           </view>
-           
-           <view class="detail-item">
-             <text class="detail-label">{{ t('components.newLending.initialCollateralRatio') }}</text>
-             <text class="detail-value">78%</text>
-           </view>
-           
-           <view class="detail-item">
-             <text class="detail-label">{{ t('components.newLending.additionalMargin') }}</text>
-             <text class="detail-value">85%</text>
-           </view>
-           
-           <view class="detail-item">
-             <text class="detail-label">{{ t('components.newLending.forcedLiquidationCollateralRatio') }}</text>
-             <text class="detail-value">91%</text>
-           </view>
+                       <view class="detail-item">
+              <text class="detail-label">{{ t('components.newLending.liquidationInsuranceFee') }}</text>
+              <text class="detail-value">--</text>
+            </view>
+            
+            <view class="detail-item">
+              <text class="detail-label">{{ t('components.newLending.initialCollateralRatio') }}</text>
+              <text class="detail-value">{{ loanConfig.maxLtvRatio }}</text>
+            </view>
+            
+            <view class="detail-item">
+              <text class="detail-label">{{ t('components.newLending.additionalMargin') }}</text>
+              <text class="detail-value">85%</text>
+            </view>
+            
+            <view class="detail-item">
+              <text class="detail-label">{{ t('components.newLending.forcedLiquidationCollateralRatio') }}</text>
+              <text class="detail-value">{{ loanConfig.insuranceFeeRate }}</text>
+            </view>
          </view>
          
          <!-- 分割线 -->
@@ -93,10 +95,10 @@
          
          <!-- 第二部分：利率和参考价格 -->
          <view class="details-part">
-           <view class="detail-item">
-             <text class="detail-label">{{ t('components.newLending.annualInterestRate') }}</text>
-             <text class="detail-value">8.18%</text>
-           </view>
+                       <view class="detail-item">
+              <text class="detail-label">{{ t('components.newLending.annualInterestRate') }}</text>
+              <text class="detail-value">{{ loanConfig.annualRate }}</text>
+            </view>
            
            <view class="detail-item">
              <text class="detail-label">{{ t('components.newLending.netAnnualizedInterestRate') }}</text>
@@ -126,14 +128,25 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { userFundsAPI, loanAPI } from '@/api/apiService'
 
 const { t } = useI18n()
 
 // 响应式数据
 const collateralAmount = ref('')
 const borrowAmount = ref('')
+const vgauBalance = ref('0')
+const isLoadingBalance = ref(false)
+
+// 借贷配置数据
+const loanConfig = ref({
+  maxLtvRatio: '78%',        // 初始抵押比率
+  insuranceFeeRate: '--',     // 强制清算抵押比率
+  annualRate: '8.18%'         // 净年化利率
+})
+const isLoadingConfig = ref(false)
 
 // 计算可借金额（基于抵押品数量）
 const calculatedBorrowAmount = computed(() => {
@@ -152,10 +165,118 @@ const handleCollateralChange = () => {
   }
 }
 
+// 获取借贷配置
+const fetchLoanConfig = async () => {
+  try {
+    isLoadingConfig.value = true
+    console.log('📡 开始获取借贷配置...')
+    
+    const response = await loanAPI.getConfig()
+    console.log('📡 借贷配置接口响应:', response)
+    
+    if (response && response.success && response.data) {
+      // 更新借贷配置
+      loanConfig.value = {
+        maxLtvRatio: response.data.maxLtvRatio || '78%',
+        insuranceFeeRate: response.data.insuranceFeeRate || '--',
+        annualRate: response.data.annualRate || '8.18%'
+      }
+      console.log('✅ 借贷配置获取成功:', loanConfig.value)
+    } else {
+      console.warn('⚠️ 借贷配置接口返回异常:', response)
+    }
+  } catch (error) {
+    console.error('❌ 获取借贷配置失败:', error)
+    // 保持默认值，不显示错误提示
+  } finally {
+    isLoadingConfig.value = false
+  }
+}
+
+// 获取用户VGAU余额
+const fetchVGAUBalance = async () => {
+  try {
+    isLoadingBalance.value = true
+    console.log('📡 开始获取用户VGAU余额...')
+    
+         const response = await userFundsAPI.getBalances()
+     console.log('📡 VGAU余额接口响应:', response)
+     console.log('🔍 响应数据结构:', {
+       success: response?.success,
+       message: response?.message,
+       dataLength: response?.data?.length,
+       dataKeys: response?.data?.[0] ? Object.keys(response.data[0]) : [],
+       firstItem: response?.data?.[0]
+     })
+    
+         if (response && response.success && response.data) {
+       // 查找VGAU余额
+       const vgauData = response.data.find(balance => 
+         balance.currency && balance.currency.toUpperCase() === 'VGAU'
+       )
+       
+       console.log('🔍 找到的VGAU数据:', vgauData)
+       
+       if (vgauData && vgauData.availableAmount !== undefined) {
+         vgauBalance.value = formatNumber(vgauData.availableAmount)
+         console.log('✅ VGAU余额获取成功:', vgauBalance.value)
+       } else {
+         console.warn('⚠️ 未找到VGAU余额数据或availableAmount字段')
+         console.log('🔍 VGAU数据详情:', vgauData)
+         vgauBalance.value = '0'
+       }
+    } else {
+      console.warn('⚠️ VGAU余额接口返回异常:', response)
+      vgauBalance.value = '0'
+    }
+  } catch (error) {
+    console.error('❌ 获取VGAU余额失败:', error)
+    vgauBalance.value = '0'
+    
+    // 显示错误提示
+    uni.showToast({
+      title: '获取余额失败，请稍后重试',
+      icon: 'none',
+      duration: 2000
+    })
+  } finally {
+    isLoadingBalance.value = false
+  }
+}
+
+// 格式化数字显示
+const formatNumber = (number) => {
+  if (typeof number === 'string') {
+    number = parseFloat(number)
+  }
+  
+  if (isNaN(number)) {
+    return '0'
+  }
+  
+  // 如果数字很大，使用千分位分隔符
+  if (number >= 1000) {
+    return number.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })
+  }
+  
+  return number.toFixed(2)
+}
+
 // 设置最大抵押品数量
 const setMaxCollateral = () => {
-  collateralAmount.value = '10000'
-  handleCollateralChange()
+  if (vgauBalance.value && vgauBalance.value !== '0') {
+    collateralAmount.value = vgauBalance.value.replace(/,/g, '')
+    handleCollateralChange()
+  } else {
+    uni.showToast({
+      title: '请先获取余额信息',
+      icon: 'none',
+      duration: 2000
+    })
+  }
 }
 
 // 前往信息页面
@@ -196,6 +317,13 @@ const confirmLending = () => {
 const goBack = () => {
   uni.navigateBack()
 }
+
+// 页面加载时获取VGAU余额和借贷配置
+onMounted(() => {
+  console.log('🚀 NewLending页面加载完成，开始获取数据...')
+  fetchVGAUBalance()
+  fetchLoanConfig()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -413,6 +541,13 @@ const goBack = () => {
   color: rgba(255, 255, 255, 0.5);
   font-weight: 500;
 }
+
+.balance-amount.loading {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+
 
 /* 借贷详情区域 */
 .details-section {
