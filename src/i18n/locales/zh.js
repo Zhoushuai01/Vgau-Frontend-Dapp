@@ -102,6 +102,8 @@ export default {
       custodian: '託管服務',
       details: '詳細信息'
     }
+    ,
+    officialSite: 'VeriGold官網'
   },
 
   // DeFi页面

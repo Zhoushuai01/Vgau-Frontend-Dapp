@@ -101,7 +101,8 @@ export default {
       audited: 'Audited',
       custodian: 'Custody Service',
       details: 'Details'
-    }
+    },
+    officialSite: 'VeriGold Official'
   },
 
   // DeFi Page

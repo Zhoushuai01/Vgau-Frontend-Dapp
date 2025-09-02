@@ -15,6 +15,10 @@
         
         <!-- 右侧钱包连接和语言选择 -->
         <view class="right-controls">
+          <!-- 官网按钮（白色） -->
+          <view class="official-link-btn" @click="openOfficialSite">
+            <text class="official-link-text">{{ $t('home.officialSite') }}</text>
+          </view>
           <view class="connect-wallet-btn" @click="walletConnected ? showWalletModal = true : connectWallet()" :class="{ connected: walletConnected }">
             <text class="btn-text">{{ walletConnected ? formatShortAddress(currentAccount) : $t('wallet.connect') }}</text>
           </view>
@@ -235,6 +239,18 @@
   import { formatShortAddress } from '@/utils/addressUtils'
   
   const { t, locale } = useI18n()
+  
+  // 官网地址
+  const officialUrl = 'http://localhost:3000/home'
+  const openOfficialSite = () => {
+    // #ifdef H5
+    window.open(officialUrl, '_blank')
+    // #endif
+    
+    // #ifdef APP-PLUS || MP
+    uni.navigateTo({ url: officialUrl })
+    // #endif
+  }
   
   // 轮播图数据
   const banners = ref([
@@ -948,6 +964,26 @@
   font-size: 40rpx;
   color: #FFFFFF;
   margin-bottom: 16rpx;
+}
+
+/* 官网按钮（白色） */
+.official-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6rpx 16rpx; /* 更小内边距，缩小宽度 */
+  background-color: #FFFFFF;
+  border-radius: 16rpx;
+  height: 40rpx; /* 与链接钱包一致 */
+  min-width: 90rpx; /* 更小最小宽度 */
+}
+
+.official-link-text {
+  color: #000000;
+  font-size: 18rpx; /* 继续缩小字体 */
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .project-desc {
