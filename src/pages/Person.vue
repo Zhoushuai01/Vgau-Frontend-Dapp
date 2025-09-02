@@ -21,9 +21,6 @@
       <!-- 用户信息卡片 -->
       <view class="user-card">
         <view class="user-info">
-          <view class="avatar">
-            <image src="/static/logo.png" class="avatar-img" />
-          </view>
           <view class="user-details">
             <text class="username">{{ userInfo.username }}</text>
             <text class="user-id">{{ userInfo.userId }}</text>
@@ -34,9 +31,10 @@
         <view class="wallet-section">
           <view class="wallet-info">
             <text class="wallet-label">{{ $t('person.walletAddress') }}</text>
-            <text class="wallet-address">{{ formatShortAddress(walletAddress) }}</text>
+            <text class="wallet-address" v-if="walletAddress">{{ formatShortAddress(walletAddress) }}</text>
+            <text class="wallet-address no-wallet" v-else>{{ $t('person.noWalletConnected') }}</text>
           </view>
-          <view class="copy-btn" @click="copyWalletAddress">
+          <view class="copy-btn" @click="copyWalletAddress" v-if="walletAddress">
             <image src="/static/fuzhi.png" class="copy-icon" />
           </view>
         </view>
@@ -164,11 +162,12 @@ import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatShortAddress } from '@/utils/addressUtils'
 import { authAPI } from '@/api/apiService.js'
+import { checkWalletConnection } from '@/utils/walletService.js'
 
 const { t, locale } = useI18n()
 
 // 响应式数据
-const walletAddress = ref('0x7e0fbF2D6DEa2371ea8f237c056B024dA4Bc87af')
+const walletAddress = ref('')
 
 const userInfo = reactive({
   username: 'User123',
@@ -184,6 +183,31 @@ const assets = reactive({
 
 const points = ref('235')
 const showLogoutConfirmModal = ref(false)
+
+// 手动连接功能已移除（仅显示已连接地址）
+
+// 设置钱包事件监听
+const setupWalletEventListeners = () => {
+  if (typeof window.ethereum !== 'undefined') {
+    // 监听账户变化
+    window.ethereum.on('accountsChanged', (accounts) => {
+      console.log('🔄 钱包账户已切换:', accounts)
+      if (accounts.length > 0) {
+        walletAddress.value = accounts[0]
+        console.log('✅ 更新钱包地址:', accounts[0])
+      } else {
+        walletAddress.value = ''
+        console.log('⚠️ 钱包已断开连接')
+      }
+    })
+    
+    // 监听网络变化
+    window.ethereum.on('chainChanged', (chainId) => {
+      console.log('🔄 网络已切换:', chainId)
+      // 可以在这里添加网络切换的处理逻辑
+    })
+  }
+}
 
 // 复制钱包地址
 const copyWalletAddress = () => {
@@ -249,6 +273,25 @@ const showToast = (message) => {
     icon: 'success',
     duration: 2000
   })
+}
+
+// 获取连接的钱包地址
+const getConnectedWalletAddress = async () => {
+  try {
+    console.log('🔍 获取连接的钱包地址...')
+    const connectedAddress = await checkWalletConnection()
+    
+    if (connectedAddress) {
+      walletAddress.value = connectedAddress
+      console.log('✅ 获取到钱包地址:', connectedAddress)
+    } else {
+      console.log('⚠️ 未检测到连接的钱包')
+      walletAddress.value = ''
+    }
+  } catch (error) {
+    console.error('获取钱包地址失败:', error)
+    walletAddress.value = ''
+  }
 }
 
 // 获取用户信息 - 以后可以对接接口
@@ -706,7 +749,14 @@ const clearUserData = () => {
 }
 
 // 页面加载时获取数据
-onMounted(() => {
+onMounted(async () => {
+  await getConnectedWalletAddress()
+  
+  // 如果钱包已连接，设置事件监听
+  if (walletAddress.value) {
+    setupWalletEventListeners()
+  }
+  
   getUserInfo()
   getAssetsInfo()
   
@@ -959,20 +1009,7 @@ onMounted(() => {
   margin-bottom: 16rpx;
 }
 
-.avatar {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 16rpx;
-  background-color: #D9D9D9;
-  margin-right: 34rpx;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-}
+/* 头像样式已移除 */
 
 .user-details {
   display: flex;
@@ -1040,6 +1077,12 @@ onMounted(() => {
 .copy-icon {
   width: 32rpx;
   height: 32rpx;
+}
+
+/* 未连接钱包时的地址显示 */
+.wallet-address.no-wallet {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
 }
 
 

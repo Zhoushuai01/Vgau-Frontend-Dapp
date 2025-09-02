@@ -64,8 +64,8 @@
     </view>
     
     <!-- 确认兑换按钮 -->
-    <view class="confirm-btn" @click="confirmExchange">
-      <text class="confirm-text">{{ t('components.exchange.confirmExchange') }}</text>
+    <view class="confirm-btn" :class="{ 'loading': isLoading }" @click="confirmExchange">
+      <text class="confirm-text">{{ isLoading ? getLoadingTitle() : t('components.exchange.confirmExchange') }}</text>
     </view>
   </view>
   
@@ -73,45 +73,167 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import i18n from '@/i18n/i18n.js'
+import contractExchange from '@/utils/contractExchange.js'
 
 const { t } = useI18n()
+// 获取加载弹窗的纯文字标题（避免显示键值对）
+const getLoadingTitle = () => {
+  try {
+    const locale = i18n.global.locale?.value || 'en'
+    return locale.startsWith('zh') ? '正在兌換...' : 'Exchanging...'
+  } catch (e) {
+    return 'Exchanging...'
+  }
+}
 
 // 兑换数量
 const exchangeAmount = ref('')
+const isLoading = ref(false)
+const currentPrice = ref(120) // 默认价格，将从合约获取
 
 // 计算所需USDT
-const requiredUSDT = computed(() => {
+const requiredUSDT = ref('0')
+
+// 计算所需USDT的函数
+const calculateRequiredUSDT = async () => {
   if (!exchangeAmount.value || isNaN(exchangeAmount.value)) {
-    return '0'
+    requiredUSDT.value = '0'
+    return
   }
-  const amount = parseFloat(exchangeAmount.value)
-  return (amount * 120).toFixed(2)
-})
+  
+  try {
+    const amount = parseFloat(exchangeAmount.value)
+    console.log('🔍 计算所需USDT:', amount)
+    
+    const result = await contractExchange.getRequiredUSDT(amount)
+    
+    console.log('📊 计算结果:', result)
+    // 直接使用数字值，保留两位小数
+    requiredUSDT.value = result.formatted.toFixed(2)
+  } catch (error) {
+    console.error('计算所需USDT失败:', error)
+    requiredUSDT.value = '0'
+  }
+}
+
+// 获取最新价格
+const getLatestPrice = async () => {
+  try {
+    const price = await contractExchange.getLatestGoldPrice()
+    // 黄金价格通常有8位小数
+    currentPrice.value = parseFloat(price) / Math.pow(10, 8)
+    console.log('获取到最新黄金价格:', currentPrice.value)
+  } catch (error) {
+    console.error('获取价格失败:', error)
+    currentPrice.value = 120
+  }
+}
 
 // 确认兑换
-const confirmExchange = () => {
+const confirmExchange = async () => {
   if (!exchangeAmount.value || parseFloat(exchangeAmount.value) <= 0) {
     uni.showToast({
-      title: t('common.pleaseEnterValidAmount'),
+      title: i18n.global.t('common.pleaseEnterValidAmount'),
       icon: 'none',
       duration: 2000
     })
     return
   }
-  
-  uni.showToast({
-    title: t('components.exchange.exchangeFeature'),
-    icon: 'none',
-    duration: 2000
-  })
+
+  if (isLoading.value) {
+    return
+  }
+
+  try {
+    isLoading.value = true
+    
+    // 显示加载提示（使用纯文字，避免键值对显示）
+    uni.showLoading({
+      title: getLoadingTitle(),
+      mask: true
+    })
+
+    console.log('🚀 开始USDT兑换VGAU流程...')
+    console.log('兑换数量:', exchangeAmount.value, 'VGAU')
+
+    // 调用合约兑换
+    const result = await contractExchange.exchangeUsdtToVgau(exchangeAmount.value)
+    
+    // 隐藏加载提示
+    uni.hideLoading()
+
+    console.log('✅ 兑换成功:', result)
+
+    // 显示成功提示
+    uni.showToast({
+      title: i18n.global.t('components.exchange.exchangeSuccess'),
+      icon: 'success',
+      duration: 3000
+    })
+
+    // 清空输入框
+    exchangeAmount.value = ''
+
+    // 可以在这里添加跳转到成功页面或其他逻辑
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 2000)
+
+  } catch (error) {
+    console.error('❌ 兑换失败:', error)
+    
+    // 隐藏加载提示
+    uni.hideLoading()
+    
+    // 显示错误信息
+    let errorMessage = i18n.global.t('components.exchange.exchangeFailed')
+    
+    if (error.errorType === 'KYC_REQUIRED') {
+      errorMessage = error.message
+    } else if (error.message) {
+      if (error.message.includes('余额不足')) {
+        errorMessage = error.message
+      } else if (error.message.includes('用户取消') || error.message.includes('User rejected')) {
+        errorMessage = i18n.global.t('common.userRejected')
+      } else if (error.message.includes('网络')) {
+        errorMessage = i18n.global.t('common.networkError')
+      } else if (error.message.includes('Gas')) {
+        errorMessage = i18n.global.t('common.gasInsufficient')
+      }
+    }
+
+    uni.showModal({
+      title: i18n.global.t('common.error'),
+      content: errorMessage,
+      showCancel: false,
+      confirmText: i18n.global.t('common.confirm')
+    })
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 返回上一页
 const goBack = () => {
   uni.navigateBack()
 }
+
+// 监听兑换数量变化，自动计算所需USDT
+watch(exchangeAmount, () => {
+  calculateRequiredUSDT()
+}, { immediate: false })
+
+// 页面加载时获取最新价格
+onMounted(async () => {
+  try {
+    await getLatestPrice()
+  } catch (error) {
+    console.error('初始化价格失败:', error)
+  }
+})
 </script>
 
 <style scoped>
@@ -332,6 +454,12 @@ const goBack = () => {
   align-items: center;
   justify-content: center;
   margin: 0 32rpx 120rpx;
+  transition: all 0.3s ease;
+}
+
+.confirm-btn.loading {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.6) 0%, rgba(255, 165, 0, 0.6) 100%);
+  pointer-events: none;
 }
 
 .confirm-text {
@@ -410,4 +538,4 @@ const goBack = () => {
     padding: 24rpx;
   }
 }
-</style> 
+</style>

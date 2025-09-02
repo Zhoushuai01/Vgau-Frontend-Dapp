@@ -49,7 +49,7 @@
                 <text class="balance-text">{{ t('availableBalance') }}</text>
               </view>
               <view class="balance-amount">
-                <text class="amount-text">48,456.156 VGAU</text>
+                <text class="amount-text">{{ vgauAvailable }} VGAU</text>
               </view>
             </view>
             
@@ -93,13 +93,38 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { userFundsAPI } from '@/api/apiService.js'
 
 const { t } = useI18n()
 
 // 输入金额
 const inputAmount = ref('')
+// 可用VGAU余额（后端返回）
+const vgauAvailable = ref('0.00')
+
+// 加载后端可用余额
+const loadVgauAvailable = async () => {
+  try {
+    const res = await userFundsAPI.getBalances()
+    // 期望结构：{ success: true, data: [{ currency:'VGAU', availableAmount:'...' }, ...] }
+    const list = res?.data || []
+    const vgau = list.find(item => item?.currency === 'VGAU')
+    if (vgau && typeof vgau.availableAmount === 'string') {
+      vgauAvailable.value = (parseFloat(vgau.availableAmount) || 0).toFixed(2)
+    } else {
+      vgauAvailable.value = '0.00'
+    }
+  } catch (e) {
+    console.error('获取后端VGAU余额失败:', e)
+    vgauAvailable.value = '0.00'
+  }
+}
+
+onMounted(() => {
+  loadVgauAvailable()
+})
 
 // 返回上一页
 const goBack = () => {

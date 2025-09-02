@@ -64,8 +64,8 @@
     </view>
     
     <!-- 确认赎回按钮 -->
-    <view class="confirm-btn" @click="confirmRedeem">
-      <text class="confirm-text">{{ t('components.redeem.confirmRedeem') }}</text>
+    <view class="confirm-btn" :class="{ 'loading': isLoading }" @click="confirmRedeem">
+      <text class="confirm-text">{{ isLoading ? t('components.redeem.redeeming') : t('components.redeem.confirmRedeem') }}</text>
     </view>
 
     <!-- 成功弹窗 -->
@@ -84,26 +84,58 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import contractExchange from '@/utils/contractExchange.js'
 
 const { t } = useI18n()
 
 // 赎回数量
 const redeemAmount = ref('')
 const showSuccessModal = ref(false)
+const isLoading = ref(false)
+const currentPrice = ref(120) // 默认价格，将从合约获取
 
 // 计算所需USDT
-const requiredUSDT = computed(() => {
+const requiredUSDT = ref('0')
+
+// 计算所需USDT的函数
+const calculateRequiredUSDT = async () => {
   if (!redeemAmount.value || isNaN(redeemAmount.value)) {
-    return '0'
+    requiredUSDT.value = '0'
+    return
   }
-  const amount = parseFloat(redeemAmount.value)
-  return (amount * 120).toFixed(2)
-})
+  
+  try {
+    const amount = parseFloat(redeemAmount.value)
+    console.log('🔍 计算赎回USDT:', amount)
+    
+    const result = await contractExchange.getRequiredUSDT(amount)
+    
+    console.log('📊 计算结果:', result)
+    // 直接使用数字值，保留两位小数
+    requiredUSDT.value = result.formatted.toFixed(2)
+  } catch (error) {
+    console.error('计算所需USDT失败:', error)
+    requiredUSDT.value = '0'
+  }
+}
+
+// 获取最新价格
+const getLatestPrice = async () => {
+  try {
+    const price = await contractExchange.getLatestGoldPrice()
+    // 黄金价格通常有8位小数
+    currentPrice.value = parseFloat(price) / Math.pow(10, 8)
+    console.log('获取到最新黄金价格:', currentPrice.value)
+  } catch (error) {
+    console.error('获取价格失败:', error)
+    currentPrice.value = 120
+  }
+}
 
 // 确认赎回
-const confirmRedeem = () => {
+const confirmRedeem = async () => {
   if (!redeemAmount.value || parseFloat(redeemAmount.value) <= 0) {
     uni.showToast({
       title: t('common.pleaseEnterValidAmount'),
@@ -112,9 +144,66 @@ const confirmRedeem = () => {
     })
     return
   }
-  
-  // 显示成功弹窗
-  showSuccessModal.value = true
+
+  if (isLoading.value) {
+    return
+  }
+
+  try {
+    isLoading.value = true
+    
+    // 显示加载提示
+    uni.showLoading({
+      title: t('components.redeem.redeeming'),
+      mask: true
+    })
+
+    console.log('🚀 开始VGAU赎回USDT流程...')
+    console.log('赎回数量:', redeemAmount.value, 'VGAU')
+
+    // 调用合约赎回
+    const result = await contractExchange.exchangeVgauToUsdt(redeemAmount.value)
+    
+    // 隐藏加载提示
+    uni.hideLoading()
+
+    console.log('✅ 赎回成功:', result)
+
+    // 显示成功弹窗
+    showSuccessModal.value = true
+
+  } catch (error) {
+    console.error('❌ 赎回失败:', error)
+    
+    // 隐藏加载提示
+    uni.hideLoading()
+    
+    // 显示错误信息
+    let errorMessage = t('components.redeem.redeemFailed')
+    
+    if (error.errorType === 'KYC_REQUIRED') {
+      errorMessage = error.message
+    } else if (error.message) {
+      if (error.message.includes('余额不足')) {
+        errorMessage = error.message
+      } else if (error.message.includes('用户取消') || error.message.includes('User rejected')) {
+        errorMessage = t('common.userRejected')
+      } else if (error.message.includes('网络')) {
+        errorMessage = t('common.networkError')
+      } else if (error.message.includes('Gas')) {
+        errorMessage = t('common.gasInsufficient')
+      }
+    }
+
+    uni.showModal({
+      title: t('common.error'),
+      content: errorMessage,
+      showCancel: false,
+      confirmText: t('common.confirm')
+    })
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 返回上一页
@@ -128,6 +217,20 @@ const closeModal = () => {
   // 清空输入
   redeemAmount.value = ''
 }
+
+// 监听赎回数量变化，自动计算所需USDT
+watch(redeemAmount, () => {
+  calculateRequiredUSDT()
+}, { immediate: false })
+
+// 页面加载时获取最新价格
+onMounted(async () => {
+  try {
+    await getLatestPrice()
+  } catch (error) {
+    console.error('初始化价格失败:', error)
+  }
+})
 </script>
 
 <style scoped>
@@ -348,6 +451,12 @@ const closeModal = () => {
   align-items: center;
   justify-content: center;
   margin: 0 32rpx 120rpx;
+  transition: all 0.3s ease;
+}
+
+.confirm-btn.loading {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.6) 0%, rgba(255, 165, 0, 0.6) 100%);
+  pointer-events: none;
 }
 
 .confirm-text {
@@ -495,4 +604,4 @@ const closeModal = () => {
     padding: 24rpx;
   }
 }
-</style> 
+</style>

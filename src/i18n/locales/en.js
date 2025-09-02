@@ -149,6 +149,13 @@ export default {
     walletAddress: 'Wallet Address',
     walletAddressCopied: 'Wallet address copied!',
     copyFailed: 'Copy failed',
+    noWalletConnected: 'No wallet connected',
+    connectWallet: 'Connect Wallet',
+    connectingWallet: 'Connecting wallet...',
+    walletConnected: 'Wallet connected successfully',
+    walletConnectionFailed: 'Wallet connection failed',
+    userRejectedConnection: 'User rejected connection',
+    noWalletDetected: 'No wallet detected',
     assetOverview: 'Asset Overview',
     currentStakedAmount: 'Current Staked Amount',
     totalStakedRewards: 'Total Staked Rewards',
@@ -595,6 +602,23 @@ export default {
 
   // Component Specific Keys
   components: {
+    // Exchange
+    exchange: {
+      title: 'Exchange',
+      brandTitle: 'VGAU',
+      brandSubtitle: 'Digital Gold',
+      brandDescription: 'Secure, transparent, trusted digital gold exchange service',
+      rateText: '1 VGAU = Current Gold Price',
+      currency1: 'USDT',
+      currency2: 'VGAU',
+      exchangeAmountPlaceholder: 'Enter exchange amount',
+      requiredUSDT: 'Required USDT',
+      exchanging: 'Exchanging...',
+      exchangeSuccess: 'Exchange Successful',
+      exchangeFailed: 'Exchange Failed',
+      confirmExchange: 'Confirm Exchange'
+    },
+
     // IncreaseCollateral
     increaseCollateral: {
       title: 'Increase Collateral Amount',

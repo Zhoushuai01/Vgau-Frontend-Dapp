@@ -1,0 +1,328 @@
+import web3Service from './web3.js'
+import VGAUExchangeABI from '@/vgau-contracts_bsc-testnet_20250820/abi/VGAUExchange.sol/VGAUExchange.json'
+import USDTABI from '@/vgau-contracts_bsc-testnet_20250820/abi/BEP20USDT.json'
+import VGAUABI from '@/vgau-contracts_bsc-testnet_20250820/abi/VGAUToken.sol/VGAUToken.json'
+
+// 合约地址配置
+const CONTRACT_ADDRESSES = {
+  VGAU_EXCHANGE: '0xbEe820f5ACA3a90f21af24a6573F69E3D3232609',
+  USDT_TOKEN: '0xf6307065A593840680765889Fc16461bC7781231',
+  VGAU_TOKEN: '0x75579C9FB3A30e7c3CaBB5c74E4A6c0DB1e2054d'
+}
+
+class ContractExchange {
+  constructor() {
+    this.isInitialized = false
+  }
+
+  // 初始化合约
+  async init() {
+    try {
+      if (this.isInitialized) return true
+
+      console.log('🔧 初始化合约交换服务...')
+
+      // 初始化web3服务
+      const web3Initialized = await web3Service.init()
+      if (!web3Initialized) {
+        throw new Error('Web3初始化失败')
+      }
+
+      // 连接钱包
+      const walletConnected = await web3Service.connectWallet()
+      if (!walletConnected.success) {
+        throw new Error('钱包连接失败')
+      }
+
+      // 加载合约
+      await web3Service.loadContract(CONTRACT_ADDRESSES.VGAU_EXCHANGE, VGAUExchangeABI.abi, 'VGAUExchange')
+      await web3Service.loadContract(CONTRACT_ADDRESSES.USDT_TOKEN, USDTABI, 'USDTToken')
+      await web3Service.loadContract(CONTRACT_ADDRESSES.VGAU_TOKEN, VGAUABI.abi, 'VGAUToken')
+
+      this.isInitialized = true
+      console.log('✅ 合约交换服务初始化成功')
+      return true
+    } catch (error) {
+      console.error('❌ 合约交换服务初始化失败:', error)
+      throw error
+    }
+  }
+
+  // 获取USDT授权额度
+  async getUSDTAllowance() {
+    try {
+      await this.init()
+      
+      const allowance = await web3Service.callContractMethod(
+        'USDTToken',
+        'allowance',
+        web3Service.currentAccount,
+        CONTRACT_ADDRESSES.VGAU_EXCHANGE
+      )
+
+      console.log('📊 USDT授权额度:', allowance)
+      return allowance
+    } catch (error) {
+      console.error('❌ 获取USDT授权额度失败:', error)
+      throw error
+    }
+  }
+
+  // 获取VGAU授权额度
+  async getVGAUAllowance() {
+    try {
+      await this.init()
+      
+      const allowance = await web3Service.callContractMethod(
+        'VGAUToken',
+        'allowance',
+        web3Service.currentAccount,
+        CONTRACT_ADDRESSES.VGAU_EXCHANGE
+      )
+
+      console.log('📊 VGAU授权额度:', allowance)
+      return allowance
+    } catch (error) {
+      console.error('❌ 获取VGAU授权额度失败:', error)
+      throw error
+    }
+  }
+
+  // 授权USDT
+  async approveUSDT(amount) {
+    try {
+      await this.init()
+
+      console.log('🔐 授权USDT:', amount)
+      
+      const transaction = await web3Service.sendTransaction(
+        'USDTToken',
+        'approve',
+        { from: web3Service.currentAccount },
+        CONTRACT_ADDRESSES.VGAU_EXCHANGE,
+        amount
+      )
+
+      console.log('✅ USDT授权成功:', transaction.transactionHash)
+      return transaction
+    } catch (error) {
+      console.error('❌ USDT授权失败:', error)
+      throw error
+    }
+  }
+
+  // 授权VGAU
+  async approveVGAU(amount) {
+    try {
+      await this.init()
+
+      console.log('🔐 授权VGAU:', amount)
+      
+      const transaction = await web3Service.sendTransaction(
+        'VGAUToken',
+        'approve',
+        { from: web3Service.currentAccount },
+        CONTRACT_ADDRESSES.VGAU_EXCHANGE,
+        amount
+      )
+
+      console.log('✅ VGAU授权成功:', transaction.transactionHash)
+      return transaction
+    } catch (error) {
+      console.error('❌ VGAU授权失败:', error)
+      throw error
+    }
+  }
+
+  // USDT兑换VGAU
+  async exchangeUsdtToVgau(vgauAmount) {
+    try {
+      await this.init()
+
+      console.log('💱 开始USDT兑换VGAU...')
+      console.log('目标VGAU数量:', vgauAmount)
+
+      // VGAU精度为0，直接使用整数数量
+      const vgauAmountUnits = parseInt(vgauAmount.toString(), 10).toString()
+      console.log('VGAU数量(单位):', vgauAmountUnits)
+
+      // 1. 计算所需USDT
+      console.log('🔍 计算所需USDT...')
+      const requiredUSDT = await web3Service.callContractMethod(
+        'VGAUExchange',
+        'getRequiredUSDTByVGAU',
+        vgauAmountUnits,
+        await this.getLatestGoldPrice()
+      )
+
+      console.log('所需USDT(wei):', requiredUSDT)
+
+      // 2. 检查USDT授权额度
+      console.log('🔍 检查USDT授权额度...')
+      const allowance = await this.getUSDTAllowance()
+      console.log('当前授权额度:', allowance)
+      
+      if (allowance === '0') {
+        console.log('✅ 授权额度为0，直接授权所需金额...')
+        await this.approveUSDT(requiredUSDT)
+        
+        // 等待授权确认
+        await new Promise(resolve => setTimeout(resolve, 3000))
+      } else {
+        console.log('🔄 授权额度不为0，需要先清零...')
+        await this.approveUSDT('0')
+        
+        // 等待清零确认
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        
+        console.log('🔐 重新授权所需USDT...')
+        await this.approveUSDT(requiredUSDT)
+        
+        // 等待授权确认
+        await new Promise(resolve => setTimeout(resolve, 3000))
+      }
+
+      // 3. 执行兑换
+      console.log('💱 执行兑换交易...')
+      const transaction = await web3Service.sendTransaction(
+        'VGAUExchange',
+        'exchangeUsdtToExactVgau',
+        { from: web3Service.currentAccount },
+        vgauAmountUnits
+      )
+
+      console.log('✅ USDT兑换VGAU成功:', transaction.transactionHash)
+      return transaction
+    } catch (error) {
+      console.error('❌ USDT兑换VGAU失败:', error)
+      
+      // 处理KYC相关错误
+      if (error.message && error.message.includes('wallet address must be bound and KYC')) {
+        const kycError = new Error('请先完成钱包绑定和KYC认证后再进行大额兑换')
+        kycError.errorType = 'KYC_REQUIRED'
+        throw kycError
+      }
+      
+      throw error
+    }
+  }
+
+  // VGAU赎回USDT
+  async exchangeVgauToUsdt(vgauAmount) {
+    try {
+      await this.init()
+
+      console.log('💱 开始VGAU赎回USDT...')
+      console.log('VGAU数量:', vgauAmount)
+
+      // VGAU精度为0，直接使用整数数量
+      const vgauAmountUnits = parseInt(vgauAmount.toString(), 10).toString()
+      console.log('VGAU数量(单位):', vgauAmountUnits)
+
+      // 1. 检查VGAU授权额度
+      console.log('🔍 检查VGAU授权额度...')
+      const allowance = await this.getVGAUAllowance()
+      console.log('当前授权额度:', allowance)
+      
+      if (allowance === '0') {
+        console.log('✅ 授权额度为0，直接授权所需金额...')
+        await this.approveVGAU(vgauAmountUnits)
+        
+        // 等待授权确认
+        await new Promise(resolve => setTimeout(resolve, 3000))
+      } else {
+        console.log('🔄 授权额度不为0，需要先清零...')
+        await this.approveVGAU('0')
+        
+        // 等待清零确认
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        
+        console.log('🔐 重新授权VGAU...')
+        await this.approveVGAU(vgauAmountUnits)
+        
+        // 等待授权确认
+        await new Promise(resolve => setTimeout(resolve, 3000))
+      }
+
+      // 2. 执行赎回
+      console.log('💱 执行赎回交易...')
+      const transaction = await web3Service.sendTransaction(
+        'VGAUExchange',
+        'exchangeVgauToUsdt',
+        { from: web3Service.currentAccount },
+        vgauAmountUnits
+      )
+
+      console.log('✅ VGAU赎回USDT成功:', transaction.transactionHash)
+      return transaction
+    } catch (error) {
+      console.error('❌ VGAU赎回USDT失败:', error)
+      
+      // 处理KYC相关错误
+      if (error.message && error.message.includes('wallet address must be bound and KYC')) {
+        const kycError = new Error('请先完成钱包绑定和KYC认证后再进行大额赎回')
+        kycError.errorType = 'KYC_REQUIRED'
+        throw kycError
+      }
+      
+      throw error
+    }
+  }
+
+  // 获取最新黄金价格
+  async getLatestGoldPrice() {
+    try {
+      await this.init()
+      
+      const priceData = await web3Service.callContractMethod(
+        'VGAUExchange',
+        'getLatestValidXAUPrice'
+      )
+
+      return priceData.price
+    } catch (error) {
+      console.error('❌ 获取黄金价格失败:', error)
+      throw error
+    }
+  }
+
+  // 计算所需USDT
+  async getRequiredUSDT(vgauAmount) {
+    try {
+      await this.init()
+
+      // VGAU精度为0，VGAU数量按整数传入
+      const vgauAmountUnits = parseInt(vgauAmount.toString(), 10).toString()
+      const goldPrice = await this.getLatestGoldPrice()
+      
+      const requiredUSDT = await web3Service.callContractMethod(
+        'VGAUExchange',
+        'getRequiredUSDTByVGAU',
+        vgauAmountUnits,
+        goldPrice
+      )
+
+      // 获取USDT小数位数
+      const usdtDecimals = await web3Service.callContractMethod(
+        'VGAUExchange',
+        'usdtDecimals'
+      )
+      
+      // 转换为可读格式
+      const formattedAmount = parseFloat(requiredUSDT) / Math.pow(10, parseInt(usdtDecimals))
+      
+      return {
+        raw: requiredUSDT,
+        formatted: formattedAmount
+      }
+    } catch (error) {
+      console.error('❌ 计算所需USDT失败:', error)
+      throw error
+    }
+  }
+}
+
+// 创建单例实例
+const contractExchange = new ContractExchange()
+
+export default contractExchange

@@ -379,7 +379,7 @@
         const stats = await vgauService.getPlatformStats()
         if (stats) {
           tvlData.value = parseFloat(stats.tvl).toLocaleString()
-          vgauPrice.value = parseFloat(stats.price).toFixed(4)
+          vgauPrice.value = parseFloat(stats.price).toFixed(2)
           aprData.value = `${(stats.apr * 100).toFixed(2)}%`
         }
       }

@@ -144,8 +144,13 @@ class VGAUService {
         )
         
         if (result) {
-          // 将结果转换为可读格式（使用18位小数精度）
-          return web3Service.web3.utils.fromWei(result, 'ether')
+          // 获取USDT小数位数并正确转换
+          const usdtDecimals = await web3Service.callContractMethod(
+            contractName, 
+            'usdtDecimals'
+          )
+          // 根据USDT的实际小数位数进行转换（通常是6位）
+          return (parseFloat(result) / Math.pow(10, parseInt(usdtDecimals))).toString()
         }
       }
       

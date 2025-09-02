@@ -149,6 +149,13 @@ export default {
     walletAddress: '錢包地址',
     walletAddressCopied: '錢包地址已複製',
     copyFailed: '複製失敗',
+    noWalletConnected: '未連接錢包',
+    connectWallet: '連接錢包',
+    connectingWallet: '正在連接錢包...',
+    walletConnected: '錢包連接成功',
+    walletConnectionFailed: '錢包連接失敗',
+    userRejectedConnection: '用戶拒絕連接',
+    noWalletDetected: '未檢測到錢包',
     assetOverview: '資產概覽',
     currentStakedAmount: '當前質押數量',
     totalStakedRewards: '總質押獎勵',
@@ -605,6 +612,23 @@ export default {
 
   // 組件特定鍵值
   components: {
+    // Exchange
+    exchange: {
+      title: '兌換',
+      brandTitle: 'VGAU',
+      brandSubtitle: '數字黃金',
+      brandDescription: '安全、透明、可信的數字黃金兌換服務',
+      rateText: '1 VGAU = 當前黃金價格',
+      currency1: 'USDT',
+      currency2: 'VGAU',
+      exchangeAmountPlaceholder: '請輸入兌換數量',
+      requiredUSDT: '所需 USDT',
+      exchanging: '正在兌換...',
+      exchangeSuccess: '兌換成功',
+      exchangeFailed: '兌換失敗',
+      confirmExchange: '確認兌換'
+    },
+
     // IncreaseCollateral
     increaseCollateral: {
       title: '增加抵押金額',
