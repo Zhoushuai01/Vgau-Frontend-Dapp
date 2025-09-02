@@ -189,6 +189,9 @@ class ApiService {
     // 获取邀请码
     getCode: () => this.get(this.endpoints.INVITE.CODE),
     
+    // 获取我的邀请码
+    getMyCode: () => this.get(this.endpoints.INVITE.MY_CODE),
+    
     // 绑定邀请人
     bind: (code) => this.post(this.endpoints.INVITE.BIND, { code }),
     
@@ -205,7 +208,13 @@ class ApiService {
     createOrder: (data) => this.post(this.endpoints.STAKE.ORDERS, data),
     
     // 获取用户订单列表
-    getOrders: () => this.get(this.endpoints.STAKE.ORDERS)
+    getOrders: () => this.get(this.endpoints.STAKE.ORDERS),
+    
+    // 获取质押统计信息
+    getStatistics: () => this.get(this.endpoints.STAKE.STATISTICS),
+    
+    // 赎回质押订单
+    redeemOrder: (orderId) => this.post(this.endpoints.STAKE.REDEEM.replace('{orderId}', orderId))
   }
   
   // 用户资金余额相关API
@@ -217,7 +226,9 @@ class ApiService {
   // 借贷配置相关API
   loan = {
     // 获取借贷配置
-    getConfig: () => this.get(this.endpoints.LOAN.CONFIG)
+    getConfig: () => this.get(this.endpoints.LOAN.CONFIG),
+    // 创建借贷订单
+    createOrder: (data) => this.post(this.endpoints.LOAN.ORDERS, data)
   }
 }
 

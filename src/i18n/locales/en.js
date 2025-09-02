@@ -631,7 +631,10 @@ export default {
       successResult: 'Will redeem',
       successResultRedeem: '100 VGAU',
       successResultRefund: 'refund 1.56 USDT',
-      collateralIncreased: 'Collateral increased successfully'
+      collateralIncreased: 'Collateral increased successfully',
+      increaseSuccess: 'You have increased {amount}',
+      newCollateralRatio: 'The collateralization rate after increasing the collateral amount is {ratio}',
+      confirmButton: 'Confirm'
     },
 
     // Redeem
@@ -779,6 +782,7 @@ export default {
     borrowOrder: {
       title: 'Borrow Order',
       borrowOrder: 'Borrow Order',
+      orderNumber: 'Order Number',
       borrowedUSDTArrival: 'Borrowed USDT will immediately arrive in USDT withdrawal\'s borrowed funds',
       totalLiabilities: 'Total Liabilities (USDT)',
       collateralAmount: 'Collateral Amount (VGAU)',

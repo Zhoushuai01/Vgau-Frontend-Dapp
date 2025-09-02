@@ -80,30 +80,45 @@
   <!-- 确认弹窗 -->
   <view v-if="showConfirmModal" class="modal-overlay" @click="showConfirmModal = false">
     <view class="modal-content" @click.stop>
-      <view class="modal-text">
-        <text v-if="modalStep === 1" class="warning-text">{{ t('components.increaseCollateral.collateralRatioWarning') }}</text>
-        <text v-if="modalStep === 1" class="instruction-text">{{ t('components.increaseCollateral.collateralRatioInstruction') }}</text>
-        <text v-if="modalStep === 2" class="repayment-amount">{{ t('components.increaseCollateral.repaymentAmount') }} <text class="highlight">{{ t('components.increaseCollateral.repaymentAmountValue') }}</text></text>
-        <text v-if="modalStep === 2" class="repayment-after">{{ t('components.increaseCollateral.repaymentAfter') }}</text>
-        <text v-if="modalStep === 2" class="repayment-result">{{ t('components.increaseCollateral.repaymentResult') }} <text class="white-text">{{ t('components.increaseCollateral.repaymentResultRedeem') }}</text> {{ t('components.increaseCollateral.repaymentResultRefund') }}</text>
-        <text v-if="modalStep === 3" class="success-amount">{{ t('components.increaseCollateral.repaymentSuccessful') }} <text class="highlight">{{ t('components.increaseCollateral.repaymentAmountValue') }}</text></text>
-        <text v-if="modalStep === 3" class="success-result">{{ t('components.increaseCollateral.successResult') }} <text class="white-text">{{ t('components.increaseCollateral.successResultRedeem') }}</text>, {{ t('components.increaseCollateral.successResultRefund') }}</text>
-      </view>
+             <view class="modal-text">
+         <text class="success-title" v-html="formattedIncreaseSuccess"></text>
+         <text class="success-description" v-html="formattedNewCollateralRatio"></text>
+       </view>
       <view class="modal-btn" @click="confirmModalAction">
-        <text class="modal-btn-text">{{ t('components.increaseCollateral.confirm') }}</text>
+                 <text class="modal-btn-text">{{ t('components.increaseCollateral.confirmButton') }}</text>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
 // 增加金额
 const increaseAmount = ref('')
+
+// 弹窗显示数据
+const increasedAmount = ref('0VGAU') // 增加的金额，例如 '77VGAU'
+const newCollateralRatio = ref('0%') // 增加抵押后的质押率，例如 '65%'
+
+// 计算属性：格式化增加成功消息，高亮金额和VGAU
+const formattedIncreaseSuccess = computed(() => {
+  const amount = increasedAmount.value.replace('VGAU', '')
+  return t('components.increaseCollateral.increaseSuccess', { 
+    amount: `<span class="highlight-orange">${amount}VGAU</span>` 
+  })
+})
+
+// 计算属性：格式化新质押率消息，高亮比率
+const formattedNewCollateralRatio = computed(() => {
+  const ratio = newCollateralRatio.value
+  return t('components.increaseCollateral.newCollateralRatio', { 
+    ratio: `<span class="highlight-white">${ratio}</span>` 
+  })
+})
 
 // 返回上一页
 const goBack = () => {
@@ -126,7 +141,6 @@ const setMaxAmount = () => {
 
 // 显示确认弹窗
 const showConfirmModal = ref(false)
-const modalStep = ref(1) // 1: 初始确认, 2: 还款提示, 3: 成功提示
 
 // 处理确认
 const handleConfirm = () => {
@@ -150,30 +164,21 @@ const handleConfirm = () => {
     return
   }
   
-  // 显示确认弹窗
-  showConfirmModal.value = true
-  modalStep.value = 1
+     // 模拟成功操作后获取到的数据
+   increasedAmount.value = `${increaseAmount.value}VGAU` // 假设增加的金额就是输入金额
+   newCollateralRatio.value = '65%' // 假设新的质押率为65% (实际应由后端返回)
+
+   // 显示确认弹窗
+   showConfirmModal.value = true
 }
 
 // 确认弹窗确认操作
 const confirmModalAction = () => {
-  if (modalStep.value === 1) {
-    // 第一步：显示还款提示
-    modalStep.value = 2
-  } else if (modalStep.value === 2) {
-    // 第二步：显示成功提示
-    modalStep.value = 3
-  } else {
-    // 第三步：完成操作，留在此页面
-    showConfirmModal.value = false
-    modalStep.value = 1
-    
-    uni.showToast({
-      title: t('components.increaseCollateral.collateralIncreased'),
-      icon: 'success',
-      duration: 2000
-    })
-  }
+  // 关闭弹窗
+  showConfirmModal.value = false
+  
+  // 返回上一页
+  uni.navigateBack()
 }
 </script>
 
@@ -506,7 +511,6 @@ const confirmModalAction = () => {
   flex-direction: column;
   gap: 24rpx;
   margin-bottom: 48rpx;
-  height: 320rpx;
   justify-content: center;
   align-items: center;
 }
@@ -523,6 +527,28 @@ const confirmModalAction = () => {
   color: #FFFFFF;
   font-weight: 400;
   line-height: 1.5;
+}
+
+.success-title {
+  font-size: 32rpx;
+  color: #FFFFFF;
+  font-weight: bold;
+  text-align: center;
+}
+
+.success-title .highlight-orange {
+  color: #E78B1B; /* 匹配图片中的橙色 */
+}
+
+.success-description {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+.success-description .highlight-white {
+  color: #FFFFFF;
+  font-weight: bold;
 }
 
 .repayment-amount {
@@ -576,7 +602,7 @@ const confirmModalAction = () => {
 .modal-btn {
   width: 100%;
   height: 88rpx;
-  background: linear-gradient(90deg, rgba(254, 218, 120, 1) 0%, rgba(176, 121, 32, 1) 100%);
+  background: linear-gradient(90deg, #E78B1B 0%, #FFC069 100%); /* 渐变色 */
   border-radius: 16rpx;
   display: flex;
   align-items: center;

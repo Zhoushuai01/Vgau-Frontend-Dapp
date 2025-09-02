@@ -34,10 +34,11 @@
     <view class="invite-link-card">
       <view class="link-info">
         <text class="link-label">{{ t('components.invitation.invitationLink') }}</text>
-        <text class="link-url">{{ inviteLink }}</text>
+        <text v-if="loading" class="link-url loading-text">加载中...</text>
+        <text v-else class="link-url">{{ inviteLink }}</text>
       </view>
-      <view class="copy-btn" @click="copyInviteLink">
-                 <text class="copy-text">{{ t('common.copy') }}</text>
+      <view class="copy-btn" @click="copyInviteLink" :class="{ 'disabled': loading || !inviteLink }">
+        <text class="copy-text">{{ t('common.copy') }}</text>
       </view>
     </view>
 
@@ -99,15 +100,18 @@
  </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatShortAddress } from '@/utils/addressUtils'
+import { inviteAPI } from '@/api/apiService.js'
 
 const { t } = useI18n()
 
 // 响应式数据
-const inviteLink = ref('https://verigold.com/invite/ABC123')
+const inviteLink = ref('')
+const inviteCode = ref('')
 const showRuleModal = ref(false)
+const loading = ref(false)
 
 // 模拟邀请列表数据
 const invitationList = ref([
@@ -125,6 +129,37 @@ const invitationList = ref([
   }
 ])
 
+// 获取我的邀请码
+const fetchMyInviteCode = async () => {
+  loading.value = true
+  try {
+    const response = await inviteAPI.getMyCode()
+    console.log('我的邀请码响应:', response)
+    
+    if (response && response.data && response.data.inviteCode) {
+      inviteCode.value = response.data.inviteCode
+      // 生成邀请链接
+      inviteLink.value = `http://localhost:3000/register?inviter=${inviteCode.value}`
+    } else {
+      // 如果接口没有数据，使用测试数据
+      inviteCode.value = 'ABC123'
+      inviteLink.value = `http://localhost:3000/register?inviter=${inviteCode.value}`
+    }
+  } catch (error) {
+    console.error('获取邀请码失败:', error)
+    // 使用测试数据作为后备
+    inviteCode.value = 'ABC123'
+    inviteLink.value = `http://localhost:3000/register?inviter=${inviteCode.value}`
+    uni.showToast({
+      title: '获取邀请码失败',
+      icon: 'none',
+      duration: 2000
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
 // 返回上一页
 const goBack = () => {
   uni.navigateBack()
@@ -132,12 +167,28 @@ const goBack = () => {
 
 // 复制邀请链接
 const copyInviteLink = () => {
+  if (loading.value || !inviteLink.value) {
+    uni.showToast({
+      title: '邀请链接未准备好',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
   uni.setClipboardData({
     data: inviteLink.value,
     success: () => {
       uni.showToast({
         title: t('components.invitation.linkCopied'),
         icon: 'success',
+        duration: 2000
+      })
+    },
+    fail: () => {
+      uni.showToast({
+        title: '复制失败',
+        icon: 'none',
         duration: 2000
       })
     }
@@ -153,6 +204,11 @@ const openRuleModal = () => {
 const closeRuleModal = () => {
   showRuleModal.value = false
 }
+
+// 页面加载时获取邀请码
+onMounted(() => {
+  fetchMyInviteCode()
+})
 </script>
 
 <style scoped>
@@ -331,6 +387,20 @@ const closeRuleModal = () => {
   font-size: 32rpx;
   font-weight: 400;
   line-height: 1.5;
+}
+
+.loading-text {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+.copy-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.copy-btn.disabled .copy-text {
+  color: rgba(231, 139, 27, 0.5);
 }
 
 /* 邀请奖励详情 */

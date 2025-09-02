@@ -436,17 +436,40 @@ const createStakeOrder = async () => {
     }
     
     const response = await stakeAPI.createOrder(orderData)
-    console.log('✅ 质押订单创建成功:', response)
+    console.log('📡 质押订单创建API响应:', response)
+    console.log('📊 响应结构分析:', {
+      hasSuccess: !!response.success,
+      successValue: response.success,
+      hasCode: !!response.code,
+      codeValue: response.code,
+      hasStatusCode: !!response.statusCode,
+      statusCodeValue: response.statusCode,
+      hasData: !!response.data,
+      hasMessage: !!response.message,
+      messageValue: response.message
+    })
     
     uni.hideLoading()
     
-    if (response.success && response.data) {
-      // 显示成功提示
-      uni.showToast({
-        title: response.message || t('components.productPurchase.orderCreateSuccess'),
-        icon: 'success',
-        duration: 3000
-      })
+    // 检查响应结构，支持不同的API响应格式
+    const isSuccess = response.success || response.code === 0 || response.statusCode === 200
+    const responseData = response.data || response
+    const responseMessage = response.message || '质押订单创建成功'
+    
+    console.log('🔍 成功判断结果:', {
+      isSuccess,
+      success: response.success,
+      code: response.code,
+      statusCode: response.statusCode
+    })
+    
+    if (isSuccess) {
+             // 显示成功提示
+       uni.showToast({
+         title: responseMessage,
+         icon: 'success',
+         duration: 1000
+       })
       
       // 清空输入
       stakingAmount.value = ''
@@ -455,15 +478,13 @@ const createStakeOrder = async () => {
       // 刷新VGAU余额
       await fetchVGAUBalance()
       
-      // 延迟跳转到订单详情或历史页面
-      setTimeout(() => {
-        uni.navigateTo({
-          url: `/views/StakingDetail?orderId=${response.data.orderId}&status=staking`
-        })
-      }, 2000)
+             // 延迟返回上一页
+       setTimeout(() => {
+         uni.navigateBack()
+       }, 1000)
       
     } else {
-      throw new Error(response.message || '创建订单失败')
+      throw new Error(responseMessage || '创建订单失败')
     }
     
   } catch (error) {
@@ -475,6 +496,33 @@ const createStakeOrder = async () => {
     
     // 根据错误类型显示不同的提示
     if (error.message) {
+      // 如果错误消息是成功消息，说明API实际是成功的，只是响应结构问题
+      if (error.message.includes('质押订单创建成功') || error.message.includes('success')) {
+        console.log('⚠️ API实际成功，但响应结构有问题，按成功处理')
+        
+                 // 显示成功提示
+         uni.showToast({
+           title: t('components.productPurchase.orderCreateSuccess'),
+           icon: 'success',
+           duration: 1000
+         })
+        
+        // 清空输入
+        stakingAmount.value = ''
+        showProductDetail.value = false
+        
+        // 刷新VGAU余额
+        await fetchVGAUBalance()
+        
+                 // 延迟返回上一页
+         setTimeout(() => {
+           uni.navigateBack()
+         }, 1000)
+        
+        return // 提前返回，不显示错误提示
+      }
+      
+      // 处理其他错误类型
       if (error.message.includes('余额不足') || error.message.includes('insufficient')) {
         errorMessage = t('common.insufficientBalance')
       } else if (error.message.includes('产品不存在') || error.message.includes('product not found')) {

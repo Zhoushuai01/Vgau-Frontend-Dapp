@@ -64,7 +64,8 @@ export const API_ENDPOINTS = {
   
   // 借贷配置
   LOAN: {
-    CONFIG: '/loan/config'
+    CONFIG: '/loan/config',
+    ORDERS: '/loan/orders'
   },
   
   // 用户管理
@@ -92,13 +93,16 @@ export const API_ENDPOINTS = {
   INVITE: {
     CODE: '/invite/code',
     BIND: '/invite/bind',
-    RELATIONS: '/invite/relations'
+    RELATIONS: '/invite/relations',
+    MY_CODE: '/invite/my-code'
   },
   
   // 质押管理
   STAKE: {
     PRODUCTS: '/stake/products',
-    ORDERS: '/stake/orders'
+    ORDERS: '/stake/orders',
+    STATISTICS: '/stake/statistics',
+    REDEEM: '/stake/orders/{orderId}/redeem'
   }
 }
 

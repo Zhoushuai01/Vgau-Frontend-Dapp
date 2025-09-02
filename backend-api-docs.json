@@ -2798,8 +2798,8 @@
                       "data": {
                         "id": 123456,
                         "orderNumber": "LOAN_20240120_123456",
-                        "collateralAmount": "1000000000000000000000",
-                        "loanAmount": "1000.500000000000000000",
+                        "collateralAmount": "3",
+                        "loanAmount": "1000.50",
                         "insuranceFeeAmount": "20.010000000000000000",
                         "actualReceiveAmount": "980.490000000000000000",
                         "annualRate": "0.1200",
@@ -2926,9 +2926,9 @@
                       "success": true,
                       "message": "Operation successful",
                       "data": {
-                        "collateralAmount": "1000000000000000000000",
+                        "collateralAmount": "3",
                         "collateralAmountStandard": "1000.000000000000000000",
-                        "loanAmount": "1000.500000000000000000",
+                        "loanAmount": "1000.50",
                         "insuranceFeeAmount": "20.010000000000000000",
                         "actualReceiveAmount": "980.490000000000000000",
                         "initialLtvRatio": "0.7500",
@@ -11033,6 +11033,9 @@
             "description": "获取统计信息成功",
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatisticsResponse"
+                },
                 "examples": {
                   "统计信息示例": {
                     "description": "统计信息示例",
@@ -11063,6 +11066,9 @@
             "description": "用户未认证",
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
                 "examples": {
                   "未认证示例": {
                     "description": "未认证示例",
@@ -11080,6 +11086,9 @@
             "description": "服务器内部错误",
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
                 "examples": {
                   "服务器错误示例": {
                     "description": "服务器错误示例",
@@ -12127,15 +12136,53 @@
           "借贷模块"
         ],
         "summary": "获取借贷配置信息",
-        "description": "获取当前借贷功能配置信息",
+        "description": "查询系统当前有效的借贷功能配置参数，用于前端展示规则或接口前置校验。\n\n## 配置内容说明\n该接口返回的配置项包括但不限于：\n- 质押率相关：最小质押率、最大质押率（如78%）\n- 费率相关：强平保险费率（如2%）、年化利率（如12%）\n- 金额限制：最小抵押品数量、最小借款金额、最大借款金额\n- 功能开关：借贷功能是否启用（true/false）\n- 其他规则：还款期限、强平触发阈值等\n\n## 业务用途\n1. 前端调用此接口获取规则，用于用户输入时的实时校验（如限制借款金额不超过最大值）\n2. 后端其他接口可引用这些配置做业务逻辑校验（如创建订单时校验质押率是否合规）\n3. 配置项可通过后台管理系统动态修改，无需重启服务\n\n## 权限要求\n- 无需登录（公开接口）\n- 无频率限制\n",
         "operationId": "getLoanConfig",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "查询成功，返回配置项键值对",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                  "$ref": "#/components/schemas/LoanConfigDto"
+                },
+                "examples": {
+                  "配置查询成功示例": {
+                    "description": "配置查询成功示例",
+                    "value": {
+                      "success": true,
+                      "message": "查询成功",
+                      "data": {
+                        "maxLtvRatio": "0.78",
+                        "minLtvRatio": "0.30",
+                        "insuranceFeeRate": "0.02",
+                        "annualInterestRate": "0.12",
+                        "minCollateralAmount": "1000000000000000000",
+                        "minLoanAmount": "100.000000000000000000",
+                        "maxLoanAmount": "10000.000000000000000000",
+                        "loanFunctionEnabled": true,
+                        "repaymentPeriodDays": 30,
+                        "liquidationThreshold": "0.85"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "查询失败（如配置项未初始化）",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "配置查询失败示例": {
+                    "description": "配置查询失败示例",
+                    "value": {
+                      "success": false,
+                      "message": "借贷配置未初始化，请联系管理员",
+                      "code": 500
+                    }
+                  }
                 }
               }
             }
@@ -18124,6 +18171,50 @@
         }
       }
     },
+    "/api/admin/loan/diagnose": {
+      "get": {
+        "tags": [
+          "借贷管理"
+        ],
+        "summary": "诊断借贷配置和价格信息",
+        "description": "检查借贷模块的配置和价格信息，用于调试问题",
+        "operationId": "diagnoseLoanSystem",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/loan/debug-dapp": {
+      "get": {
+        "tags": [
+          "借贷管理"
+        ],
+        "summary": "DApp请求调试",
+        "description": "检查DApp请求的详细信息，包括请求头、认证状态等",
+        "operationId": "debugDappRequest",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/loan/config": {
       "get": {
         "tags": [
@@ -22022,14 +22113,14 @@
         "properties": {
           "collateralAmount": {
             "type": "integer",
-            "description": "抵押VGAU数量（最小单位，18位小数）",
-            "example": 1e+21,
-            "minimum": 0
+            "description": "抵押VGAU数量（克或wei，自动识别）",
+            "example": 0.115,
+            "minimum": 0.001
           },
           "loanAmount": {
             "type": "number",
-            "description": "借出USDT金额",
-            "example": 1000.5,
+            "description": "借贷金额（USDT）",
+            "example": 100,
             "minimum": 0
           },
           "expectedInsuranceFeeRate": {
@@ -22046,13 +22137,13 @@
             "maximum": 1,
             "minimum": 0
           },
-          "expectedVgauPrice": {
-            "type": "number",
-            "description": "期望的VGAU价格（用于一致性验证）",
-            "example": 4.55,
-            "minimum": 0
+          "collateralAmountInWei": {
+            "type": "integer"
           },
           "collateralAmountInStandardUnit": {
+            "type": "number"
+          },
+          "loanAmountInStandardUnit": {
             "type": "number"
           }
         },
@@ -22060,7 +22151,6 @@
           "collateralAmount",
           "expectedAnnualRate",
           "expectedInsuranceFeeRate",
-          "expectedVgauPrice",
           "loanAmount"
         ]
       },
@@ -22071,13 +22161,12 @@
           "orderNumber": {
             "type": "string",
             "description": "借贷订单号",
-            "example": "LOAN_20250120_1234567890",
-            "minLength": 1
+            "example": "LOAN202408290001"
           },
           "additionalCollateralAmount": {
-            "type": "integer",
-            "description": "增加的抵押VGAU数量（最小单位）",
-            "example": 5e+18
+            "type": "number",
+            "description": "增加抵押数量（VGAU）",
+            "example": 1.5
           },
           "additionalCollateralAmountInStandardUnit": {
             "type": "number"
@@ -22269,17 +22358,17 @@
             "maxLength": 500,
             "minLength": 0
           },
-          "extensionMatchesMimeType": {
+          "validMimeTypeForFileType": {
             "type": "boolean"
           },
-          "formattedFileSize": {
-            "type": "string"
+          "extensionMatchesMimeType": {
+            "type": "boolean"
           },
           "validFileSizeForFileType": {
             "type": "boolean"
           },
-          "validMimeTypeForFileType": {
-            "type": "boolean"
+          "formattedFileSize": {
+            "type": "string"
           },
           "fileExtension": {
             "type": "string"
@@ -22484,11 +22573,11 @@
             "maxItems": 3,
             "minItems": 1
           },
-          "complete": {
-            "type": "boolean"
-          },
           "multipleFilesValidationError": {
             "type": "string"
+          },
+          "complete": {
+            "type": "boolean"
           },
           "validationError": {
             "type": "string"
@@ -22496,14 +22585,14 @@
           "otherDocumentDescriptionRequired": {
             "type": "boolean"
           },
+          "usingMultipleFileMode": {
+            "type": "boolean"
+          },
           "allFileIds": {
             "type": "array",
             "items": {
               "type": "string"
             }
-          },
-          "usingMultipleFileMode": {
-            "type": "boolean"
           }
         },
         "required": [
@@ -22941,11 +23030,11 @@
             "maxLength": 500,
             "minLength": 0
           },
-          "parsedAmount": {
-            "type": "integer"
-          },
           "validOnchainInfo": {
             "type": "boolean"
+          },
+          "parsedAmount": {
+            "type": "integer"
           }
         },
         "required": [
@@ -23476,11 +23565,11 @@
             "maxLength": 200,
             "minLength": 5
           },
-          "addOperation": {
-            "type": "boolean"
-          },
           "absoluteAmount": {
             "type": "number"
+          },
+          "addOperation": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -23594,11 +23683,11 @@
           "validationError": {
             "type": "string"
           },
-          "validRevokeReason": {
-            "type": "boolean"
-          },
           "formattedRevokeReason": {
             "type": "string"
+          },
+          "validRevokeReason": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -23628,14 +23717,14 @@
           "validationError": {
             "type": "string"
           },
-          "statusDescription": {
-            "type": "string"
+          "approved": {
+            "type": "boolean"
           },
           "rejected": {
             "type": "boolean"
           },
-          "approved": {
-            "type": "boolean"
+          "statusDescription": {
+            "type": "string"
           },
           "validReviewStatus": {
             "type": "boolean"
@@ -24304,6 +24393,122 @@
           }
         }
       },
+      "StatisticsResponse": {
+        "type": "object",
+        "description": "用户质押统计信息的完整响应结构",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "响应状态码，0表示成功",
+            "example": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "获取统计信息成功"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserStakeStatistics",
+            "description": "统计信息数据"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "统计信息响应"
+      },
+      "UserStakeStatistics": {
+        "type": "object",
+        "description": "用户质押统计信息",
+        "example": {
+          "totalStakeAmount": 1000,
+          "totalAccumulatedInterest": 50.25,
+          "activeOrderCount": 5,
+          "completedOrderCount": 10,
+          "totalOrderCount": 15,
+          "averageAnnualRate": 6.5
+        },
+        "properties": {
+          "totalStakeAmount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总质押数量（VGAU）",
+            "example": 1000,
+            "minimum": 0
+          },
+          "totalAccumulatedInterest": {
+            "type": "number",
+            "description": "总累计利息（USDT）",
+            "example": 50.25,
+            "minimum": 0
+          },
+          "activeOrderCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "活跃订单数量",
+            "example": 5,
+            "minimum": 0
+          },
+          "completedOrderCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "已完成订单数量",
+            "example": 10,
+            "minimum": 0
+          },
+          "totalOrderCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "总订单数量",
+            "example": 15,
+            "minimum": 0
+          },
+          "averageAnnualRate": {
+            "type": "number",
+            "description": "平均年化利率（百分比）",
+            "example": 6.5,
+            "maximum": 100,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "activeOrderCount",
+          "averageAnnualRate",
+          "completedOrderCount",
+          "totalAccumulatedInterest",
+          "totalOrderCount",
+          "totalStakeAmount"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "API错误响应的标准格式",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "错误状态码",
+            "example": 401
+          },
+          "message": {
+            "type": "string",
+            "description": "错误消息",
+            "example": "用户未登录或token已过期"
+          },
+          "data": {
+            "description": "错误详情数据",
+            "example": null
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "错误响应"
+      },
       "CommonApiResponseUserPointsStatistics": {
         "type": "object",
         "description": "统一API响应结构",
@@ -24527,18 +24732,6 @@
             "description": "记录创建时间",
             "example": "2024-01-20T08:30:00"
           },
-          "operationTypeClass": {
-            "type": "string"
-          },
-          "operatorTypeClass": {
-            "type": "string"
-          },
-          "systemOperation": {
-            "type": "boolean"
-          },
-          "earnRecord": {
-            "type": "boolean"
-          },
           "consumeRecord": {
             "type": "boolean"
           },
@@ -24547,6 +24740,18 @@
           },
           "adminOperation": {
             "type": "boolean"
+          },
+          "systemOperation": {
+            "type": "boolean"
+          },
+          "earnRecord": {
+            "type": "boolean"
+          },
+          "operationTypeClass": {
+            "type": "string"
+          },
+          "operatorTypeClass": {
+            "type": "string"
           }
         }
       },
@@ -24784,17 +24989,17 @@
           "actualReceiveAmount": {
             "type": "number"
           },
+          "finalStatus": {
+            "type": "boolean"
+          },
+          "collateralAmountStandard": {
+            "type": "number"
+          },
           "statusDescription": {
             "type": "string"
           },
           "annualRateAsPercentage": {
             "type": "number"
-          },
-          "collateralAmountStandard": {
-            "type": "number"
-          },
-          "finalStatus": {
-            "type": "boolean"
           },
           "ltvRatioAsPercentage": {
             "type": "number"
@@ -24876,20 +25081,20 @@
               "$ref": "#/components/schemas/LoanOrderDto"
             }
           },
-          "averageLtvRatioAsPercentage": {
-            "type": "number"
-          },
           "riskNotice": {
             "type": "string"
           },
-          "borrowingExperienceLevel": {
-            "type": "string"
-          },
-          "repaymentCompletionRate": {
+          "averageLtvRatioAsPercentage": {
             "type": "number"
           },
           "maxLtvRatioAsPercentage": {
             "type": "number"
+          },
+          "repaymentCompletionRate": {
+            "type": "number"
+          },
+          "borrowingExperienceLevel": {
+            "type": "string"
           }
         }
       },
@@ -24970,6 +25175,75 @@
             "format": "int32",
             "description": "错误码",
             "example": 0
+          }
+        }
+      },
+      "LoanConfigDto": {
+        "type": "object",
+        "description": "借贷功能配置参数",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "借贷功能是否启用",
+            "example": true
+          },
+          "annualRate": {
+            "type": "number",
+            "description": "当前年化利率",
+            "example": 0.12
+          },
+          "maxLtvRatio": {
+            "type": "number",
+            "description": "最大质押率",
+            "example": 0.78
+          },
+          "minLtvRatio": {
+            "type": "number",
+            "description": "最小质押率",
+            "example": 0.3
+          },
+          "minCollateralAmount": {
+            "type": "number",
+            "description": "最小抵押品数量（最小单位）",
+            "example": 1e+18
+          },
+          "insuranceFeeRate": {
+            "type": "number",
+            "description": "强平保险费率",
+            "example": 0.02
+          },
+          "riskThresholdLevel1": {
+            "type": "number",
+            "description": "一级风险预警阈值",
+            "example": 0.7
+          },
+          "riskThresholdLevel2": {
+            "type": "number",
+            "description": "二级风险预警阈值",
+            "example": 0.8
+          },
+          "riskThresholdLiquidation": {
+            "type": "number",
+            "description": "强平风险阈值",
+            "example": 0.85
+          },
+          "maxOrdersPerUser": {
+            "type": "integer",
+            "format": "int32",
+            "description": "用户最大订单数",
+            "example": 5
+          },
+          "priceUpdateInterval": {
+            "type": "integer",
+            "format": "int32",
+            "description": "价格更新间隔（秒）",
+            "example": 30
+          },
+          "riskBatchSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "风险检测批次大小",
+            "example": 100
           }
         }
       },
@@ -27536,34 +27810,34 @@
               "type": "string"
             }
           },
-          "statusDescription": {
-            "type": "string"
-          },
-          "priceChangeRate": {
+          "initialLtvRatioAsPercentage": {
             "type": "number"
-          },
-          "rateModified": {
-            "type": "boolean"
-          },
-          "annualRateAtCreationAsPercentage": {
-            "type": "number"
-          },
-          "currentCollateralValue": {
-            "type": "number"
-          },
-          "riskLevelDescription": {
-            "type": "string"
           },
           "currentAnnualRateAsPercentage": {
-            "type": "number"
-          },
-          "initialLtvRatioAsPercentage": {
             "type": "number"
           },
           "currentLtvRatioAsPercentage": {
             "type": "number"
           },
           "collateralAmountStandard": {
+            "type": "number"
+          },
+          "statusDescription": {
+            "type": "string"
+          },
+          "riskLevelDescription": {
+            "type": "string"
+          },
+          "currentCollateralValue": {
+            "type": "number"
+          },
+          "annualRateAtCreationAsPercentage": {
+            "type": "number"
+          },
+          "rateModified": {
+            "type": "boolean"
+          },
+          "priceChangeRate": {
             "type": "number"
           }
         }
@@ -27944,12 +28218,12 @@
             "type": "integer",
             "format": "int32"
           },
-          "paged": {
-            "type": "boolean"
-          },
           "pageSize": {
             "type": "integer",
             "format": "int32"
+          },
+          "paged": {
+            "type": "boolean"
           },
           "unpaged": {
             "type": "boolean"
@@ -28656,10 +28930,10 @@
             "type": "integer",
             "format": "int64"
           },
-          "processedKeyword": {
+          "processedCategory": {
             "type": "string"
           },
-          "processedCategory": {
+          "processedKeyword": {
             "type": "string"
           }
         }

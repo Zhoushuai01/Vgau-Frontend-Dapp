@@ -165,7 +165,7 @@ export default {
       history: '歷史記錄',
       invite: '邀請',
       points: '積分',
-      redeem: '兌換',
+      redeem: '贖回',
       service: '客服',
       settings: '設置',
       notice: '通知'
@@ -641,7 +641,10 @@ export default {
       successResult: '將贖回',
       successResultRedeem: '100 VGAU',
       successResultRefund: '退還 1.56 USDT',
-      collateralIncreased: '抵押金額增加成功'
+      collateralIncreased: '抵押金額增加成功',
+      increaseSuccess: '您已增加{amount}',
+      newCollateralRatio: '增加抵押金額後的質押率為{ratio}',
+      confirmButton: '確定'
     },
 
     // Redeem
@@ -789,6 +792,7 @@ export default {
     borrowOrder: {
       title: '借幣訂單',
       borrowOrder: '借幣訂單',
+      orderNumber: '訂單號',
       borrowedUSDTArrival: '借入的USDT將立即到達USDT提現的借入資金',
       totalLiabilities: '總負債 (USDT)',
       collateralAmount: '抵押品數量 (VGAU)',

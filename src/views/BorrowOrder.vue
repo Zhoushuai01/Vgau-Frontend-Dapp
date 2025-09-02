@@ -34,6 +34,10 @@
       <view class="collateral-list">
         <!-- 第一个抵押项目 -->
         <view class="collateral-card">
+                     <view class="order-number">
+             <text class="order-number-label">{{ $t('components.borrowOrder.orderNumber') }}</text>
+             <text class="order-number-value">LOAN_20250120_1234567890</text>
+           </view>
           <view class="collateral-header">
             <text class="collateral-title">{{ $t('components.borrowOrder.collateralAmount') }}</text>
             <text class="collateral-amount">100</text>
@@ -66,6 +70,10 @@
 
         <!-- 第二个抵押项目 -->
         <view class="collateral-card">
+                     <view class="order-number">
+             <text class="order-number-label">{{ $t('components.borrowOrder.orderNumber') }}</text>
+             <text class="order-number-value">LOAN_20250120_9876543210</text>
+           </view>
           <view class="collateral-header">
             <text class="collateral-title">{{ $t('components.borrowOrder.collateralAmount') }}</text>
             <text class="collateral-amount">100</text>
@@ -299,6 +307,26 @@ const goBack = () => {
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   border-radius: 16rpx;
   padding: 32rpx;
+}
+
+.order-number {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.order-number-label {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.order-number-value {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+  text-align: right;
 }
 
 .collateral-header {

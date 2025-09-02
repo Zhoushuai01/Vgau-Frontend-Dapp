@@ -35,7 +35,7 @@
                    type="number" 
                    placeholder="Enter amount" 
                    v-model="collateralAmount"
-                   :adjust-position="false" />
+                   :adjust-position="false" />qian
             <view class="input-suffix">
               <text class="currency-text">VGAU</text>
               <view class="divider"></view>
@@ -71,7 +71,7 @@
          <view class="details-part">
                        <view class="detail-item">
               <text class="detail-label">{{ t('components.newLending.liquidationInsuranceFee') }}</text>
-              <text class="detail-value">--</text>
+              <text class="detail-value">{{ formatPercentage(loanConfig.insuranceFeeRate) }}</text>
             </view>
             
             <view class="detail-item">
@@ -81,12 +81,12 @@
             
             <view class="detail-item">
               <text class="detail-label">{{ t('components.newLending.additionalMargin') }}</text>
-              <text class="detail-value">85%</text>
+              <text class="detail-value">{{ loanConfig.riskThresholdLevel2 }}</text>
             </view>
             
             <view class="detail-item">
               <text class="detail-label">{{ t('components.newLending.forcedLiquidationCollateralRatio') }}</text>
-              <text class="detail-value">{{ loanConfig.insuranceFeeRate }}</text>
+              <text class="detail-value">{{ loanConfig.riskThresholdLiquidation }}</text>
             </view>
          </view>
          
@@ -100,15 +100,7 @@
               <text class="detail-value">{{ loanConfig.annualRate }}</text>
             </view>
            
-           <view class="detail-item">
-             <text class="detail-label">{{ t('components.newLending.netAnnualizedInterestRate') }}</text>
-             <text class="detail-value">0.00%</text>
-           </view>
            
-           <view class="detail-item">
-             <text class="detail-label">{{ t('components.newLending.estimatedHourlyInterestRate') }}</text>
-             <text class="detail-value">--</text>
-           </view>
            
            <view class="detail-item">
              <text class="detail-label">{{ t('components.newLending.liquidationReferencePrice') }}</text>
@@ -143,7 +135,9 @@ const isLoadingBalance = ref(false)
 // 借贷配置数据
 const loanConfig = ref({
   maxLtvRatio: '78%',        // 初始抵押比率
-  insuranceFeeRate: '--',     // 强制清算抵押比率
+  riskThresholdLevel2: '88%',    // 追加保证金
+  riskThresholdLiquidation: '85%',    // 强制清算抵押比率
+  insuranceFeeRate: '2%',    // 清算保险费率
   annualRate: '8.18%'         // 净年化利率
 })
 const isLoadingConfig = ref(false)
@@ -165,6 +159,43 @@ const handleCollateralChange = () => {
   }
 }
 
+
+
+// 将百分比值解析为小数（支持 '8.18%' 或 0.0818 或 '0.0818'）
+const parsePercentToDecimal = (value) => {
+  if (value === undefined || value === null) return 0
+  if (typeof value === 'number') {
+    return value > 1 ? value / 100 : value
+  }
+  const s = String(value).trim()
+  if (s.endsWith('%')) {
+    const num = parseFloat(s.slice(0, -1))
+    return isNaN(num) ? 0 : num / 100
+  }
+  const num = parseFloat(s)
+  if (isNaN(num)) return 0
+  return num > 1 ? num / 100 : num
+}
+
+// 将小数格式化为百分比显示（去掉不必要的小数零）
+const formatPercentage = (value) => {
+  if (value === undefined || value === null) return '--'
+  if (typeof value === 'number') {
+    const percentage = value * 100
+    // 去掉不必要的小数零
+    return `${parseFloat(percentage.toFixed(2))}%`
+  }
+  const s = String(value).trim()
+  if (s.endsWith('%')) {
+    return s
+  }
+  const num = parseFloat(s)
+  if (isNaN(num)) return '--'
+  const percentage = num * 100
+  // 去掉不必要的小数零
+  return `${parseFloat(percentage.toFixed(2))}%`
+}
+
 // 获取借贷配置
 const fetchLoanConfig = async () => {
   try {
@@ -177,11 +208,18 @@ const fetchLoanConfig = async () => {
     if (response && response.success && response.data) {
       // 更新借贷配置
       loanConfig.value = {
-        maxLtvRatio: response.data.maxLtvRatio || '78%',
-        insuranceFeeRate: response.data.insuranceFeeRate || '--',
-        annualRate: response.data.annualRate || '8.18%'
+        maxLtvRatio: formatPercentage(response.data.maxLtvRatio) || '78%',
+        riskThresholdLevel2: formatPercentage(response.data.riskThresholdLevel2) || '88%',
+        riskThresholdLiquidation: formatPercentage(response.data.riskThresholdLiquidation) || '85%',
+        insuranceFeeRate: response.data.insuranceFeeRate || '0.0200', // 保险费率，保持原始小数格式
+        annualRate: formatPercentage(response.data.annualRate) || '8.18%'
       }
       console.log('✅ 借贷配置获取成功:', loanConfig.value)
+      console.log('🔍 保险费率详情:', {
+        原始值: response.data.insuranceFeeRate,
+        处理后值: loanConfig.value.insuranceFeeRate,
+        转换后小数: parsePercentToDecimal(loanConfig.value.insuranceFeeRate)
+      })
     } else {
       console.warn('⚠️ 借贷配置接口返回异常:', response)
     }
@@ -287,7 +325,7 @@ const goToInfoPage = () => {
 }
 
 // 确认借贷
-const confirmLending = () => {
+const confirmLending = async () => {
   if (!collateralAmount.value || parseFloat(collateralAmount.value) <= 0) {
     uni.showToast({
       title: t('common.pleaseEnterValidAmount'),
@@ -305,12 +343,53 @@ const confirmLending = () => {
     })
     return
   }
-  
-  uni.showToast({
-    title: t('components.newLending.lendingFeature'),
-    icon: 'none',
-    duration: 2000
-  })
+
+  try {
+    uni.showLoading({ title: '提交中...' })
+
+    const collateralInStd = parseFloat(String(collateralAmount.value).replace(/,/g, ''))
+    const loanAmt = parseFloat(String(borrowAmount.value).replace(/,/g, ''))
+
+    // 解析保险费率和年利率
+    const insuranceFeeRate = parsePercentToDecimal(loanConfig.value.insuranceFeeRate)
+    const annualRate = parsePercentToDecimal(loanConfig.value.annualRate)
+    
+    console.log('🔍 保险费率解析详情:', {
+      原始值: loanConfig.value.insuranceFeeRate,
+      解析后小数: insuranceFeeRate,
+      解析函数: 'parsePercentToDecimal'
+    })
+
+    const body = {
+      collateralAmount: collateralInStd,        // 输入的VGAU数量
+      loanAmount: loanAmt,                     // 可借USDT金额
+      expectedInsuranceFeeRate: insuranceFeeRate,  // 保险费率数值
+      expectedAnnualRate: annualRate           // 年利率数值
+    }
+
+    console.log('📝 创建借贷订单参数:', body)
+    console.log('🔍 参数详情:', {
+      collateralAmount: `${collateralInStd} VGAU`,
+      loanAmount: `${loanAmt} USDT`,
+      expectedInsuranceFeeRate: `${insuranceFeeRate} (保险费率: ${loanConfig.value.insuranceFeeRate})`,
+      expectedAnnualRate: `${annualRate} (${loanConfig.value.annualRate})`
+    })
+    
+    const resp = await loanAPI.createOrder(body)
+    console.log('✅ 创建借贷订单响应:', resp)
+
+    if (resp && resp.success) {
+      uni.showToast({ title: '创建成功', icon: 'success', duration: 1500 })
+      // 可根据需要跳转到订单详情或列表
+    } else {
+      uni.showToast({ title: resp?.message || '创建失败', icon: 'none', duration: 2000 })
+    }
+  } catch (e) {
+    console.error('❌ 创建借贷订单异常:', e)
+    uni.showToast({ title: '创建失败，请稍后重试', icon: 'none', duration: 2000 })
+  } finally {
+    uni.hideLoading()
+  }
 }
 
 // 返回上一页
