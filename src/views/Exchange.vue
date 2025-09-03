@@ -67,6 +67,23 @@
     <view class="confirm-btn" :class="{ 'loading': isLoading }" @click="confirmExchange">
       <text class="confirm-text">{{ isLoading ? getLoadingTitle() : t('components.exchange.confirmExchange') }}</text>
     </view>
+    
+    <!-- 自定义错误弹窗 -->
+    <view class="custom-error-modal" v-if="showErrorModal" @click="closeErrorModal">
+      <view class="error-modal-content" @click.stop>
+        <view class="error-header">
+          <text class="error-title">{{ errorModalData.title }}</text>
+        </view>
+        <view class="error-body">
+          <text class="error-message">{{ errorModalData.message }}</text>
+        </view>
+        <view class="error-footer">
+          <view class="error-confirm-btn" @click="closeErrorModal">
+            <text class="error-confirm-text">{{ errorModalData.confirmText }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
   
 
@@ -89,10 +106,85 @@ const getLoadingTitle = () => {
   }
 }
 
+// 获取错误标题的纯文字（避免显示键值对）
+const getErrorTitle = () => {
+  try {
+    const locale = i18n.global.locale?.value || 'en'
+    return locale.startsWith('zh') ? '錯誤' : 'Error'
+  } catch (e) {
+    return 'Error'
+  }
+}
+
+// 获取确认按钮文字的纯文字（避免显示键值对）
+const getConfirmText = () => {
+  try {
+    const locale = i18n.global.locale?.value || 'en'
+    return locale.startsWith('zh') ? '確認' : 'Confirm'
+  } catch (e) {
+    return 'Confirm'
+  }
+}
+
+// 获取错误信息的纯文字（避免显示键值对）
+const getErrorMessage = (error) => {
+  try {
+    const locale = i18n.global.locale?.value || 'en'
+    const isZh = locale.startsWith('zh')
+    
+    if (error.errorType === 'KYC_REQUIRED') {
+      return error.message
+    } else if (error.message) {
+      if (error.message.includes('余额不足') || error.message.includes('Insufficient balance')) {
+        return error.message
+      } else if (error.message.includes('用户取消') || error.message.includes('User rejected')) {
+        return isZh ? '用戶取消操作' : 'User Cancelled Operation'
+      } else if (error.message.includes('网络') || error.message.includes('network')) {
+        return isZh ? '網絡錯誤' : 'Network Error'
+      } else if (error.message.includes('Gas') || error.message.includes('gas')) {
+        return isZh ? 'Gas費用不足' : 'Insufficient Gas Fee'
+      }
+    }
+    
+    // 默认错误信息
+    return isZh ? '兌換失敗' : 'Exchange Failed'
+  } catch (e) {
+    return 'Exchange Failed'
+  }
+}
+
+// 获取成功信息的纯文字（避免显示键值对）
+const getSuccessMessage = () => {
+  try {
+    const locale = i18n.global.locale?.value || 'en'
+    return locale.startsWith('zh') ? '兌換成功' : 'Exchange Successful'
+  } catch (e) {
+    return 'Exchange Successful'
+  }
+}
+
+// 获取有效金额提示的纯文字（避免显示键值对）
+const getValidAmountMessage = () => {
+  try {
+    const locale = i18n.global.locale?.value || 'en'
+    return locale.startsWith('zh') ? '請輸入有效金額' : 'Please Enter Valid Amount'
+  } catch (e) {
+    return 'Please Enter Valid Amount'
+  }
+}
+
 // 兑换数量
 const exchangeAmount = ref('')
 const isLoading = ref(false)
 const currentPrice = ref(120) // 默认价格，将从合约获取
+
+// 自定义错误弹窗相关状态
+const showErrorModal = ref(false)
+const errorModalData = ref({
+  title: '',
+  message: '',
+  confirmText: ''
+})
 
 // 计算所需USDT
 const requiredUSDT = ref('0')
@@ -136,7 +228,7 @@ const getLatestPrice = async () => {
 const confirmExchange = async () => {
   if (!exchangeAmount.value || parseFloat(exchangeAmount.value) <= 0) {
     uni.showToast({
-      title: i18n.global.t('common.pleaseEnterValidAmount'),
+      title: getValidAmountMessage(),
       icon: 'none',
       duration: 2000
     })
@@ -169,7 +261,7 @@ const confirmExchange = async () => {
 
     // 显示成功提示
     uni.showToast({
-      title: i18n.global.t('components.exchange.exchangeSuccess'),
+      title: getSuccessMessage(),
       icon: 'success',
       duration: 3000
     })
@@ -188,29 +280,13 @@ const confirmExchange = async () => {
     // 隐藏加载提示
     uni.hideLoading()
     
-    // 显示错误信息
-    let errorMessage = i18n.global.t('components.exchange.exchangeFailed')
-    
-    if (error.errorType === 'KYC_REQUIRED') {
-      errorMessage = error.message
-    } else if (error.message) {
-      if (error.message.includes('余额不足')) {
-        errorMessage = error.message
-      } else if (error.message.includes('用户取消') || error.message.includes('User rejected')) {
-        errorMessage = i18n.global.t('common.userRejected')
-      } else if (error.message.includes('网络')) {
-        errorMessage = i18n.global.t('common.networkError')
-      } else if (error.message.includes('Gas')) {
-        errorMessage = i18n.global.t('common.gasInsufficient')
-      }
+    // 显示错误信息 - 使用自定义弹窗避免键值对显示
+    errorModalData.value = {
+      title: getErrorTitle(),
+      message: getErrorMessage(error),
+      confirmText: getConfirmText()
     }
-
-    uni.showModal({
-      title: i18n.global.t('common.error'),
-      content: errorMessage,
-      showCancel: false,
-      confirmText: i18n.global.t('common.confirm')
-    })
+    showErrorModal.value = true
   } finally {
     isLoading.value = false
   }
@@ -219,6 +295,11 @@ const confirmExchange = async () => {
 // 返回上一页
 const goBack = () => {
   uni.navigateBack()
+}
+
+// 关闭错误弹窗
+const closeErrorModal = () => {
+  showErrorModal.value = false
 }
 
 // 监听兑换数量变化，自动计算所需USDT
@@ -508,6 +589,74 @@ onMounted(async () => {
   }
 }
 
+/* 自定义错误弹窗样式 */
+.custom-error-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.error-modal-content {
+  background-color: #000000;
+  border: 2rpx solid #333333;
+  border-radius: 16rpx;
+  width: 600rpx;
+  max-width: 90%;
+  overflow: hidden;
+}
+
+.error-header {
+  padding: 40rpx 32rpx 20rpx;
+  border-bottom: 1rpx solid #333333;
+}
+
+.error-title {
+  color: #FFFFFF;
+  font-size: 36rpx;
+  font-weight: 600;
+  text-align: center;
+  display: block;
+}
+
+.error-body {
+  padding: 32rpx;
+}
+
+.error-message {
+  color: #FFFFFF;
+  font-size: 28rpx;
+  line-height: 1.5;
+  text-align: center;
+  display: block;
+}
+
+.error-footer {
+  padding: 20rpx 32rpx 40rpx;
+  display: flex;
+  justify-content: center;
+}
+
+.error-confirm-btn {
+  background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%);
+  border-radius: 12rpx;
+  padding: 20rpx 60rpx;
+  min-width: 200rpx;
+  text-align: center;
+}
+
+.error-confirm-text {
+  color: #000000;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
 /* 小屏幕适配 */
 @media (max-width: 600rpx) {
   .page-header {
@@ -536,6 +685,19 @@ onMounted(async () => {
   
   .confirm-btn {
     padding: 24rpx;
+  }
+  
+  .error-modal-content {
+    width: 90%;
+    margin: 0 20rpx;
+  }
+  
+  .error-title {
+    font-size: 32rpx;
+  }
+  
+  .error-message {
+    font-size: 26rpx;
   }
 }
 </style>
