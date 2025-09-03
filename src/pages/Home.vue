@@ -147,41 +147,8 @@
           <text class="amount-number">5,611,036g</text>
           <text class="amount-label">{{ $t('home.inventoryAmount') }}</text>
         </view>
-        <view class="daily-inventory">
-          <text class="daily-label">{{ $t('home.dailyInventory') }}</text>
-          <scroll-view class="daily-scroll" scroll-x="true" show-scrollbar="false">
-            <view class="daily-data">
-              <view class="daily-item">
-                <text class="daily-date">2025-12-02</text>
-                <text class="daily-amount">5,611,036g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-01-02</text>
-                <text class="daily-amount">5,611,036g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-12-01</text>
-                <text class="daily-amount">5,611,036g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-11-30</text>
-                <text class="daily-amount">5,610,000g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-11-29</text>
-                <text class="daily-amount">5,609,500g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-11-28</text>
-                <text class="daily-amount">5,609,000g</text>
-              </view>
-            </view>
-          </scroll-view>
-        </view>
-        <view class="source-info">
-          <text class="source-text">{{ $t('home.source') }}</text>
-          <text class="certificate-text">{{ $t('home.certificate') }}</text>
-        </view>
+
+
       </view>
     </view>
     
@@ -1209,64 +1176,9 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-.daily-inventory {
-  margin-bottom: 32rpx;
-}
 
-.daily-label {
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 16rpx;
-  display: block;
-}
 
-.daily-scroll {
-  width: 100%;
-  white-space: nowrap;
-}
 
-.daily-data {
-  display: flex;
-  gap: 16rpx;
-  padding: 16rpx 0;
-}
-
-.daily-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 200rpx;
-  background: #000000;
-  border: 1rpx solid rgba(255, 255, 255, 0.2);
-  border-radius: 16rpx;
-  padding: 24rpx 16rpx;
-  flex-shrink: 0;
-}
-
-.daily-date {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 8rpx;
-  text-align: center;
-}
-
-.daily-amount {
-  font-size: 28rpx;
-  color: #FFFFFF;
-  font-weight: 600;
-  text-align: center;
-}
-
-.source-info {
-  margin-top: 32rpx;
-}
-
-.source-text, .certificate-text {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.2);
-  display: block;
-  margin-bottom: 8rpx;
-}
 
 /* 自定义Toast样式 - 半透明（移动端兼容） */
 :deep(.uni-toast) {
