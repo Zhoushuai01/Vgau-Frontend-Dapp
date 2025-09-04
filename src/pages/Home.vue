@@ -148,7 +148,6 @@
           <text class="amount-label">{{ $t('home.inventoryAmount') }}</text>
         </view>
 
-
       </view>
     </view>
     
@@ -1175,7 +1174,6 @@
   font-size: 28rpx;
   color: rgba(255, 255, 255, 0.5);
 }
-
 
 
 
