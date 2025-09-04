@@ -14,7 +14,7 @@ export const API_CONFIG = {
   
   // 生产环境配置
   production: {
-    baseURL: 'http://192.168.1.100:8080/api',
+    baseURL: 'https://verigold.ai/api',
     proxy: null
   }
 }
