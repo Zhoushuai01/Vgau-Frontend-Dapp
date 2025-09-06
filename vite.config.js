@@ -11,7 +11,7 @@ export default defineConfig({
     host: '0.0.0.0', // 允许所有IP访问
     port: 5173, // 指定端口
     open: true, // 自动打开浏览器
-    cors: true, // 启用CORS
+    cors: true, // 启  用CORS
     proxy: {
       '/api': {
         target: 'http://192.168.1.100:8080',

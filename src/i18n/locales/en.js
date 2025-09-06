@@ -65,6 +65,12 @@ export default {
     pleaseEnterPositiveInteger: 'Please Enter Positive Integer'
   },
 
+  // Exchange
+  exchange: {
+    exchangeSuccess: 'Exchange Successful',
+    exchangeFailed: 'Exchange Failed'
+  },
+
   // Navigation
   navigation: {
     home: 'Home',

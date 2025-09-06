@@ -218,7 +218,7 @@
   const { t, locale } = useI18n()
   
   // 官网地址
-  const officialUrl = 'http://localhost:3000/home'
+  const officialUrl = 'https://verigold.ai/'
   const openOfficialSite = () => {
     // #ifdef H5
     window.open(officialUrl, '_blank')
@@ -458,7 +458,7 @@
 
       // 显示成功提示
       uni.showToast({
-        title: i18n.global.t('components.exchange.exchangeSuccess'),
+        title: i18n.global.t('exchange.exchangeSuccess'),
         icon: 'success',
         duration: 3000
       })
@@ -473,7 +473,7 @@
       uni.hideLoading()
       
       // 显示错误信息
-      let errorMessage = i18n.global.t('components.exchange.exchangeFailed')
+      let errorMessage = i18n.global.t('exchange.exchangeFailed')
       
       if (error.errorType === 'KYC_REQUIRED') {
         errorMessage = error.message

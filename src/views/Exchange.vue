@@ -68,6 +68,7 @@
       <text class="confirm-text">{{ isLoading ? getLoadingTitle() : t('components.exchange.confirmExchange') }}</text>
     </view>
     
+    
     <!-- 自定义错误弹窗 -->
     <view class="custom-error-modal" v-if="showErrorModal" @click="closeErrorModal">
       <view class="error-modal-content" @click.stop>
@@ -301,6 +302,7 @@ const goBack = () => {
 const closeErrorModal = () => {
   showErrorModal.value = false
 }
+
 
 // 监听兑换数量变化，自动计算所需USDT
 watch(exchangeAmount, () => {

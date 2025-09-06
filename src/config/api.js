@@ -4,7 +4,7 @@ export const API_CONFIG = {
   development: {
     baseURL: 'http://localhost:5173/api',
     proxy: {
-      target: 'http://192.168.1.100:8080',
+      target:'http://192.168.1.100:8080',
       changeOrigin: true,
       pathRewrite: {
         '^/api': '/api'
