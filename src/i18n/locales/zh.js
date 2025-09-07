@@ -65,6 +65,12 @@ export default {
     pleaseEnterPositiveInteger: '請輸入正整數'
   },
 
+  // 兑换
+  exchange: {
+    exchangeSuccess: '兌換成功',
+    exchangeFailed: '兌換失敗'
+  },
+
   // 导航
   navigation: {
     home: '首頁',
@@ -102,6 +108,8 @@ export default {
       custodian: '託管服務',
       details: '詳細信息'
     }
+    ,
+    officialSite: 'VeriGold官網'
   },
 
   // DeFi页面

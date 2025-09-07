@@ -15,6 +15,10 @@
         
         <!-- 右侧钱包连接和语言选择 -->
         <view class="right-controls">
+          <!-- 官网按钮（白色） -->
+          <view class="official-link-btn" @click="openOfficialSite">
+            <text class="official-link-text">{{ $t('home.officialSite') }}</text>
+          </view>
           <view class="connect-wallet-btn" @click="walletConnected ? showWalletModal = true : connectWallet()" :class="{ connected: walletConnected }">
             <text class="btn-text">{{ walletConnected ? formatShortAddress(currentAccount) : $t('wallet.connect') }}</text>
           </view>
@@ -87,11 +91,20 @@
       <view class="exchange-section">
         <view class="exchange-title">{{ $t('home.exchange') }}</view>
         <view class="exchange-input">
-                      <input class="input-field" :placeholder="$t('home.enterAmount')" />
+          <input 
+            class="input-field" 
+            type="number"
+            v-model="homeExchangeAmount"
+            :placeholder="$t('home.enterAmount')" 
+            placeholder-class="placeholder-text"
+            :adjust-position="false"
+            :hold-keyboard="true"
+            :cursor-spacing="200"
+          />
           <view class="currency-label">VGAU</view>
         </view>
-        <view class="confirm-button">
-          <text class="button-text">{{ $t('home.confirmOperation') }}</text>
+        <view class="confirm-button" :class="{ 'loading': isHomeExchangeLoading }" @click="confirmHomeExchange">
+          <text class="button-text">{{ isHomeExchangeLoading ? getHomeLoadingTitle() : $t('home.confirmOperation') }}</text>
         </view>
       </view>
 
@@ -134,41 +147,7 @@
           <text class="amount-number">5,611,036g</text>
           <text class="amount-label">{{ $t('home.inventoryAmount') }}</text>
         </view>
-        <view class="daily-inventory">
-          <text class="daily-label">{{ $t('home.dailyInventory') }}</text>
-          <scroll-view class="daily-scroll" scroll-x="true" show-scrollbar="false">
-            <view class="daily-data">
-              <view class="daily-item">
-                <text class="daily-date">2025-12-02</text>
-                <text class="daily-amount">5,611,036g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-01-02</text>
-                <text class="daily-amount">5,611,036g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-12-01</text>
-                <text class="daily-amount">5,611,036g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-11-30</text>
-                <text class="daily-amount">5,610,000g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-11-29</text>
-                <text class="daily-amount">5,609,500g</text>
-              </view>
-              <view class="daily-item">
-                <text class="daily-date">2025-11-28</text>
-                <text class="daily-amount">5,609,000g</text>
-              </view>
-            </view>
-          </scroll-view>
-        </view>
-        <view class="source-info">
-          <text class="source-text">{{ $t('home.source') }}</text>
-          <text class="certificate-text">{{ $t('home.certificate') }}</text>
-        </view>
+
       </view>
     </view>
     
@@ -230,11 +209,25 @@
   import { onPageScroll, onShow } from '@dcloudio/uni-app'
   import { useI18n } from 'vue-i18n'
   import { setLocale } from '@/i18n/i18n.js'
+  import i18n from '@/i18n/i18n.js'
   import web3Service from '../utils/web3.js'
   import vgauService from '../utils/vgauService.js'
+  import contractExchange from '@/utils/contractExchange.js'
   import { formatShortAddress } from '@/utils/addressUtils'
   
   const { t, locale } = useI18n()
+  
+  // 官网地址
+  const officialUrl = 'https://verigold.ai/'
+  const openOfficialSite = () => {
+    // #ifdef H5
+    window.open(officialUrl, '_blank')
+    // #endif
+    
+    // #ifdef APP-PLUS || MP
+    uni.navigateTo({ url: officialUrl })
+    // #endif
+  }
   
   // 轮播图数据
   const banners = ref([
@@ -266,6 +259,10 @@
     details: '',
     suggestions: []
   })
+  
+  // 首页兑换相关状态
+  const homeExchangeAmount = ref('')
+  const isHomeExchangeLoading = ref(false)
   
   // 复制合同地址到剪贴板
   const copyContractAddress = () => {
@@ -412,6 +409,95 @@
         })
       }
     })
+  }
+  
+  // 获取首页加载弹窗的纯文字标题（避免显示键值对）
+  const getHomeLoadingTitle = () => {
+    try {
+      const locale = i18n.global.locale?.value || 'en'
+      return locale.startsWith('zh') ? '正在兌換...' : 'Exchanging...'
+    } catch (e) {
+      return 'Exchanging...'
+    }
+  }
+  
+  // 首页确认兑换
+  const confirmHomeExchange = async () => {
+    if (!homeExchangeAmount.value || parseFloat(homeExchangeAmount.value) <= 0) {
+      uni.showToast({
+        title: i18n.global.t('common.pleaseEnterValidAmount'),
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+
+    if (isHomeExchangeLoading.value) {
+      return
+    }
+
+    try {
+      isHomeExchangeLoading.value = true
+      
+      // 显示加载提示（使用纯文字，避免键值对显示）
+      uni.showLoading({
+        title: getHomeLoadingTitle(),
+        mask: true
+      })
+
+      console.log('🚀 开始首页USDT兑换VGAU流程...')
+      console.log('兑换数量:', homeExchangeAmount.value, 'VGAU')
+
+      // 调用合约兑换
+      const result = await contractExchange.exchangeUsdtToVgau(homeExchangeAmount.value)
+      
+      // 隐藏加载提示
+      uni.hideLoading()
+
+      console.log('✅ 首页兑换成功:', result)
+
+      // 显示成功提示
+      uni.showToast({
+        title: i18n.global.t('exchange.exchangeSuccess'),
+        icon: 'success',
+        duration: 3000
+      })
+
+      // 清空输入框
+      homeExchangeAmount.value = ''
+
+    } catch (error) {
+      console.error('❌ 首页兑换失败:', error)
+      
+      // 隐藏加载提示
+      uni.hideLoading()
+      
+      // 显示错误信息
+      let errorMessage = i18n.global.t('exchange.exchangeFailed')
+      
+      if (error.errorType === 'KYC_REQUIRED') {
+        errorMessage = error.message
+      } else if (error.message) {
+        if (error.message.includes('余额不足')) {
+          errorMessage = error.message
+        } else if (error.message.includes('用户取消') || error.message.includes('User rejected')) {
+          errorMessage = i18n.global.t('common.userRejected')
+        } else if (error.message.includes('网络')) {
+          errorMessage = i18n.global.t('common.networkError')
+        } else if (error.message.includes('Gas')) {
+          errorMessage = i18n.global.t('common.gasInsufficient')
+        }
+      }
+
+      uni.showModal({
+        title: i18n.global.t('common.error'),
+        content: errorMessage,
+        showCancel: false,
+        confirmText: i18n.global.t('common.confirm')
+      })
+    } finally {
+      isHomeExchangeLoading.value = false
+    }
   }
   
   // 断开钱包连接
@@ -913,8 +999,15 @@
   flex: 1;
   background: transparent;
   border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 28rpx;
+}
+
+.placeholder-text {
   color: rgba(255, 255, 255, 0.2);
   font-size: 28rpx;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .currency-label {
@@ -928,6 +1021,12 @@
   border-radius: 16rpx;
   padding: 24rpx 0;
   text-align: center;
+  transition: all 0.3s ease;
+}
+
+.confirm-button.loading {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.6) 0%, rgba(255, 165, 0, 0.6) 100%);
+  pointer-events: none;
 }
 
 .button-text {
@@ -948,6 +1047,26 @@
   font-size: 40rpx;
   color: #FFFFFF;
   margin-bottom: 16rpx;
+}
+
+/* 官网按钮（白色） */
+.official-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6rpx 16rpx; /* 更小内边距，缩小宽度 */
+  background-color: #FFFFFF;
+  border-radius: 16rpx;
+  height: 40rpx; /* 与链接钱包一致 */
+  min-width: 90rpx; /* 更小最小宽度 */
+}
+
+.official-link-text {
+  color: #000000;
+  font-size: 18rpx; /* 继续缩小字体 */
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .project-desc {
@@ -1056,64 +1175,8 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-.daily-inventory {
-  margin-bottom: 32rpx;
-}
 
-.daily-label {
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 16rpx;
-  display: block;
-}
 
-.daily-scroll {
-  width: 100%;
-  white-space: nowrap;
-}
-
-.daily-data {
-  display: flex;
-  gap: 16rpx;
-  padding: 16rpx 0;
-}
-
-.daily-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 200rpx;
-  background: #000000;
-  border: 1rpx solid rgba(255, 255, 255, 0.2);
-  border-radius: 16rpx;
-  padding: 24rpx 16rpx;
-  flex-shrink: 0;
-}
-
-.daily-date {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 8rpx;
-  text-align: center;
-}
-
-.daily-amount {
-  font-size: 28rpx;
-  color: #FFFFFF;
-  font-weight: 600;
-  text-align: center;
-}
-
-.source-info {
-  margin-top: 32rpx;
-}
-
-.source-text, .certificate-text {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.2);
-  display: block;
-  margin-bottom: 8rpx;
-}
 
 /* 自定义Toast样式 - 半透明（移动端兼容） */
 :deep(.uni-toast) {

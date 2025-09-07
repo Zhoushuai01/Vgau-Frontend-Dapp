@@ -65,6 +65,12 @@ export default {
     pleaseEnterPositiveInteger: 'Please Enter Positive Integer'
   },
 
+  // Exchange
+  exchange: {
+    exchangeSuccess: 'Exchange Successful',
+    exchangeFailed: 'Exchange Failed'
+  },
+
   // Navigation
   navigation: {
     home: 'Home',
@@ -101,7 +107,8 @@ export default {
       audited: 'Audited',
       custodian: 'Custody Service',
       details: 'Details'
-    }
+    },
+    officialSite: 'VeriGold Official'
   },
 
   // DeFi Page

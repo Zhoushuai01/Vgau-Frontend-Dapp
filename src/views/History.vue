@@ -8,11 +8,6 @@
       <view class="page-title">
         <text class="title-text">{{ t('history.title') }}</text>
       </view>
-      <view class="header-actions">
-        <view class="header-btn" @click="goToTransactionHistory">
-          <image src="/static/history.png" class="header-icon" />
-        </view>
-      </view>
     </view>
 
          <!-- 主要内容区域 -->
@@ -386,14 +381,6 @@ const viewEarnTransactionDetail = (transaction) => {
   })
 }
 
-// 前往交易历史
-const goToTransactionHistory = () => {
-  uni.showToast({
-    title: t('history.transactionHistoryFeature'),
-    icon: 'none',
-    duration: 2000
-  })
-}
 
 // 前往借贷详情
 const goToBorrowingDetail = (status = 'borrowing') => {
@@ -474,24 +461,6 @@ onMounted(() => {
   font-weight: 400;
 }
 
-.header-actions {
-  display: flex;
-  gap: 16rpx;
-}
-
-.header-btn {
-  width: 48rpx;
-  height: 48rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.header-icon {
-  width: 32rpx;
-  height: 32rpx;
-}
 
 /* 主要内容区域 */
 .main-content {

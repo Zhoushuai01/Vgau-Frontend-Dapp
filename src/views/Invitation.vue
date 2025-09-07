@@ -119,7 +119,7 @@ const invitationList = ref([
     id: '001',
     wallet: '0x7eCfbF2D6DEa2371ea8f237c056B024dA4Bc87af',
     type: t('components.invitation.directReferral'),
-    rewards: '2'
+    rewards: '1'
   },
   {
     id: '002',

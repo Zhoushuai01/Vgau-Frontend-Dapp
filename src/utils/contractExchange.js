@@ -157,7 +157,26 @@ class ContractExchange {
 
       console.log('所需USDT(wei):', requiredUSDT)
 
-      // 2. 检查USDT授权额度
+      // 2. KYC阈值与累计兑换额度校验（前端提前拦截）
+      try {
+        const [kycThreshold, userTotalUsdt] = await Promise.all([
+          this.getKycThreshold(),
+          this.getUserTotalExchangeUsdtAmount()
+        ])
+        // 计划本次兑换将增加的USDT消耗：requiredUSDT
+        const willTotal = BigInt(userTotalUsdt.toString()) + BigInt(requiredUSDT.toString())
+        if (willTotal > BigInt(kycThreshold.toString())) {
+          const kycError = new Error('请先完成钱包绑定和KYC认证后再进行大额兑换')
+          kycError.errorType = 'KYC_REQUIRED'
+          throw kycError
+        }
+      } catch (e) {
+        // 若是KYC_REQUIRED则抛给上层；其他读取失败不阻塞后续授权与交易
+        if (e && e.errorType === 'KYC_REQUIRED') throw e
+        console.warn('KYC前置校验失败或未通过，继续由合约侧校验:', e)
+      }
+
+      // 3. 检查USDT授权额度
       console.log('🔍 检查USDT授权额度...')
       const allowance = await this.getUSDTAllowance()
       console.log('当前授权额度:', allowance)
@@ -182,7 +201,7 @@ class ContractExchange {
         await new Promise(resolve => setTimeout(resolve, 3000))
       }
 
-      // 3. 执行兑换
+      // 4. 执行兑换
       console.log('💱 执行兑换交易...')
       const transaction = await web3Service.sendTransaction(
         'VGAUExchange',
@@ -317,6 +336,54 @@ class ContractExchange {
       }
     } catch (error) {
       console.error('❌ 计算所需USDT失败:', error)
+      throw error
+    }
+  }
+
+  // 读取KYC阈值（USDT，以最小单位返回）
+  async getKycThreshold() {
+    try {
+      await this.init()
+      const threshold = await web3Service.callContractMethod(
+        'VGAUExchange',
+        'kycThreshold'
+      )
+      return threshold
+    } catch (error) {
+      console.error('❌ 读取KYC阈值失败:', error)
+      throw error
+    }
+  }
+
+  // 读取用户累计兑换USDT金额（以最小单位返回）
+  async getUserTotalExchangeUsdtAmount(address = null) {
+    try {
+      await this.init()
+      const userAddress = address || web3Service.currentAccount
+      if (!userAddress) throw new Error('没有可用的账户地址')
+      const total = await web3Service.callContractMethod(
+        'VGAUExchange',
+        'userTotalExchangeUsdtAmount',
+        userAddress
+      )
+      return total
+    } catch (error) {
+      console.error('❌ 读取用户累计兑换USDT失败:', error)
+      throw error
+    }
+  }
+
+  // 获取USDT小数位数
+  async getUSDTDecimals() {
+    try {
+      await this.init()
+      const decimals = await web3Service.callContractMethod(
+        'VGAUExchange',
+        'usdtDecimals'
+      )
+      return decimals
+    } catch (error) {
+      console.error('❌ 获取USDT小数位数失败:', error)
       throw error
     }
   }

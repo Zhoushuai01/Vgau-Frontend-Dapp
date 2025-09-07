@@ -47,7 +47,7 @@
           <text class="game-label">Eco Mini Game</text>
         </view>
       </view>
-
+                 
       <!-- 垂直游戏列表区域 -->
       <view class="vertical-games">
         <view class="game-row">

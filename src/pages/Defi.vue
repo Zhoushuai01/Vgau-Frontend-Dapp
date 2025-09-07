@@ -670,7 +670,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(90deg, rgba(100, 100, 100, 1) 0%, rgba(255, 255, 255, 1) 100%);
+  background: #FFFFFF;
   border-radius: 16rpx;
   padding: 32rpx;
   position: relative;
@@ -684,7 +684,7 @@
   transform: translate(-50%, -50%);
   width: 2rpx;
   height: 90rpx;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .yield-info {
@@ -702,21 +702,21 @@
 
 .yield-label {
   font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(0, 0, 0, 0.5);
   font-weight: 400;
   margin-bottom: 8rpx;
 }
 
 .yield-value {
   font-size: 32rpx;
-  color: #FFFFFF;
+  color: #000000;
   font-weight: 400;
 }
 
 .yield-divider {
   width: 2rpx;
   height: 100%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .claim-button {
