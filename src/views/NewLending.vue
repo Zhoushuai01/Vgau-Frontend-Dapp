@@ -33,9 +33,9 @@
           <view class="input-container">
             <input class="amount-input" 
                    type="number" 
-                   placeholder="Enter amount" 
+                   :placeholder="t('components.newLending.enterCollateralAmount')" 
                    v-model="collateralAmount"
-                   :adjust-position="false" />qian
+                   :adjust-position="false" />
             <view class="input-suffix">
               <text class="currency-text">VGAU</text>
               <view class="divider"></view>
@@ -55,7 +55,7 @@
           <view class="input-container">
             <input class="amount-input" 
                    type="number" 
-                   placeholder="Enter amount" 
+                   :placeholder="t('components.newLending.enterBorrowAmount')" 
                    v-model="borrowAmount"
                    :adjust-position="false" />
                          <view class="input-suffix">
@@ -350,29 +350,15 @@ const confirmLending = async () => {
     const collateralInStd = parseFloat(String(collateralAmount.value).replace(/,/g, ''))
     const loanAmt = parseFloat(String(borrowAmount.value).replace(/,/g, ''))
 
-    // 解析保险费率和年利率
-    const insuranceFeeRate = parsePercentToDecimal(loanConfig.value.insuranceFeeRate)
-    const annualRate = parsePercentToDecimal(loanConfig.value.annualRate)
-    
-    console.log('🔍 保险费率解析详情:', {
-      原始值: loanConfig.value.insuranceFeeRate,
-      解析后小数: insuranceFeeRate,
-      解析函数: 'parsePercentToDecimal'
-    })
-
     const body = {
       collateralAmount: collateralInStd,        // 输入的VGAU数量
-      loanAmount: loanAmt,                     // 可借USDT金额
-      expectedInsuranceFeeRate: insuranceFeeRate,  // 保险费率数值
-      expectedAnnualRate: annualRate           // 年利率数值
+      loanAmount: loanAmt                      // 可借USDT金额
     }
 
     console.log('📝 创建借贷订单参数:', body)
     console.log('🔍 参数详情:', {
       collateralAmount: `${collateralInStd} VGAU`,
-      loanAmount: `${loanAmt} USDT`,
-      expectedInsuranceFeeRate: `${insuranceFeeRate} (保险费率: ${loanConfig.value.insuranceFeeRate})`,
-      expectedAnnualRate: `${annualRate} (${loanConfig.value.annualRate})`
+      loanAmount: `${loanAmt} USDT`
     })
     
     const resp = await loanAPI.createOrder(body)
@@ -380,7 +366,10 @@ const confirmLending = async () => {
 
     if (resp && resp.success) {
       uni.showToast({ title: '创建成功', icon: 'success', duration: 1500 })
-      // 可根据需要跳转到订单详情或列表
+      // 立即跳转到DeFi页面
+      uni.switchTab({
+        url: '/pages/Defi'
+      })
     } else {
       uni.showToast({ title: resp?.message || '创建失败', icon: 'none', duration: 2000 })
     }
