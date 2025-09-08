@@ -15,8 +15,8 @@ export default defineConfig({
     cors: true, // 启  用CORS
     proxy: {
       '/api': {
-        // 修改:target: 'http://192.168.1.100:8080',
-        target: 'https://verigold.ai/', // 请替换为实际的服务器地址和端口
+    //代理
+        target: 'http://192.168.1.100:8080', 
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '/api')

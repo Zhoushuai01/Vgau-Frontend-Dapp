@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // 开发环境配置
   development: {
-    baseURL: 'http://localhost:5173/api',
+    baseURL: '/api',
     proxy: {
       target:'http://192.168.1.100:8080',
       changeOrigin: true,
