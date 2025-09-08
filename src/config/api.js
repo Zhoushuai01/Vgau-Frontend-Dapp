@@ -59,7 +59,8 @@ export const API_ENDPOINTS = {
   
   // 用户资金余额
   USER_FUNDS: {
-    BALANCES: '/user-funds/balances'
+    BALANCES: '/user-funds/balances',
+    WITHDRAW: '/user-funds/withdraw'
   },
   
   // 借贷配置
@@ -80,6 +81,11 @@ export const API_ENDPOINTS = {
     SETUP: '/totp/setup',
     VERIFY: '/totp/verify',
     DISABLE: '/totp/disable'
+  },
+
+  // 新版 2FA 验证（/auth/2fa/verify）
+  AUTH_2FA: {
+    VERIFY: '/auth/2fa/verify'
   },
   
   // 文件管理

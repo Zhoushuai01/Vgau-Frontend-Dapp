@@ -3,7 +3,7 @@ import uni from "@dcloudio/vite-plugin-uni";
 import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/dapp/',
+  base: '/',
   plugins: [
     uni(),
   
@@ -29,16 +29,15 @@ export default defineConfig({
       "api": path.resolve(__dirname, "./src/api/apiService.js"),
     },
   },
-  // 构建配置
+  // 构建配置（移除 dapp 前缀，使用标准命名）
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     rollupOptions: {
       output: {
-        // 确保DApp的资源文件名与主站不同，避免冲突
-        entryFileNames: 'assets/dapp-[hash].js',
-        chunkFileNames: 'assets/dapp-[hash].js',
-        assetFileNames: 'assets/dapp-[hash].[ext]'
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]'
       }
     }
   }

@@ -51,7 +51,7 @@
         </view>
 
                  <view class="parameter-item">
-           <text class="parameter-label">{{ t('components.newLending.availableToBorrow') }}</text>
+           <text class="parameter-label">{{ t('components.newLending.lendingAmount') }}</text>
           <view class="input-container">
             <input class="amount-input" 
                    type="number" 
@@ -62,6 +62,10 @@
                <text class="currency-text-white">USDT</text>
              </view>
                      </view>
+                    <view class="available-balance">
+            <text class="balance-label">{{ t('components.newLending.borrowRange') }}</text>
+            <text class="balance-amount">{{ `${minBorrowAmount} - ${maxBorrowAmount} USDT` }}</text>
+          </view>
          </view>
       </view>
 
@@ -120,9 +124,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { userFundsAPI, loanAPI } from '@/api/apiService'
+import contractExchange from '@/utils/contractExchange.js'
 
 const { t } = useI18n()
 
@@ -135,12 +140,18 @@ const isLoadingBalance = ref(false)
 // 借贷配置数据
 const loanConfig = ref({
   maxLtvRatio: '78%',        // 初始抵押比率
+  minLtvRatio: '60%',        // 最小抵押比率（新增）
   riskThresholdLevel2: '88%',    // 追加保证金
   riskThresholdLiquidation: '85%',    // 强制清算抵押比率
   insuranceFeeRate: '2%',    // 清算保险费率
   annualRate: '8.18%'         // 净年化利率
 })
 const isLoadingConfig = ref(false)
+
+// 抵押对应USDT价值与可借范围
+const collateralUsdtValue = ref('0')
+const minBorrowAmount = ref('0')
+const maxBorrowAmount = ref('0')
 
 // 计算可借金额（基于抵押品数量）
 const calculatedBorrowAmount = computed(() => {
@@ -158,6 +169,64 @@ const handleCollateralChange = () => {
     borrowAmount.value = calculatedBorrowAmount.value
   }
 }
+
+// 计算并更新抵押对应USDT价值与可借范围（基于合约价格，按克计价）
+const updateBorrowRange = async () => {
+  try {
+    const collateral = parseFloat(String(collateralAmount.value).replace(/,/g, ''))
+    if (!collateral || isNaN(collateral) || collateral <= 0) {
+      collateralUsdtValue.value = '0'
+      minBorrowAmount.value = '0'
+      maxBorrowAmount.value = '0'
+      return
+    }
+
+    // 从合约计算该VGAU数量对应的USDT价值（已考虑精度）
+    const required = await contractExchange.getRequiredUSDT(collateral)
+    const usdtValue = Number(required.formatted) || 0
+    collateralUsdtValue.value = usdtValue.toFixed(2)
+
+    const minRatio = parsePercentToDecimal(loanConfig.value.minLtvRatio)
+    const maxRatio = parsePercentToDecimal(loanConfig.value.maxLtvRatio)
+
+    const minV = (usdtValue * minRatio)
+    const maxV = (usdtValue * maxRatio)
+
+    minBorrowAmount.value = minV.toFixed(2)
+    maxBorrowAmount.value = maxV.toFixed(2)
+
+    // 若当前输入借款额不在范围内，则夹紧到区间
+    if (borrowAmount.value) {
+      const cur = parseFloat(String(borrowAmount.value).replace(/,/g, ''))
+      if (!isNaN(cur)) {
+        if (cur < minV) borrowAmount.value = minBorrowAmount.value
+        if (cur > maxV) borrowAmount.value = maxBorrowAmount.value
+      }
+    }
+  } catch (e) {
+    console.error('❌ 更新借款范围失败:', e)
+  }
+}
+
+// 监听抵押数量变化，实时刷新范围
+watch(collateralAmount, () => {
+  updateBorrowRange()
+})
+
+// 借款金额输入强校验：必须在[min,max]区间
+watch(borrowAmount, (val) => {
+  if (!val) return
+  const cur = parseFloat(String(val).replace(/,/g, ''))
+  const minV = parseFloat(minBorrowAmount.value)
+  const maxV = parseFloat(maxBorrowAmount.value)
+  if (isNaN(cur) || isNaN(minV) || isNaN(maxV) || minV === 0 && maxV === 0) return
+  if (cur < minV || cur > maxV) {
+    uni.showToast({ title: `借款范围 ${minV.toFixed(2)} - ${maxV.toFixed(2)} USDT`, icon: 'none', duration: 2000 })
+    // 自动夹紧
+    if (cur < minV) borrowAmount.value = minBorrowAmount.value
+    if (cur > maxV) borrowAmount.value = maxBorrowAmount.value
+  }
+})
 
 
 
@@ -209,6 +278,7 @@ const fetchLoanConfig = async () => {
       // 更新借贷配置
       loanConfig.value = {
         maxLtvRatio: formatPercentage(response.data.maxLtvRatio) || '78%',
+        minLtvRatio: formatPercentage(response.data.minLtvRatio) || '60%',
         riskThresholdLevel2: formatPercentage(response.data.riskThresholdLevel2) || '88%',
         riskThresholdLiquidation: formatPercentage(response.data.riskThresholdLiquidation) || '85%',
         insuranceFeeRate: response.data.insuranceFeeRate || '0.0200', // 保险费率，保持原始小数格式
@@ -350,6 +420,15 @@ const confirmLending = async () => {
     const collateralInStd = parseFloat(String(collateralAmount.value).replace(/,/g, ''))
     const loanAmt = parseFloat(String(borrowAmount.value).replace(/,/g, ''))
 
+    // 提交前校验借款额必须在[min,max]区间
+    const minV = parseFloat(minBorrowAmount.value) || 0
+    const maxV = parseFloat(maxBorrowAmount.value) || 0
+    if (minV > 0 && maxV > 0 && (loanAmt < minV || loanAmt > maxV)) {
+      uni.hideLoading()
+      uni.showToast({ title: `借款范围 ${minV.toFixed(2)} - ${maxV.toFixed(2)} USDT`, icon: 'none', duration: 2000 })
+      return
+    }
+
     const body = {
       collateralAmount: collateralInStd,        // 输入的VGAU数量
       loanAmount: loanAmt                      // 可借USDT金额
@@ -367,9 +446,42 @@ const confirmLending = async () => {
     if (resp && resp.success) {
       uni.showToast({ title: '创建成功', icon: 'success', duration: 1500 })
       // 立即跳转到DeFi页面
-      uni.switchTab({
-        url: '/pages/Defi'
-      })
+      console.log('🚀 准备跳转到DeFi页面...')
+      
+      // 使用setTimeout确保Toast显示后再跳转
+      setTimeout(() => {
+        // 先返回到上一页，然后跳转到DeFi
+        uni.navigateBack({
+          success: () => {
+            console.log('✅ 返回上一页成功，准备跳转到DeFi')
+            // 延迟一下再跳转
+            setTimeout(() => {
+              uni.switchTab({
+                url: '/pages/Defi',
+                success: () => {
+                  console.log('✅ 跳转到DeFi页面成功')
+                },
+                fail: (err) => {
+                  console.error('❌ 跳转到DeFi页面失败:', err)
+                }
+              })
+            }, 100)
+          },
+          fail: (err) => {
+            console.error('❌ 返回上一页失败:', err)
+            // 如果返回失败，直接尝试跳转
+            uni.switchTab({
+              url: '/pages/Defi',
+              success: () => {
+                console.log('✅ 直接跳转到DeFi页面成功')
+              },
+              fail: (err2) => {
+                console.error('❌ 直接跳转也失败:', err2)
+              }
+            })
+          }
+        })
+      }, 100)
     } else {
       uni.showToast({ title: resp?.message || '创建失败', icon: 'none', duration: 2000 })
     }
@@ -391,6 +503,8 @@ onMounted(() => {
   console.log('🚀 NewLending页面加载完成，开始获取数据...')
   fetchVGAUBalance()
   fetchLoanConfig()
+  // 初始化一次范围
+  updateBorrowRange()
 })
 </script>
 

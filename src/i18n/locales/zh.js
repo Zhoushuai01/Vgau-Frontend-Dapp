@@ -800,6 +800,8 @@ export default {
       max: '最大',
       availableAssets: '可用資產',
       availableToBorrow: '可借金額',
+      lendingAmount: '借貸金額',
+      borrowRange: '可借範圍',
       enterBorrowAmount: '請輸入借款金額',
       liquidationInsuranceFee: '清算保險費',
       initialCollateralRatio: '初始抵押比率',

@@ -789,6 +789,8 @@ export default {
       max: 'MAX',
       availableAssets: 'Available Assets',
       availableToBorrow: 'Available to Borrow',
+      lendingAmount: 'Lending Amount',
+      borrowRange: 'Borrow Range',
       enterBorrowAmount: 'Enter borrow amount',
       liquidationInsuranceFee: 'Liquidation Insurance Fee',
       initialCollateralRatio: 'Initial Collateral Ratio',

@@ -105,7 +105,10 @@ class ApiService {
     getProfile: () => this.get(this.endpoints.AUTH.PROFILE),
     
     // 获取当前用户信息（检查登录状态）
-    getMe: () => this.get(this.endpoints.AUTH.ME)
+    getMe: () => this.get(this.endpoints.AUTH.ME),
+    
+    // 2FA 验证（/auth/2fa/verify）
+    verify2FA: (data) => this.post(this.endpoints.AUTH_2FA.VERIFY, data)
   }
 
   // 钱包认证相关API
@@ -172,6 +175,11 @@ class ApiService {
     disable: (code) => this.post(this.endpoints.TOTP.DISABLE, { code })
   }
 
+  // 新版 2FA 验证接口（/auth/2fa/verify）
+  auth2fa = {
+    verify: (data) => this.post(this.endpoints.AUTH_2FA.VERIFY, data)
+  }
+
   // 文件管理相关API
   file = {
     // 上传文件
@@ -220,7 +228,9 @@ class ApiService {
   // 用户资金余额相关API
   userFunds = {
     // 获取用户资金余额
-    getBalances: () => this.get(this.endpoints.USER_FUNDS.BALANCES)
+    getBalances: () => this.get(this.endpoints.USER_FUNDS.BALANCES),
+    // 提现申请
+    withdraw: (data) => this.post(this.endpoints.USER_FUNDS.WITHDRAW, data)
   }
   
   // 借贷配置相关API
