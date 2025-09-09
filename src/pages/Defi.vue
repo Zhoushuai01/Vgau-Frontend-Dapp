@@ -3,6 +3,9 @@
     <!-- 顶部标题栏 - 固定在顶部 -->
     <view class="header">
       <view class="header-actions">
+        <view class="header-btn" @click="handleDisconnect" v-if="isWalletConnected">
+          <text class="disconnect-text">{{ $t('defi.disconnect') }}</text>
+        </view>
         <view class="header-btn" @click="goToHistory">
           <image src="/static/history.png" class="header-icon" />
         </view>
@@ -231,7 +234,7 @@
 
 <script setup>
   import { ref, onMounted } from 'vue'
-  import { smartUserVerify } from '@/utils/walletService.js'
+  import { smartUserVerify, disconnectWallet, isWalletDisconnected } from '@/utils/walletService.js'
   import { useI18n } from 'vue-i18n'
  
   const { t, locale } = useI18n()
@@ -264,6 +267,9 @@
     walletAddress: null
   })
   
+  // 钱包连接状态
+  const isWalletConnected = ref(false)
+  
   // 智能用户验证（优先检查登录状态）
   const checkWalletBinding = async () => {
     try {
@@ -275,6 +281,7 @@
         // 用户验证成功
         walletBindStatus.value.isBound = true
         walletBindStatus.value.walletAddress = result.walletAddress || 'logged_in_user'
+        isWalletConnected.value = true
         
         // 根据验证方式显示不同消息
         if (result.skipWalletCheck) {
@@ -479,8 +486,93 @@
     })
   }
   
-  onMounted(() => {
+  // 处理断开连接
+  const handleDisconnect = async () => {
+    try {
+      // 显示确认对话框
+      const result = await new Promise((resolve) => {
+        uni.showModal({
+          title: t('defi.disconnectConfirm.title'),
+          content: t('defi.disconnectConfirm.content'),
+          confirmText: t('defi.disconnectConfirm.confirm'),
+          cancelText: t('defi.disconnectConfirm.cancel'),
+          success: (res) => {
+            resolve(res.confirm)
+          },
+          fail: () => {
+            resolve(false)
+          }
+        })
+      })
+      
+      if (!result) {
+        return
+      }
+      
+      // 显示加载状态
+      uni.showLoading({
+        title: t('defi.disconnectLoading'),
+        mask: true
+      })
+      
+      // 执行断开连接
+      const disconnectResult = await disconnectWallet()
+      
+      uni.hideLoading()
+      
+      if (disconnectResult.success) {
+        // 更新连接状态
+        isWalletConnected.value = false
+        walletBindStatus.value.isBound = false
+        walletBindStatus.value.walletAddress = null
+        
+        // 显示成功消息
+        uni.showToast({
+          title: t('defi.disconnectSuccess'),
+          icon: 'success',
+          duration: 2000
+        })
+        
+        console.log('✅ 钱包断开连接成功')
+      } else {
+        // 显示错误消息
+        uni.showToast({
+          title: disconnectResult.message || t('defi.disconnectFailed'),
+          icon: 'none',
+          duration: 3000
+        })
+        
+        console.error('❌ 钱包断开连接失败:', disconnectResult.error)
+      }
+    } catch (error) {
+      uni.hideLoading()
+      console.error('断开连接处理失败:', error)
+      
+      uni.showToast({
+        title: t('defi.disconnectFailed'),
+        icon: 'none',
+        duration: 3000
+      })
+    }
+  }
+  
+  onMounted(async () => {
     console.log('DeFi页面加载完成')
+    
+    // 检查钱包连接状态
+    try {
+      const isDisconnected = isWalletDisconnected()
+      isWalletConnected.value = !isDisconnected
+      
+      if (isWalletConnected.value) {
+        console.log('钱包已连接')
+      } else {
+        console.log('钱包未连接')
+      }
+    } catch (error) {
+      console.error('检查钱包连接状态失败:', error)
+      isWalletConnected.value = false
+    }
   })
 </script>
 
@@ -536,6 +628,16 @@
 .header-icon {
   width: 40rpx;
   height: 40rpx;
+}
+
+.disconnect-text {
+  font-size: 24rpx;
+  color: #FF6B6B;
+  font-weight: 400;
+  padding: 8rpx 16rpx;
+  border: 1rpx solid #FF6B6B;
+  border-radius: 8rpx;
+  background: rgba(255, 107, 107, 0.1);
 }
 
 .main-content {

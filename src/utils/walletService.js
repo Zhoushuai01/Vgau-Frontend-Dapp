@@ -504,4 +504,207 @@ function analyzeWalletLoginError(error) {
     原始错误: error.message
   })
   return errorInfo
-} 
+}
+
+/**
+ * 断开钱包连接并清除所有权限
+ * 包括断开"查看您的账户并建议交易"和"使用您启用的网络"权限
+ */
+export const disconnectWallet = async () => {
+  try {
+    console.log('开始断开钱包连接...')
+    
+    // 1. 检查是否有ethereum provider
+    if (typeof window.ethereum === 'undefined') {
+      console.log('未检测到钱包，无需断开连接')
+      return {
+        success: true,
+        message: '未检测到钱包连接'
+      }
+    }
+
+    // 2. 尝试断开钱包连接
+    // 注意：MetaMask等钱包可能不支持直接断开连接，但我们可以清除本地状态
+    try {
+      // 尝试使用wallet_revokePermissions方法（如果支持）
+      if (window.ethereum.request) {
+        // 获取当前权限
+        const permissions = await window.ethereum.request({
+          method: 'wallet_getPermissions'
+        }).catch(() => [])
+        
+        console.log('当前权限:', permissions)
+        
+        // 如果有权限，尝试撤销
+        if (permissions && permissions.length > 0) {
+          for (const permission of permissions) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_revokePermissions',
+                params: [permission.caveats]
+              })
+              console.log('已撤销权限:', permission.caveats)
+            } catch (revokeError) {
+              console.log('撤销权限失败（可能不支持）:', revokeError.message)
+            }
+          }
+        }
+      }
+    } catch (permissionError) {
+      console.log('权限管理失败（可能不支持）:', permissionError.message)
+    }
+
+    // 3. 清除本地存储的认证信息
+    try {
+      // 清除localStorage中的认证相关数据
+      const authKeys = [
+        'userToken',
+        'walletAddress', 
+        'userData',
+        'authToken',
+        'loginStatus',
+        'walletConnection',
+        'userLoginData'
+      ]
+      
+      authKeys.forEach(key => {
+        localStorage.removeItem(key)
+        sessionStorage.removeItem(key)
+      })
+      
+      console.log('已清除本地认证数据')
+    } catch (storageError) {
+      console.error('清除本地存储失败:', storageError)
+    }
+
+    // 4. 清除Web3相关状态
+    try {
+      // 如果存在全局Web3实例，重置其状态
+      if (window.web3Service) {
+        window.web3Service.disconnect()
+      }
+      
+      // 清除全局状态
+      if (window.ethereum && window.ethereum.removeAllListeners) {
+        window.ethereum.removeAllListeners('accountsChanged')
+        window.ethereum.removeAllListeners('chainChanged')
+        window.ethereum.removeAllListeners('disconnect')
+      }
+      
+      console.log('已清除Web3状态')
+    } catch (web3Error) {
+      console.error('清除Web3状态失败:', web3Error)
+    }
+
+    // 5. 触发账户变化事件（模拟断开连接）
+    try {
+      // 手动触发accountsChanged事件，传入空数组表示断开连接
+      if (window.ethereum && window.ethereum.emit) {
+        window.ethereum.emit('accountsChanged', [])
+      }
+      
+      // 或者直接设置accounts为空
+      if (window.ethereum && window.ethereum._state) {
+        window.ethereum._state.accounts = []
+      }
+      
+      console.log('已触发断开连接事件')
+    } catch (eventError) {
+      console.error('触发断开连接事件失败:', eventError)
+    }
+
+    // 6. 调用后端登出API（如果用户已登录）
+    try {
+      const { logout } = await import('@/api/apiService.js')
+      await logout()
+      console.log('后端登出成功')
+    } catch (apiError) {
+      console.log('后端登出失败（可能未登录）:', apiError.message)
+    }
+
+    console.log('✅ 钱包断开连接完成')
+    
+    return {
+      success: true,
+      message: '钱包已断开连接，所有权限已清除'
+    }
+
+  } catch (error) {
+    console.error('断开钱包连接失败:', error)
+    
+    // 即使出错，也尝试清除本地状态
+    try {
+      localStorage.clear()
+      sessionStorage.clear()
+    } catch (clearError) {
+      console.error('清除存储失败:', clearError)
+    }
+    
+    return {
+      success: false,
+      error: error.message,
+      message: '断开连接时出现错误，但已清除本地状态'
+    }
+  }
+}
+
+/**
+ * 检查钱包是否已断开连接
+ */
+export const isWalletDisconnected = () => {
+  try {
+    // 检查localStorage中是否有认证信息
+    const hasAuthData = localStorage.getItem('userToken') || 
+                       localStorage.getItem('walletAddress') ||
+                       localStorage.getItem('authToken')
+    
+    // 检查ethereum provider状态
+    const hasEthereum = typeof window.ethereum !== 'undefined'
+    const hasAccounts = hasEthereum && window.ethereum.selectedAddress
+    
+    // 如果本地没有认证数据且钱包没有选中账户，则认为已断开
+    return !hasAuthData && (!hasEthereum || !hasAccounts)
+  } catch (error) {
+    console.error('检查断开连接状态失败:', error)
+    return true // 出错时认为已断开
+  }
+}
+
+/**
+ * 强制断开所有连接（用于错误恢复）
+ */
+export const forceDisconnectAll = async () => {
+  try {
+    console.log('强制断开所有连接...')
+    
+    // 1. 清除所有本地存储
+    localStorage.clear()
+    sessionStorage.clear()
+    
+    // 2. 重置Web3状态
+    if (window.web3Service) {
+      window.web3Service.disconnect()
+    }
+    
+    // 3. 移除所有事件监听器
+    if (window.ethereum && window.ethereum.removeAllListeners) {
+      window.ethereum.removeAllListeners()
+    }
+    
+    // 4. 触发页面刷新（可选）
+    // window.location.reload()
+    
+    console.log('✅ 强制断开完成')
+    
+    return {
+      success: true,
+      message: '已强制断开所有连接'
+    }
+  } catch (error) {
+    console.error('强制断开失败:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+}

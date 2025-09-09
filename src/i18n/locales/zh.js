@@ -128,6 +128,16 @@ export default {
     productPurchase: '產品申購',
     borrowOrder: '借幣訂單',
     newLending: '新的借貸',
+    disconnect: '斷開連接',
+    disconnectConfirm: {
+      title: '確認斷開連接',
+      content: '確定要斷開錢包連接嗎？斷開後需要重新連接才能使用功能。',
+      confirm: '確認斷開',
+      cancel: '取消'
+    },
+    disconnectLoading: '正在斷開連接...',
+    disconnectSuccess: '錢包已斷開連接',
+    disconnectFailed: '斷開連接失敗',
     tabs: {
       account: '賬戶',
       loans: '借貸',

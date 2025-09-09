@@ -127,6 +127,16 @@ export default {
     productPurchase: 'Product Purchase',
     borrowOrder: 'Borrow Order',
     newLending: 'New Lending',
+    disconnect: 'Disconnect',
+    disconnectConfirm: {
+      title: 'Confirm Disconnect',
+      content: 'Are you sure you want to disconnect your wallet? You will need to reconnect to use features.',
+      confirm: 'Confirm Disconnect',
+      cancel: 'Cancel'
+    },
+    disconnectLoading: 'Disconnecting...',
+    disconnectSuccess: 'Wallet disconnected successfully',
+    disconnectFailed: 'Failed to disconnect wallet',
     tabs: {
       account: 'Account',
       loans: 'Loans',

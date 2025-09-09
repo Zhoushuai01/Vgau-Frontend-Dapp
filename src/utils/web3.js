@@ -427,7 +427,84 @@ class Web3Service {
     this.currentAccount = null
     this.isConnected = false
     this.contracts = {}
+    
+    // 清除Web3实例
+    if (this.web3) {
+      this.web3 = null
+    }
+    
+    // 清除provider引用
+    if (this.provider) {
+      this.provider = null
+    }
+    
     console.log('Web3服务已断开连接')
+  }
+
+  // 完全断开连接并清除所有状态
+  async fullDisconnect() {
+    try {
+      console.log('开始完全断开Web3连接...')
+      
+      // 1. 清除基本状态
+      this.disconnect()
+      
+      // 2. 尝试撤销钱包权限
+      if (typeof window.ethereum !== 'undefined' && window.ethereum.request) {
+        try {
+          // 获取当前权限
+          const permissions = await window.ethereum.request({
+            method: 'wallet_getPermissions'
+          }).catch(() => [])
+          
+          console.log('当前钱包权限:', permissions)
+          
+          // 撤销所有权限
+          if (permissions && permissions.length > 0) {
+            for (const permission of permissions) {
+              try {
+                await window.ethereum.request({
+                  method: 'wallet_revokePermissions',
+                  params: [permission.caveats]
+                })
+                console.log('已撤销权限:', permission.caveats)
+              } catch (revokeError) {
+                console.log('撤销权限失败（可能不支持）:', revokeError.message)
+              }
+            }
+          }
+        } catch (permissionError) {
+          console.log('权限管理失败（可能不支持）:', permissionError.message)
+        }
+      }
+      
+      // 3. 移除所有事件监听器
+      if (window.ethereum && window.ethereum.removeAllListeners) {
+        window.ethereum.removeAllListeners('accountsChanged')
+        window.ethereum.removeAllListeners('chainChanged')
+        window.ethereum.removeAllListeners('disconnect')
+        console.log('已移除所有事件监听器')
+      }
+      
+      // 4. 触发断开连接事件
+      if (window.ethereum && window.ethereum.emit) {
+        window.ethereum.emit('accountsChanged', [])
+        console.log('已触发断开连接事件')
+      }
+      
+      console.log('✅ Web3完全断开连接完成')
+      
+      return {
+        success: true,
+        message: 'Web3已完全断开连接'
+      }
+    } catch (error) {
+      console.error('完全断开Web3连接失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
   }
 
   // 检查是否支持的网络
