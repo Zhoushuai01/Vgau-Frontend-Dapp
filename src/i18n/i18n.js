@@ -1,6 +1,9 @@
 import { createI18n } from 'vue-i18n'
 import zh from './locales/zh.js'
 import en from './locales/en.js'
+import ar from './locales/ar.js'
+import pt from './locales/pt.js'
+import fr from './locales/fr.js'
 
 // 获取浏览器语言设置
 const getDefaultLocale = () => {
@@ -9,6 +12,12 @@ const getDefaultLocale = () => {
   
   if (lang.startsWith('zh')) {
     return 'zh'
+  } else if (lang.startsWith('ar')) {
+    return 'ar'
+  } else if (lang.startsWith('pt')) {
+    return 'pt'
+  } else if (lang.startsWith('fr')) {
+    return 'fr'
   }
   return 'en'
 }
@@ -29,7 +38,10 @@ const i18n = createI18n({
   fallbackLocale: 'en',
   messages: {
     zh,
-    en
+    en,
+    ar,
+    pt,
+    fr
   },
   globalInjection: true, // 全局注入$t函数
   silentTranslationWarn: true, // 静默翻译警告
@@ -56,7 +68,10 @@ export const getCurrentLocale = () => {
 export const getSupportedLocales = () => {
   return [
     { code: 'zh', name: '中文', flag: '🇨🇳' },
-    { code: 'en', name: 'English', flag: '🇺🇸' }
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+    { code: 'ar', name: 'اللغة العربية', flag: '🇸🇦' },
+    { code: 'pt', name: 'português', flag: '🇵🇹' },
+    { code: 'fr', name: 'Français', flag: '🇫🇷' }
   ]
 }
 
