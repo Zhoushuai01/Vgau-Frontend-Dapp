@@ -733,7 +733,30 @@ export default {
       totalEarnings: '總收益',
       activeProducts: '活躍產品',
       noActiveProducts: '暫無活躍產品',
-      viewDetails: '查看詳情'
+      viewDetails: '查看詳情',
+      redeemConfirm: {
+        title: '贖回',
+        content: '確定要贖回 {amount} VGAU 嗎？',
+        principal: '本金',
+        interest: '收益',
+        confirm: '確認贖回',
+        cancel: '取消',
+        currency: {
+          vgau: 'VGAU',
+          usdt: 'USDT'
+        }
+      },
+      loading: '加載中...',
+      noOrders: '暫無質押訂單',
+      dataLoadFailed: '獲取數據失敗',
+      orderNotExpired: '訂單尚未到期，無法贖回',
+      redeemSuccess: '贖回成功',
+      redeemFailed: '贖回失敗',
+      redeemFailedRetry: '贖回失敗，請稍後重試',
+      networkError: '網絡連接失敗，請檢查網絡後重試',
+      loginExpired: '登錄已過期，請重新登錄',
+      noPermission: '沒有權限執行此操作',
+      orderNotFound: '訂單不存在或已被處理'
     },
 
     // ProductHelp

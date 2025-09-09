@@ -776,15 +776,15 @@
 
 .connect-wallet-btn {
   background: #FFFFFF;
-  border-radius: 16rpx;
-  padding: 8rpx 24rpx;
+  border-radius: 12rpx;
+  padding: 6rpx 16rpx;
   cursor: pointer;
   transition: all 0.3s ease;
-  height: 40rpx;
+  height: 32rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 120rpx;
+  min-width: 80rpx;
   border: 1rpx solid transparent;
 }
 
@@ -799,7 +799,7 @@
 
 .btn-text {
   color: #000000;
-  font-size: 28rpx;
+  font-size: 22rpx;
   font-weight: 500;
   white-space: nowrap;
 }

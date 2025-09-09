@@ -21,7 +21,7 @@
       </view>
       <!-- 加载状态 -->
       <view v-if="loading" class="loading-container">
-        <text class="loading-text">加载中...</text>
+        <text class="loading-text">{{ t('components.myFinance.loading') }}</text>
       </view>
 
       <!-- 质押订单列表 -->
@@ -62,7 +62,7 @@
 
       <!-- 空状态 -->
       <view v-else class="empty-state">
-        <text class="empty-text">暂无质押订单</text>
+        <text class="empty-text">{{ t('components.myFinance.noOrders') }}</text>
       </view>
 
       <!-- 底部状态 -->
@@ -71,7 +71,45 @@
       </view>
     </view>
 
-
+    <!-- 赎回确认弹窗 -->
+    <view class="redeem-confirm-modal" v-if="showRedeemConfirmModal" @click="closeRedeemConfirmModal">
+      <view class="modal-overlay"></view>
+      <view class="modal-content" @click.stop>
+        <!-- 弹窗头部 -->
+        <view class="modal-header">
+          <text class="modal-title">{{ t('components.myFinance.redeemConfirm.title') }}</text>
+        </view>
+        
+        <!-- 弹窗内容 -->
+        <view class="modal-body">
+          <view class="redeem-info">
+            <text class="info-text">{{ t('components.myFinance.redeemConfirm.content', { amount: selectedRedeemOrder?.totalStakeAmount || '0' }) }}</text>
+          </view>
+          
+          <view class="redeem-details">
+            <view class="detail-item">
+              <text class="detail-label">{{ t('components.myFinance.redeemConfirm.principal') }}:</text>
+              <text class="detail-value">{{ selectedRedeemOrder?.totalStakeAmount || '0' }} {{ t('components.myFinance.redeemConfirm.currency.vgau') }}</text>
+            </view>
+            <view class="detail-item">
+              <text class="detail-label">{{ t('components.myFinance.redeemConfirm.interest') }}:</text>
+              <text class="detail-value">{{ selectedRedeemOrder?.totalInterestEarned || '0' }} {{ t('components.myFinance.redeemConfirm.currency.usdt') }}</text>
+            </view>
+          </view>
+          
+        </view>
+        
+        <!-- 弹窗按钮 -->
+        <view class="modal-actions">
+          <view class="action-btn cancel-btn" @click="closeRedeemConfirmModal">
+            <text class="btn-text">{{ t('components.myFinance.redeemConfirm.cancel') }}</text>
+          </view>
+          <view class="action-btn confirm-btn" @click="confirmRedeem">
+            <text class="btn-text">{{ t('components.myFinance.redeemConfirm.confirm') }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -86,18 +124,31 @@ const { t } = useI18n()
 const stakeOrders = ref([])
 const loading = ref(false)
 
+// 赎回确认弹窗
+const showRedeemConfirmModal = ref(false)
+const selectedRedeemOrder = ref(null)
+
 // 获取质押订单列表
 const fetchStakeOrders = async () => {
   loading.value = true
   try {
     const response = await stakeAPI.getOrders()
-    console.log('质押订单列表:', response)
+    console.log('🔍 后端API响应详情:', {
+      success: response?.success,
+      message: response?.message,
+      data: response?.data,
+      hasData: !!response?.data,
+      dataLength: response?.data?.length || 0,
+      firstOrder: response?.data?.[0] || null
+    })
     
     // 如果接口没有数据，使用测试数据
     let ordersData = []
-    if (response && response.data) {
+    if (response && response.data && response.data.length > 0) {
       ordersData = response.data
+      console.log('✅ 使用后端数据，订单数量:', ordersData.length)
     } else {
+      console.log('⚠️ 后端无数据，使用测试数据')
       // 测试数据 - 包含已到期和未到期的订单
       ordersData = [
         {
@@ -120,8 +171,15 @@ const fetchStakeOrders = async () => {
     }
     
     // 处理每个订单的字段映射
-    stakeOrders.value = ordersData.map(order => {
-      console.log('处理订单:', order)
+    stakeOrders.value = ordersData.map((order, index) => {
+      console.log(`📋 处理订单 ${index + 1}:`, {
+        原始订单ID: order.id,
+        订单ID类型: typeof order.id,
+        订单状态: order.status,
+        质押金额: order.stakeAmount || order.totalStakeAmount,
+        完整订单数据: order
+      })
+      
       const mappedOrder = {
         ...order,
         // 确保字段映射正确
@@ -130,14 +188,21 @@ const fetchStakeOrders = async () => {
         totalStakeAmount: order.totalStakeAmount || order.stakeAmount || '0',
         totalInterestEarned: order.totalInterestEarned || order.interestEarned || '0'
       }
-      console.log('映射后的订单:', mappedOrder)
+      
+      console.log(`✅ 映射后的订单 ${index + 1}:`, {
+        最终订单ID: mappedOrder.id,
+        订单ID类型: typeof mappedOrder.id,
+        订单状态: mappedOrder.status,
+        质押金额: mappedOrder.totalStakeAmount
+      })
+      
       return mappedOrder
     })
     console.log('最终订单列表:', stakeOrders.value)
   } catch (error) {
     console.error('获取质押订单失败:', error)
     uni.showToast({
-      title: '获取数据失败',
+      title: t('components.myFinance.dataLoadFailed'),
       icon: 'none',
       duration: 2000
     })
@@ -233,25 +298,16 @@ const handleRedeem = async (order) => {
   // 检查订单是否可赎回
   if (!isOrderExpired(order.lastStakeTime)) {
     uni.showToast({
-      title: '订单尚未到期，无法赎回',
+      title: t('components.myFinance.orderNotExpired'),
       icon: 'none',
       duration: 2000
     })
     return
   }
 
-  // 确认赎回
-  uni.showModal({
-    title: '确认赎回',
-    content: `确定要赎回 ${order.totalStakeAmount} VGAU 吗？赎回后将获得 ${order.totalInterestEarned} USDT 收益。`,
-    confirmText: '确认赎回',
-    cancelText: '取消',
-    success: async (res) => {
-      if (res.confirm) {
-        await redeemOrder(order)
-      }
-    }
-  })
+  // 显示自定义赎回确认弹窗
+  showRedeemConfirmModal.value = true
+  selectedRedeemOrder.value = order
 }
 
 // 执行赎回操作
@@ -259,20 +315,34 @@ const redeemOrder = async (order) => {
   try {
     // 显示加载提示
     uni.showLoading({
-      title: '赎回中...',
+      title: t('components.myFinance.redeemConfirm.confirm') + '...',
       mask: true
     })
 
-    console.log('开始赎回订单:', order.id)
+    console.log('开始赎回订单:', {
+      orderId: order.id,
+      stakeAmount: order.totalStakeAmount,
+      interestEarned: order.totalInterestEarned,
+      apiEndpoint: `/api/stake/orders/${order.id}/redeem`
+    })
+    
+    // 调用赎回API接口 /api/stake/orders/{orderId}/redeem
     const response = await stakeAPI.redeemOrder(order.id)
-    console.log('赎回响应:', response)
+    console.log('赎回API响应:', {
+      status: response?.status,
+      success: response?.success,
+      code: response?.code,
+      message: response?.message,
+      data: response?.data
+    })
 
     // 隐藏加载提示
     uni.hideLoading()
 
-    if (response && response.success) {
+    // 检查响应结果
+    if (response && (response.success || response.code === 200 || response.status === 'success')) {
       uni.showToast({
-        title: '赎回成功',
+        title: t('components.myFinance.redeemSuccess'),
         icon: 'success',
         duration: 2000
       })
@@ -280,13 +350,33 @@ const redeemOrder = async (order) => {
       // 刷新订单列表
       await fetchStakeOrders()
     } else {
-      throw new Error(response?.message || '赎回失败')
+      // 处理不同的响应格式
+      const errorMessage = response?.message || response?.error || t('components.myFinance.redeemFailed')
+      throw new Error(errorMessage)
     }
   } catch (error) {
     console.error('赎回订单失败:', error)
     uni.hideLoading()
+    
+    // 根据错误类型显示不同的提示
+    let errorMessage = t('components.myFinance.redeemFailedRetry')
+    
+    if (error.message) {
+      if (error.message.includes('network') || error.message.includes('timeout')) {
+        errorMessage = t('components.myFinance.networkError')
+      } else if (error.message.includes('unauthorized') || error.message.includes('401')) {
+        errorMessage = t('components.myFinance.loginExpired')
+      } else if (error.message.includes('forbidden') || error.message.includes('403')) {
+        errorMessage = t('components.myFinance.noPermission')
+      } else if (error.message.includes('not found') || error.message.includes('404')) {
+        errorMessage = t('components.myFinance.orderNotFound')
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
     uni.showToast({
-      title: error.message || '赎回失败，请稍后重试',
+      title: errorMessage,
       icon: 'none',
       duration: 3000
     })
@@ -294,6 +384,20 @@ const redeemOrder = async (order) => {
 }
 
 
+
+// 关闭赎回确认弹窗
+const closeRedeemConfirmModal = () => {
+  showRedeemConfirmModal.value = false
+  selectedRedeemOrder.value = null
+}
+
+// 确认赎回
+const confirmRedeem = async () => {
+  if (selectedRedeemOrder.value) {
+    await redeemOrder(selectedRedeemOrder.value)
+    closeRedeemConfirmModal()
+  }
+}
 
 // 页面加载时获取数据
 onMounted(() => {
@@ -508,5 +612,148 @@ onMounted(() => {
   font-weight: 400;
 }
 
+/* 赎回确认弹窗样式 */
+.redeem-confirm-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 600rpx;
+  background: rgba(26, 26, 26, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32rpx 32rpx 24rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+
+.modal-title {
+  font-size: 32rpx;
+  color: #FFFFFF;
+  font-weight: 600;
+  text-align: center;
+}
+
+.modal-body {
+  padding: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.redeem-info {
+  text-align: center;
+}
+
+.info-text {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.redeem-details {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12rpx;
+  padding: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-label {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+.detail-value {
+  font-size: 26rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+
+.modal-actions {
+  display: flex;
+  gap: 16rpx;
+  padding: 24rpx 32rpx 32rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.action-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.98);
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.confirm-btn {
+  background: linear-gradient(90deg, rgba(254, 218, 120, 1) 0%, rgba(176, 121, 32, 1) 100%);
+  box-shadow: inset 0px 4rpx 0px 0px rgba(255, 255, 255, 0.25), inset 0px -2rpx 0px 0px rgba(218, 118, 52, 1);
+}
+
+.btn-text {
+  font-size: 28rpx;
+  font-weight: 500;
+  text-align: center;
+}
+
+.cancel-btn .btn-text {
+  color: #FFFFFF;
+}
+
+.confirm-btn .btn-text {
+  color: #000000;
+}
 
 </style> 

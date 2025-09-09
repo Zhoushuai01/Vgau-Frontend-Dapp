@@ -722,7 +722,30 @@ export default {
       totalEarnings: 'Total Earnings',
       activeProducts: 'Active Products',
       noActiveProducts: 'No Active Products',
-      viewDetails: 'View Details'
+      viewDetails: 'View Details',
+      redeemConfirm: {
+        title: 'Redeem',
+        content: 'Are you sure you want to redeem {amount} VGAU?',
+        principal: 'Principal',
+        interest: 'Interest',
+        confirm: 'Confirm Redemption',
+        cancel: 'Cancel',
+        currency: {
+          vgau: 'VGAU',
+          usdt: 'USDT'
+        }
+      },
+      loading: 'Loading...',
+      noOrders: 'No staking orders',
+      dataLoadFailed: 'Failed to load data',
+      orderNotExpired: 'Order not yet expired, cannot redeem',
+      redeemSuccess: 'Redeem successful',
+      redeemFailed: 'Redeem failed',
+      redeemFailedRetry: 'Redeem failed, please try again later',
+      networkError: 'Network connection failed, please check your network and try again',
+      loginExpired: 'Login expired, please login again',
+      noPermission: 'No permission to perform this operation',
+      orderNotFound: 'Order not found or has been processed'
     },
 
     // ProductHelp
