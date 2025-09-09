@@ -14,10 +14,10 @@ export const API_CONFIG = {
   
   // 生产环境配置
   production: {
-    baseURL: 'https://verigold.ai/api',
+    baseURL: 'https://api.verigold.ai/api',
     proxy: null
   }
-}
+} 
 
 // 获取当前环境配置
 const getCurrentConfig = () => {
