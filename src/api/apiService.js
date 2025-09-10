@@ -204,7 +204,10 @@ class ApiService {
     bind: (code) => this.post(this.endpoints.INVITE.BIND, { code }),
     
     // 获取邀请关系
-    getRelations: (params) => this.get(this.endpoints.INVITE.RELATIONS, params)
+    getRelations: (params) => this.get(this.endpoints.INVITE.RELATIONS, params),
+    
+    // 获取我的下线列表
+    getMyDownline: (params) => this.get(this.endpoints.INVITE.MY_DOWNLINE, params)
   }
 
   // 质押管理相关API

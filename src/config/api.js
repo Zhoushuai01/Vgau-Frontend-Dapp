@@ -101,7 +101,8 @@ export const API_ENDPOINTS = {
     CODE: '/invite/code',
     BIND: '/invite/bind',
     RELATIONS: '/invite/relations',
-    MY_CODE: '/invite/my-code'
+    MY_CODE: '/invite/my-code',
+    MY_DOWNLINE: '/invite/my-downline'
   },
   
   // 质押管理

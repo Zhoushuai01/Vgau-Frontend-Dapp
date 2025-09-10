@@ -13,20 +13,20 @@
          <!-- 邀请奖励卡片 -->
      <view class="reward-card">
        <view class="reward-info">
-         <text class="reward-value">{{ t('components.invitation.invitationRewards') }}</text>
-         <text class="reward-label">{{ t('components.invitation.invitationRewards') }}</text>
+         <text class="reward-value">{{ totalPoints.toLocaleString() }} {{ t('common.points') }}</text>
+         <text class="reward-label">{{ t('components.invitation.invitationRewardsLabel') }}</text>
        </view>
      </view>
 
          <!-- 用户统计 -->
      <view class="stats-section">
        <view class="stat-card">
-         <text class="stat-value">{{ t('components.invitation.numberOfInvitedPeople') }}</text>
-         <text class="stat-label">{{ t('components.invitation.numberOfInvitedPeople') }}</text>
+         <text class="stat-value">{{ invitedUsers }} {{ t('common.users') }}</text>
+         <text class="stat-label">{{ t('components.invitation.numberOfInvitedPeopleLabel') }}</text>
        </view>
        <view class="stat-card">
-         <text class="stat-value">{{ t('components.invitation.numberOfDirectPushPersonnel') }}</text>
-         <text class="stat-label">{{ t('components.invitation.numberOfDirectPushPersonnel') }}</text>
+         <text class="stat-value">{{ directPushUsers }} {{ t('common.users') }}</text>
+         <text class="stat-label">{{ t('components.invitation.numberOfDirectPushPersonnelLabel') }}</text>
        </view>
      </view>
 
@@ -61,9 +61,12 @@
 
       <!-- 表格内容 -->
       <view class="table-content">
-        <view class="table-row" v-for="(item, index) in invitationList" :key="index">
+        <view v-if="invitationList.length === 0" class="empty-data">
+          <text class="empty-text">{{ t('common.noData') }}</text>
+        </view>
+        <view v-else class="table-row" v-for="(item, index) in invitationList" :key="index">
           <text class="row-id">{{ item.id }}</text>
-                          <text class="row-wallet">{{ formatShortAddress(item.wallet) }}</text>
+          <text class="row-wallet">{{ formatShortAddress(item.wallet) }}</text>
           <text class="row-type">{{ item.type }}</text>
           <text class="row-rewards">{{ item.rewards }}</text>
         </view>
@@ -90,10 +93,10 @@
          <text class="rule-content">
            {{ t('components.invitation.successfullyReferUserThroughKYC') }}
          </text>
-         <view class="rule-list">
-           <text class="rule-item">{{ t('components.invitation.directReferral') }}--{{ t('components.invitation.rewardsPerUser') }}</text>
-           <text class="rule-item">{{ t('components.invitation.indirectReferral') }}--{{ t('components.invitation.rewardsPerUser') }}</text>
-         </view>
+          <view class="rule-list">
+            <text class="rule-item">{{ t('components.invitation.directReferral') }}--1 {{ t('components.invitation.pointsUnit') }}</text>
+            <text class="rule-item">{{ t('components.invitation.indirectReferral') }}--0.2 {{ t('components.invitation.pointsUnit') }}</text>
+          </view>
        </view>
      </view>
    </view>
@@ -113,21 +116,13 @@ const inviteCode = ref('')
 const showRuleModal = ref(false)
 const loading = ref(false)
 
-// 模拟邀请列表数据
-const invitationList = ref([
-  {
-    id: '001',
-    wallet: '0x7eCfbF2D6DEa2371ea8f237c056B024dA4Bc87af',
-    type: t('components.invitation.directReferral'),
-    rewards: '1'
-  },
-  {
-    id: '002',
-    wallet: '0x8fDgcC3E7Fb3482fb8f248c057B025eB5Bc98bBg',
-    type: t('components.invitation.indirectReferral'),
-    rewards: '0.2'
-  }
-])
+// 统计数据
+const totalPoints = ref(1580)
+const invitedUsers = ref(12)
+const directPushUsers = ref(6)
+
+// 邀请列表数据
+const invitationList = ref([])
 
 // 获取我的邀请码
 const fetchMyInviteCode = async () => {
@@ -139,17 +134,17 @@ const fetchMyInviteCode = async () => {
     if (response && response.data && response.data.inviteCode) {
       inviteCode.value = response.data.inviteCode
       // 生成邀请链接
-      inviteLink.value = `http://localhost:3000/register?inviter=${inviteCode.value}`
+      inviteLink.value = `https://verigold.ai/register?inviter=${inviteCode.value}`
     } else {
       // 如果接口没有数据，使用测试数据
       inviteCode.value = 'ABC123'
-      inviteLink.value = `http://localhost:3000/register?inviter=${inviteCode.value}`
+      inviteLink.value = `https://verigold.ai/register?inviter=${inviteCode.value}`
     }
   } catch (error) {
     console.error('获取邀请码失败:', error)
     // 使用测试数据作为后备
     inviteCode.value = 'ABC123'
-    inviteLink.value = `http://localhost:3000/register?inviter=${inviteCode.value}`
+    inviteLink.value = `https://verigold.ai/register?inviter=${inviteCode.value}`
     uni.showToast({
       title: '获取邀请码失败',
       icon: 'none',
@@ -157,6 +152,52 @@ const fetchMyInviteCode = async () => {
     })
   } finally {
     loading.value = false
+  }
+}
+
+// 获取统计数据
+const fetchStatistics = async () => {
+  try {
+    // 这里可以调用相应的API接口获取统计数据
+    // 例如：const response = await inviteAPI.getStatistics()
+    // totalPoints.value = response.data.totalPoints
+    // invitedUsers.value = response.data.invitedUsers
+    // directPushUsers.value = response.data.directPushUsers
+    
+    // 目前使用默认值，后续可以替换为API调用
+    console.log('获取统计数据...')
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+  }
+}
+
+// 获取邀请列表
+const fetchInvitationList = async () => {
+  try {
+    const response = await inviteAPI.getMyDownline()
+    console.log('邀请列表响应:', response)
+    
+    if (response && response.data && Array.isArray(response.data)) {
+      // 处理API返回的数据，转换为前端需要的格式
+      invitationList.value = response.data.map((item, index) => ({
+        id: item.id || (index + 1).toString().padStart(3, '0'),
+        wallet: item.walletAddress || item.wallet || '',
+        type: item.type === 'direct' ? t('components.invitation.directReferral') : t('components.invitation.indirectReferral'),
+        rewards: item.rewards || item.points || '0'
+      }))
+    } else {
+      // 如果接口没有数据，使用空数组
+      invitationList.value = []
+    }
+  } catch (error) {
+    console.error('获取邀请列表失败:', error)
+    // 使用空数组作为后备
+    invitationList.value = []
+    uni.showToast({
+      title: '获取邀请列表失败',
+      icon: 'none',
+      duration: 2000
+    })
   }
 }
 
@@ -205,9 +246,11 @@ const closeRuleModal = () => {
   showRuleModal.value = false
 }
 
-// 页面加载时获取邀请码
+// 页面加载时获取邀请码、统计数据和邀请列表
 onMounted(() => {
   fetchMyInviteCode()
+  fetchStatistics()
+  fetchInvitationList()
 })
 </script>
 
@@ -540,6 +583,21 @@ onMounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 空数据显示 */
+.empty-data {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60rpx 0;
+}
+
+.empty-text {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 28rpx;
+  font-weight: 400;
+  line-height: 1.43;
 }
 
 /* 底部提示 */

@@ -62,7 +62,9 @@ export default {
     networkError: '網絡錯誤',
     pleaseCheckConnection: '請檢查連接',
     pleaseEnterValidAmount: '請輸入有效金額',
-    pleaseEnterPositiveInteger: '請輸入正整數'
+    pleaseEnterPositiveInteger: '請輸入正整數',
+    points: '積分',
+    users: '用戶'
   },
 
   // 兑换
@@ -940,6 +942,7 @@ export default {
       indirectReferral: '間推',
       rewardsPerUser: '2 積分/用戶',
       indirectRewardsPerUser: '0.2 積分/用戶',
+      pointsUnit: '積分/用戶',
       linkCopied: '邀請鏈接已複製！',
       invitationCode: '邀請碼',
       copyCode: '複製碼',

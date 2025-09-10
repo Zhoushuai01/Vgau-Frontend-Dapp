@@ -62,7 +62,9 @@ export default {
     networkError: 'Network Error',
     pleaseCheckConnection: 'Please Check Connection',
     pleaseEnterValidAmount: 'Please Enter Valid Amount',
-    pleaseEnterPositiveInteger: 'Please Enter Positive Integer'
+    pleaseEnterPositiveInteger: 'Please Enter Positive Integer',
+    points: 'Points',
+    users: 'Users'
   },
 
   // Exchange
@@ -929,6 +931,7 @@ export default {
       indirectReferral: 'Indirect Referral',
       rewardsPerUser: '2 Points/User',
       indirectRewardsPerUser: '0.2 Points/User',
+      pointsUnit: 'Points/User',
       linkCopied: 'Invitation link copied!',
       invitationCode: 'Invitation Code',
       copyCode: 'Copy Code',

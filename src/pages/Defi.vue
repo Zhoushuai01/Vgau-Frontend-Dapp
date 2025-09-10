@@ -74,7 +74,6 @@
               <text class="yield-label">{{ $t('defi.currentApr') }}</text>
               <text class="yield-value">1%</text>
             </view>
-            <view class="yield-divider"></view>
             <view class="yield-item">
               <text class="yield-label">{{ $t('defi.pending') }}</text>
               <text class="yield-value">{{ yieldData.pending }}</text>
@@ -848,16 +847,6 @@
   position: relative;
 }
 
-.yield-card::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 2rpx;
-  height: 90rpx;
-  background: rgba(0, 0, 0, 0.1);
-}
 
 .yield-info {
   display: flex;
@@ -885,11 +874,6 @@
   font-weight: 400;
 }
 
-.yield-divider {
-  width: 2rpx;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.1);
-}
 
 .claim-button {
   background: linear-gradient(90deg, rgba(254, 218, 120, 1) 0%, rgba(176, 121, 32, 1) 100%);

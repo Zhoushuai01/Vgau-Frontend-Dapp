@@ -62,7 +62,9 @@ export default {
     networkError: 'Erro de Rede',
     pleaseCheckConnection: 'Verifique a Conexão',
     pleaseEnterValidAmount: 'Digite um Valor Válido',
-    pleaseEnterPositiveInteger: 'Digite um Número Inteiro Positivo'
+    pleaseEnterPositiveInteger: 'Digite um Número Inteiro Positivo',
+    points: 'Pontos',
+    users: 'Usuários'
   },
 
   // 兑换
@@ -903,6 +905,7 @@ export default {
       indirectReferral: 'Referência Indireta',
       rewardsPerUser: '2 pontos/usuário',
       indirectRewardsPerUser: '0.2 pontos/usuário',
+      pointsUnit: 'pontos/usuário',
       linkCopied: 'Link de convite copiado!',
       invitationCode: 'Código de Convite',
       copyCode: 'Copiar Código',

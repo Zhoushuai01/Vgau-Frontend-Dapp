@@ -62,7 +62,9 @@ export default {
     networkError: 'خطأ في الشبكة',
     pleaseCheckConnection: 'يرجى التحقق من الاتصال',
     pleaseEnterValidAmount: 'يرجى إدخال مبلغ صحيح',
-    pleaseEnterPositiveInteger: 'يرجى إدخال رقم صحيح موجب'
+    pleaseEnterPositiveInteger: 'يرجى إدخال رقم صحيح موجب',
+    points: 'النقاط',
+    users: 'مستخدم'
   },
 
   // 兑换
@@ -903,6 +905,7 @@ export default {
       indirectReferral: 'إحالة غير مباشرة',
       rewardsPerUser: '2 نقطة/مستخدم',
       indirectRewardsPerUser: '0.2 نقطة/مستخدم',
+      pointsUnit: 'نقطة/مستخدم',
       linkCopied: 'تم نسخ رابط الدعوة!',
       invitationCode: 'رمز الدعوة',
       copyCode: 'نسخ الرمز',
