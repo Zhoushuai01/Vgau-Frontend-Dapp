@@ -349,11 +349,11 @@ const selectMethod = (method) => {
 // 获取验证码输入框占位符
 const getCodePlaceholder = () => {
   if (selectedMethod.value === 'EMAIL_VERIFY_CODE') {
-    return '請輸入郵箱驗證碼'
+    return t('validation.emailCodePlaceholder')
   } else if (selectedMethod.value === 'TOTP_CODE') {
-    return '請輸入 TOTP 驗證碼'
+    return t('validation.totpCodePlaceholder')
   }
-  return '請輸入驗證碼'
+  return t('validation.codePlaceholder')
 }
 </script>
 
@@ -799,8 +799,9 @@ const getCodePlaceholder = () => {
   padding: 0 32rpx;
   font-size: 32rpx;
   color: #FFFFFF;
-  text-align: center;
+  text-align: left;
   letter-spacing: 8rpx;
+  box-sizing: border-box;
 }
 
 .code-input:focus {

@@ -627,7 +627,11 @@ export default {
     password: '密碼長度至少6位',
     confirmPassword: '兩次輸入的密碼不一致',
     amount: '請輸入有效的金額',
-    address: '請輸入有效的地址'
+    address: '請輸入有效的地址',
+    code: '驗證碼',
+    emailCodePlaceholder: '請輸入郵箱驗證碼',
+    totpCodePlaceholder: '請輸入 TOTP 驗證碼',
+    codePlaceholder: '請輸入驗證碼'
   },
 
   // 組件特定鍵值

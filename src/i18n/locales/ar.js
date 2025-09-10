@@ -613,7 +613,11 @@ export default {
     password: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
     confirmPassword: 'كلمات المرور المدخلة غير متطابقة',
     amount: 'يرجى إدخال مبلغ صحيح',
-    address: 'يرجى إدخال عنوان صحيح'
+    address: 'يرجى إدخال عنوان صحيح',
+    code: 'رمز التحقق',
+    emailCodePlaceholder: 'يرجى إدخال رمز التحقق من البريد الإلكتروني',
+    totpCodePlaceholder: 'يرجى إدخال رمز التحقق TOTP',
+    codePlaceholder: 'يرجى إدخال رمز التحقق'
   },
 
   // 組件特定鍵值

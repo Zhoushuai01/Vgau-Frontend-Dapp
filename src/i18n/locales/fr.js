@@ -613,7 +613,11 @@ export default {
     password: 'Le mot de passe doit contenir au moins 6 caractères',
     confirmPassword: 'Les mots de passe saisis ne correspondent pas',
     amount: 'Veuillez entrer un montant valide',
-    address: 'Veuillez entrer une adresse valide'
+    address: 'Veuillez entrer une adresse valide',
+    code: 'Code de vérification',
+    emailCodePlaceholder: 'Veuillez entrer le code de vérification email',
+    totpCodePlaceholder: 'Veuillez entrer le code de vérification TOTP',
+    codePlaceholder: 'Veuillez entrer le code de vérification'
   },
 
   // 組件特定鍵值

@@ -124,7 +124,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { userFundsAPI, loanAPI } from '@/api/apiService'
 import contractExchange from '@/utils/contractExchange.js'
@@ -213,8 +213,11 @@ watch(collateralAmount, () => {
   updateBorrowRange()
 })
 
-// 借款金额输入强校验：必须在[min,max]区间
-watch(borrowAmount, (val) => {
+// 防抖定时器
+let borrowAmountValidationTimer = null
+
+// 借款金额输入校验函数
+const validateBorrowAmount = (val) => {
   if (!val) return
   const cur = parseFloat(String(val).replace(/,/g, ''))
   const minV = parseFloat(minBorrowAmount.value)
@@ -226,6 +229,18 @@ watch(borrowAmount, (val) => {
     if (cur < minV) borrowAmount.value = minBorrowAmount.value
     if (cur > maxV) borrowAmount.value = maxBorrowAmount.value
   }
+}
+
+// 借款金额输入防抖校验：延迟1.5秒后校验
+watch(borrowAmount, (val) => {
+  // 清除之前的定时器
+  if (borrowAmountValidationTimer) {
+    clearTimeout(borrowAmountValidationTimer)
+  }
+  // 设置新的定时器，1.5秒后执行校验
+  borrowAmountValidationTimer = setTimeout(() => {
+    validateBorrowAmount(val)
+  }, 1500)
 })
 
 
@@ -505,6 +520,14 @@ onMounted(() => {
   fetchLoanConfig()
   // 初始化一次范围
   updateBorrowRange()
+})
+
+// 页面卸载时清理定时器
+onUnmounted(() => {
+  if (borrowAmountValidationTimer) {
+    clearTimeout(borrowAmountValidationTimer)
+    borrowAmountValidationTimer = null
+  }
 })
 </script>
 

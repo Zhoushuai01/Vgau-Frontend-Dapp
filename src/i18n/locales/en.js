@@ -616,7 +616,11 @@ export default {
     password: 'Password must be at least 6 characters',
     confirmPassword: 'Passwords do not match',
     amount: 'Please enter a valid amount',
-    address: 'Please enter a valid address'
+    address: 'Please enter a valid address',
+    code: 'Verification Code',
+    emailCodePlaceholder: 'Please enter email verification code',
+    totpCodePlaceholder: 'Please enter TOTP verification code',
+    codePlaceholder: 'Please enter verification code'
   },
 
   // Component Specific Keys
