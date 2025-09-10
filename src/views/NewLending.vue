@@ -231,20 +231,17 @@ const validateBorrowAmount = (val) => {
   }
 }
 
-// 借款金额输入防抖校验：延迟1.5秒后校验
+// 借款金额输入防抖校验：延迟3秒后校验
 watch(borrowAmount, (val) => {
   // 清除之前的定时器
   if (borrowAmountValidationTimer) {
     clearTimeout(borrowAmountValidationTimer)
   }
-  // 设置新的定时器，1.5秒后执行校验
+  // 设置新的定时器，3秒后执行校验
   borrowAmountValidationTimer = setTimeout(() => {
     validateBorrowAmount(val)
-  }, 1500)
+  }, 3000)
 })
-
-
-
 // 将百分比值解析为小数（支持 '8.18%' 或 0.0818 或 '0.0818'）
 const parsePercentToDecimal = (value) => {
   if (value === undefined || value === null) return 0

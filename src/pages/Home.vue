@@ -303,6 +303,13 @@
         walletConnected.value = true
         currentAccount.value = result.account
         console.log('钱包连接成功，状态更新:', walletConnected.value, currentAccount.value)
+        console.log('连接钱包后的状态:', {
+          result: result,
+          walletConnected: walletConnected.value,
+          currentAccount: currentAccount.value,
+          web3ServiceConnected: web3Service.isConnected,
+          web3ServiceAccount: web3Service.currentAccount
+        })
         
         // 立即显示成功提示
         uni.showToast({
@@ -581,28 +588,44 @@
     
     // 初始化Web3和VGAU服务
     try {
+      // 先初始化Web3服务
+      await web3Service.init()
+      console.log('Web3服务初始化成功')
+      
+      // 再初始化VGAU服务
       await vgauService.init()
       console.log('VGAU服务初始化成功')
       
-      // 检查是否已经连接了钱包
+      // 检查是否已经连接了钱包（现在web3Service已经检查过现有连接）
       if (web3Service.isConnected && web3Service.currentAccount) {
         walletConnected.value = true
         currentAccount.value = web3Service.currentAccount
         console.log('检测到已连接的钱包:', currentAccount.value)
+        console.log('钱包连接状态:', {
+          isConnected: web3Service.isConnected,
+          currentAccount: web3Service.currentAccount,
+          walletConnected: walletConnected.value,
+          currentAccountValue: currentAccount.value
+        })
         
         // 获取初始数据
         await updateAccountBalance()
         await updateVGAUBalance()
         await updatePlatformData()
+      } else {
+        console.log('未检测到已连接的钱包')
       }
     } catch (error) {
-      console.error('VGAU服务初始化失败:', error)
+      console.error('服务初始化失败:', error)
     }
     
     // 添加点击外部关闭下拉框的监听器（支持移动端）
     document.addEventListener('click', handleClickOutside)
     document.addEventListener('touchstart', handleClickOutside, { passive: false })
     document.addEventListener('touchend', handleClickOutside, { passive: false })
+    
+    // 监听钱包地址不匹配事件
+    document.addEventListener('walletAddressMismatch', handleWalletAddressMismatch)
     
     // 注入全局Toast样式
     injectToastStyles()
@@ -613,8 +636,35 @@
     document.removeEventListener('click', handleClickOutside)
     document.removeEventListener('touchstart', handleClickOutside)
     document.removeEventListener('touchend', handleClickOutside)
+    document.removeEventListener('walletAddressMismatch', handleWalletAddressMismatch)
   })
   
+  // 处理钱包地址不匹配事件
+  const handleWalletAddressMismatch = (event) => {
+    const { currentAddress, newAddress, message } = event.detail
+    
+    console.warn('钱包地址不匹配:', {
+      当前连接地址: currentAddress,
+      MetaMask新地址: newAddress
+    })
+    
+    // 显示用户提示
+    uni.showModal({
+      title: '钱包地址已更改',
+      content: `检测到您在MetaMask中切换了钱包地址。\n\n当前连接地址: ${formatShortAddress(currentAddress)}\n新地址: ${formatShortAddress(newAddress)}\n\n如需使用新地址，请先断开当前连接，然后重新连接。`,
+      showCancel: true,
+      cancelText: '保持当前连接',
+      confirmText: '断开连接',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户选择断开连接
+          disconnectWallet()
+        }
+        // 如果用户选择保持当前连接，不做任何操作
+      }
+    })
+  }
+
   // 处理点击外部关闭下拉框
   const handleClickOutside = (event) => {
     // 阻止事件冒泡，确保触摸事件正确处理
