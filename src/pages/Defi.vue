@@ -52,7 +52,7 @@
           <view class="balance-header">
             <text class="currency-label">VGAU</text>
           </view>
-          <text class="balance-amount">48,456,156</text>
+          <text class="balance-amount">{{ balances.VGAU }}</text>
         </view>
         
         <!-- USDT余额 -->
@@ -60,7 +60,7 @@
           <view class="balance-header">
             <text class="currency-label">USDT</text>
           </view>
-          <text class="balance-amount">111.41</text>
+          <text class="balance-amount">{{ balances.USDT }}</text>
         </view>
         
         <view class="balance-divider"></view>
@@ -77,10 +77,10 @@
             <view class="yield-divider"></view>
             <view class="yield-item">
               <text class="yield-label">{{ $t('defi.pending') }}</text>
-              <text class="yield-value">1231.00</text>
+              <text class="yield-value">{{ yieldData.pending }}</text>
             </view>
           </view>
-          <view class="claim-button">
+          <view class="claim-button" @click="handleClaimInterest">
             <text class="claim-text">{{ $t('defi.claim') }}</text>
           </view>
         </view>
@@ -230,9 +230,10 @@
 </template>
 
 <script setup>
-  import { ref, onMounted } from 'vue'
+  import { ref, onMounted, reactive } from 'vue'
   import { smartUserVerify } from '@/utils/walletService.js'
   import { useI18n } from 'vue-i18n'
+  import { userFundsAPI, vgauSavingsAPI } from '@/api/apiService.js'
  
   const { t, locale } = useI18n()
   
@@ -263,6 +264,171 @@
     isBound: false,
     walletAddress: null
   })
+  
+  // 余额数据
+  const balances = reactive({
+    VGAU: '0',
+    USDT: '0'
+  })
+  
+  // 收益数据
+  const yieldData = reactive({
+    currentApr: '0',
+    pending: '0'
+  })
+  
+  // 格式化数字显示
+  const formatNumber = (value) => {
+    if (value === null || value === undefined) {
+      return '0'
+    }
+    
+    const num = parseFloat(value)
+    if (isNaN(num)) {
+      return '0'
+    }
+    
+    // 如果数字很大，使用千分位分隔符
+    if (num >= 1000) {
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      })
+    }
+    
+    // 保留2位小数
+    return num.toFixed(2)
+  }
+  
+  // 获取可领取利息
+  const getClaimableInterest = async () => {
+    try {
+      console.log('💰 开始获取可领取利息...')
+      
+      const response = await vgauSavingsAPI.getClaimableInterest()
+      
+      if (response && response.success && response.data !== undefined) {
+        console.log('✅ 可领取利息数据:', response.data)
+        
+        // 更新待领取金额
+        yieldData.pending = formatNumber(response.data)
+        console.log('✅ 待领取金额更新:', response.data)
+      } else {
+        console.warn('⚠️ 可领取利息接口调用失败:', response)
+        // 接口失败时保持默认值 0
+        yieldData.pending = '0'
+      }
+    } catch (error) {
+      console.error('❌ 获取可领取利息失败:', error)
+      // 发生异常时重置为默认值
+      yieldData.pending = '0'
+    }
+  }
+  
+  // 领取利息
+  const handleClaimInterest = async () => {
+    try {
+      // 获取待领取金额
+      const pendingAmountStr = yieldData.pending.replace(/,/g, '')
+      const pendingAmount = parseFloat(pendingAmountStr)
+      
+      // 直接使用字符串类型（后端要求），让后端处理金额为0的情况
+      console.log('💰 开始领取利息...', { claimAmount: pendingAmountStr })
+      
+      // 显示加载提示
+      uni.showLoading({
+        title: '正在领取...',
+        mask: true
+      })
+      
+      // 调用领取接口
+      const response = await vgauSavingsAPI.claimInterest({
+        claimAmount: pendingAmountStr
+      })
+      
+      // 隐藏加载提示
+      uni.hideLoading()
+      
+      if (response && response.success) {
+        console.log('✅ 利息领取成功:', response)
+        
+        // 显示成功提示
+        uni.showToast({
+          title: '领取成功',
+          icon: 'success',
+          duration: 2000
+        })
+        
+        // 重新获取可领取利息和余额数据
+        await Promise.all([
+          getClaimableInterest(),
+          getBalances()
+        ])
+      } else {
+        console.warn('⚠️ 利息领取失败:', response)
+        
+        // 显示失败提示
+        uni.showToast({
+          title: response?.message || '领取失败',
+          icon: 'none',
+          duration: 2000
+        })
+      }
+    } catch (error) {
+      console.error('❌ 领取利息失败:', error)
+      
+      // 隐藏加载提示
+      uni.hideLoading()
+      
+      // 显示错误提示
+      uni.showToast({
+        title: '领取失败，请稍后重试',
+        icon: 'none',
+        duration: 2000
+      })
+    }
+  }
+  
+  // 获取用户余额
+  const getBalances = async () => {
+    try {
+      console.log('💰 开始获取用户余额...')
+      
+      const response = await userFundsAPI.getBalances()
+      
+      if (response && response.success && response.data && Array.isArray(response.data)) {
+        const balanceData = response.data
+        console.log('✅ 余额数据:', balanceData)
+        
+        // 重置余额
+        balances.VGAU = '0'
+        balances.USDT = '0'
+        
+        // 遍历数组查找对应的货币余额
+        balanceData.forEach(item => {
+          if (item.currency === 'VGAU' && item.availableAmount !== undefined) {
+            balances.VGAU = formatNumber(item.availableAmount)
+            console.log('✅ VGAU余额更新:', item.availableAmount)
+          } else if (item.currency === 'USDT' && item.availableAmount !== undefined) {
+            balances.USDT = formatNumber(item.availableAmount)
+            console.log('✅ USDT余额更新:', item.availableAmount)
+          }
+        })
+        
+        console.log('💰 余额更新完成:', balances)
+      } else {
+        console.warn('⚠️ 余额接口调用失败:', response)
+        // 接口失败时保持默认值 0
+        balances.VGAU = '0'
+        balances.USDT = '0'
+      }
+    } catch (error) {
+      console.error('❌ 获取余额失败:', error)
+      // 发生异常时重置为默认值
+      balances.VGAU = '0'
+      balances.USDT = '0'
+    }
+  }
   
   // 智能用户验证（优先检查登录状态）
   const checkWalletBinding = async () => {
@@ -480,8 +646,13 @@
   }
   
   
-  onMounted(() => {
+  onMounted(async () => {
     console.log('DeFi页面加载完成')
+    // 获取用户余额和可领取利息
+    await Promise.all([
+      getBalances(),
+      getClaimableInterest()
+    ])
   })
 </script>
 

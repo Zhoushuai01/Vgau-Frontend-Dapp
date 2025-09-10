@@ -89,21 +89,78 @@
         </view>
       </view>
 
-      <!-- 2FA 模态框（支持多因子选择） -->
-      <view v-if="show2faModal" class="modal-overlay">
-        <view class="modal">
-          <view class="modal-title">2FA</view>
-          <view class="modal-body">
-            <view v-if="availableFactors.length > 1" style="margin-bottom: 16rpx; color: #fff;">
-              <picker :range="availableFactors" range-key="displayName" @change="e => selectedFactor = availableFactors[e.detail.value]">
-                <view class="modal-input" style="display:flex; align-items:center;">{{ selectedFactor?.displayName || '选择验证方式' }}</view>
-              </picker>
+      <!-- 2FA 认证模态框 -->
+      <view v-if="show2faModal" class="auth-modal-overlay" @click="cancel2FA">
+        <view class="auth-modal" @click.stop>
+          <!-- 返回按钮 -->
+          <view class="auth-modal-header">
+            <view class="back-button" @click="cancel2FA">
+              <image class="back-icon" src="/static/back.png" mode="aspectFit" />
             </view>
-            <input class="modal-input" type="text" v-model="twoFACode" :placeholder="selectedFactor?.displayName || t('totp.code')" />
           </view>
-          <view class="modal-actions">
-            <view class="modal-btn cancel" @click="cancel2FA">{{ t('common.cancel') }}</view>
-            <view class="modal-btn confirm" @click="confirm2FA" :class="{ disabled: submitting }">{{ t('common.confirm') }}</view>
+          
+          <!-- 标题 -->
+          <view class="auth-modal-title">
+            <text class="title-text">選擇驗證方式</text>
+          </view>
+          
+          <!-- 说明文字 -->
+          <view class="auth-modal-subtitle">
+            <text class="subtitle-text">需要驗證 1 種方式，剩餘 1 種</text>
+          </view>
+          
+          <!-- 验证方式选择 -->
+          <view class="auth-methods">
+            <!-- 邮箱验证码 -->
+            <view 
+              class="auth-method-item" 
+              :class="{ active: selectedMethod === 'EMAIL_VERIFY_CODE' }"
+              @click="selectMethod('EMAIL_VERIFY_CODE')"
+              v-if="availableMethods.includes('EMAIL_VERIFY_CODE')"
+            >
+              <view class="method-icon">
+                <text class="icon-text">✉</text>
+              </view>
+              <text class="method-text">郵箱驗證</text>
+            </view>
+            
+            <!-- TOTP验证码 -->
+            <view 
+              class="auth-method-item"
+              :class="{ active: selectedMethod === 'TOTP_CODE' }"
+              @click="selectMethod('TOTP_CODE')"
+              v-if="availableMethods.includes('TOTP_CODE')"
+            >
+              <view class="method-icon">
+                <text class="icon-text">🕒</text>
+              </view>
+              <view class="method-content">
+                <text class="method-text">2FA - TOTP 驗證</text>
+                <text class="method-status">✓ TOTP 已啟用</text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 验证码输入 -->
+          <view v-if="selectedMethod" class="code-input-section">
+            <input 
+              class="code-input" 
+              type="text" 
+              v-model="twoFACode" 
+              :placeholder="getCodePlaceholder()" 
+              maxlength="6"
+            />
+          </view>
+          
+          <!-- 确认按钮 -->
+          <view class="auth-modal-actions">
+            <view 
+              class="confirm-auth-btn" 
+              :class="{ disabled: !selectedMethod || !twoFACode || submitting }"
+              @click="confirm2FA"
+            >
+              <text class="confirm-auth-text">{{ submitting ? '驗證中...' : '確認' }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -127,8 +184,8 @@ const show2faModal = ref(false)
 const twoFACode = ref('')
 const submitting = ref(false)
 let pendingWithdraw = null
-const availableFactors = ref([]) // [{ code:'EMAIL_VERIFY_CODE', displayName:'邮箱验证码' }, { code:'TOTP_CODE', displayName:'TOTP验证码' }]
-const selectedFactor = ref(null)
+const availableMethods = ref([]) // ["EMAIL_VERIFY_CODE", "TOTP_CODE"]
+const selectedMethod = ref('')
 
 // 加载后端可用余额
 const loadUsdtAvailable = async () => {
@@ -185,10 +242,10 @@ const handleConfirm = async () => {
     // 保存此次请求体，后续验证成功无需重复输入
     pendingWithdraw = body
     const requires2FA = resp?.requires2FA || resp?.data?.requires2FA
-    const factors = resp?.factors || resp?.data?.factors || []
+    const methods = resp?.availableMethods || resp?.data?.availableMethods || []
     if (requires2FA) {
-      availableFactors.value = Array.isArray(factors) ? factors : []
-      selectedFactor.value = availableFactors.value[0] || null
+      availableMethods.value = Array.isArray(methods) ? methods : []
+      selectedMethod.value = '' // 让用户手动选择
       show2faModal.value = true
     } else if (resp?.success) {
       uni.showToast({ title: t('withdrawSuccess') || '提现成功', icon: 'success', duration: 1500 })
@@ -217,18 +274,18 @@ const confirm2FA = async () => {
     submitting.value = true
     uni.showLoading({ title: t('processing') })
     // 选择的验证方式
-    const factorCode = selectedFactor.value?.code
+    const methodCode = selectedMethod.value
     // 调用2FA验证
     let verifyOk = false
     try {
-      const vr = await authAPI.verify2FA({ code: twoFACode.value, factor: factorCode })
+      const vr = await authAPI.verify2FA({ code: twoFACode.value, method: methodCode })
       verifyOk = vr?.success !== false
     } catch (err) {
       // 兜底直调接口
       const res2 = await uni.request({
         url: '/api/auth/2fa/verify',
         method: 'POST',
-        data: { code: twoFACode.value, factor: factorCode },
+        data: { code: twoFACode.value, method: methodCode },
         withCredentials: true,
         header: { 'Content-Type': 'application/json' }
       })
@@ -236,19 +293,37 @@ const confirm2FA = async () => {
       if (!verifyOk) throw new Error(res2.data?.message || '2FA 验证失败')
     }
     if (!verifyOk) throw new Error('2FA 验证失败')
-    // 验证成功则认为提现流程完成
-    const resp = { success: true }
-    if (resp?.success) {
-      uni.showToast({ title: t('withdrawSuccess') || '提现成功', icon: 'success', duration: 1500 })
-      show2faModal.value = false
-      twoFACode.value = ''
-      pendingWithdraw = null
-      // 返回或跳转
-      setTimeout(() => {
-        uni.switchTab({ url: '/pages/Defi' })
-      }, 500)
-    } else {
-      throw new Error(resp?.message || '提现失败')
+    
+    // 2FA验证成功后，执行实际的提现操作
+    console.log('2FA验证成功，开始执行提现操作:', pendingWithdraw)
+    
+    try {
+      // 重新调用提现接口，这次应该直接成功（因为2FA已验证）
+      const withdrawResp = await userFundsAPI.withdraw({
+        ...pendingWithdraw,
+        verified2FA: true // 标记2FA已验证
+      })
+      
+      if (withdrawResp?.success) {
+        uni.showToast({ title: t('withdrawSuccess') || '提现成功', icon: 'success', duration: 1500 })
+        show2faModal.value = false
+        twoFACode.value = ''
+        pendingWithdraw = null
+        selectedMethod.value = ''
+        
+        // 刷新余额
+        await loadUsdtAvailable()
+        
+        // 返回或跳转
+        setTimeout(() => {
+          uni.switchTab({ url: '/pages/Defi' })
+        }, 500)
+      } else {
+        throw new Error(withdrawResp?.message || '提现失败')
+      }
+    } catch (withdrawError) {
+      console.error('提现执行失败:', withdrawError)
+      throw new Error(withdrawError?.message || '提现执行失败')
     }
   } catch (e) {
     console.error('2FA 验证或提现失败:', e)
@@ -261,6 +336,24 @@ const confirm2FA = async () => {
 
 const cancel2FA = () => {
   show2faModal.value = false
+  selectedMethod.value = ''
+  twoFACode.value = ''
+}
+
+// 选择验证方式
+const selectMethod = (method) => {
+  selectedMethod.value = method
+  twoFACode.value = '' // 清空之前输入的验证码
+}
+
+// 获取验证码输入框占位符
+const getCodePlaceholder = () => {
+  if (selectedMethod.value === 'EMAIL_VERIFY_CODE') {
+    return '請輸入郵箱驗證碼'
+  } else if (selectedMethod.value === 'TOTP_CODE') {
+    return '請輸入 TOTP 驗證碼'
+  }
+  return '請輸入驗證碼'
 }
 </script>
 
@@ -571,75 +664,180 @@ const cancel2FA = () => {
   font-weight: 400;
 }
 
-/* 2FA 模态框样式 */
-.modal-overlay {
+/* 2FA 认证模态框样式 */
+.auth-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
 }
 
-.modal {
-  width: 80%;
-  background: #121212;
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
-  border-radius: 16rpx;
-  padding: 32rpx;
-}
-
-.modal-title {
-  font-size: 32rpx;
-  color: #fff;
-  margin-bottom: 24rpx;
-}
-
-.modal-body {
-  margin-bottom: 24rpx;
-}
-
-.modal-input {
-  width: 100%;
-  height: 88rpx;
+.auth-modal {
+  width: 90%;
+  max-width: 640rpx;
   background: #1A1A1A;
-  border: 1rpx solid rgba(255, 255, 255, 0.2);
-  border-radius: 12rpx;
-  padding: 0 24rpx;
-  color: #fff;
+  border-radius: 24rpx;
+  padding: 48rpx 32rpx;
+  position: relative;
 }
 
-.modal-actions {
+.auth-modal-header {
+  position: absolute;
+  top: 32rpx;
+  left: 32rpx;
+}
+
+.back-button {
+  width: 48rpx;
+  height: 48rpx;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.auth-modal-title {
+  text-align: center;
+  margin-bottom: 16rpx;
+  margin-top: 32rpx;
+}
+
+.title-text {
+  font-size: 36rpx;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.auth-modal-subtitle {
+  text-align: center;
+  margin-bottom: 48rpx;
+}
+
+.subtitle-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+.auth-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  margin-bottom: 48rpx;
+}
+
+.auth-method-item {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
   gap: 24rpx;
 }
 
-.modal-btn {
-  min-width: 160rpx;
-  height: 72rpx;
-  border-radius: 12rpx;
+.auth-method-item.active {
+  border-color: #FFC107;
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.method-icon {
+  width: 48rpx;
+  height: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12rpx;
 }
 
-.modal-btn.cancel {
-  background: #2a2a2a;
-  color: #fff;
+.icon-text {
+  font-size: 24rpx;
 }
 
-.modal-btn.confirm {
-  background: linear-gradient(90deg, rgba(254,218,120,1) 0%, rgba(176,121,32,1) 100%);
-  color: #000;
+.method-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
 }
 
-.modal-btn.confirm.disabled {
-  opacity: 0.6;
+.method-text {
+  font-size: 32rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.method-status {
+  font-size: 24rpx;
+  color: #00FF88;
+  font-weight: 400;
+}
+
+.code-input-section {
+  margin-bottom: 48rpx;
+}
+
+.code-input {
+  width: 100%;
+  height: 96rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 16rpx;
+  padding: 0 32rpx;
+  font-size: 32rpx;
+  color: #FFFFFF;
+  text-align: center;
+  letter-spacing: 8rpx;
+}
+
+.code-input:focus {
+  border-color: #FFC107;
+  outline: none;
+}
+
+.auth-modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-auth-btn {
+  width: 100%;
+  height: 96rpx;
+  background: linear-gradient(90deg, rgba(254, 218, 120, 1) 0%, rgba(176, 121, 32, 1) 100%);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.confirm-auth-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirm-auth-btn:not(.disabled):active {
+  transform: scale(0.98);
+}
+
+.confirm-auth-text {
+  font-size: 32rpx;
+  color: #000000;
+  font-weight: 600;
 }
 
 /* 自定义Toast样式 */

@@ -161,7 +161,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatShortAddress } from '@/utils/addressUtils'
-import { authAPI } from '@/api/apiService.js'
+import { authAPI, stakeAPI, loanAPI, pointsAPI } from '@/api/apiService.js'
 import { checkWalletConnection } from '@/utils/walletService.js'
 
 const { t, locale } = useI18n()
@@ -175,13 +175,13 @@ const userInfo = reactive({
 })
 
 const assets = reactive({
-  stakedVGAU: '12,456',
-  stakingYield: '+123,456',
-  collateralVGAU: '456',
-  remainingDebt: '123'
+  stakedVGAU: '0',
+  stakingYield: '0',
+  collateralVGAU: '0',
+  remainingDebt: '0'
 })
 
-const points = ref('235')
+const points = ref('0')
 const showLogoutConfirmModal = ref(false)
 
 // 手动连接功能已移除（仅显示已连接地址）
@@ -306,16 +306,113 @@ const getUserInfo = async () => {
   }
 }
 
-// 获取资产信息 - 以后可以对接接口
+// 获取资产信息 - 调用API获取质押、借贷和积分数据
 const getAssetsInfo = async () => {
   try {
-    // 这里可以调用API获取资产信息
-    // const response = await $api.getAssetsInfo()
-    // Object.assign(assets, response.data)
-    console.log('获取资产信息')
+    console.log('📊 开始获取资产信息...')
+    
+    // 并行调用质押统计、借贷汇总和积分统计接口
+    const [stakeResponse, loanResponse, pointsResponse] = await Promise.allSettled([
+      stakeAPI.getStatistics(),
+      loanAPI.getSummary(),
+      pointsAPI.getMyStatistics()
+    ])
+    
+    // 处理质押统计数据
+    if (stakeResponse.status === 'fulfilled' && stakeResponse.value?.success) {
+      const stakeData = stakeResponse.value.data
+      console.log('✅ 质押统计数据:', stakeData)
+      
+      // 更新当前质押数量
+      if (stakeData.totalStakeAmount !== undefined) {
+        assets.stakedVGAU = formatNumber(stakeData.totalStakeAmount)
+      } else {
+        assets.stakedVGAU = '0'
+      }
+      
+      // 更新总质押奖励
+      if (stakeData.totalInterestEarned !== undefined) {
+        assets.stakingYield = formatNumber(stakeData.totalInterestEarned)
+      } else {
+        assets.stakingYield = '0'
+      }
+    } else {
+      console.warn('⚠️ 质押统计接口调用失败:', stakeResponse.reason)
+      // 接口失败时保持默认值 0
+      assets.stakedVGAU = '0'
+      assets.stakingYield = '0'
+    }
+    
+    // 处理借贷汇总数据
+    if (loanResponse.status === 'fulfilled' && loanResponse.value?.success) {
+      const loanData = loanResponse.value.data
+      console.log('✅ 借贷汇总数据:', loanData)
+      
+      // 更新当前抵押品数量
+      if (loanData.totalActiveCollateral !== undefined) {
+        assets.collateralVGAU = formatNumber(loanData.totalActiveCollateral)
+      } else {
+        assets.collateralVGAU = '0'
+      }
+    } else {
+      console.warn('⚠️ 借贷汇总接口调用失败:', loanResponse.reason)
+      // 接口失败时保持默认值 0
+      assets.collateralVGAU = '0'
+    }
+    
+    // 处理积分统计数据
+    if (pointsResponse.status === 'fulfilled' && pointsResponse.value?.success) {
+      const pointsData = pointsResponse.value.data
+      console.log('✅ 积分统计数据:', pointsData)
+      
+      // 更新总积分 - 使用currentPoints字段
+      if (pointsData.currentPoints !== undefined) {
+        points.value = formatNumber(pointsData.currentPoints)
+      } else {
+        points.value = '0'
+      }
+    } else {
+      console.warn('⚠️ 积分统计接口调用失败:', pointsResponse.reason)
+      // 接口失败时保持默认值 0
+      points.value = '0'
+    }
+    
+    console.log('📊 资产信息更新完成:', { assets, points: points.value })
   } catch (error) {
-    console.error('获取资产信息失败:', error)
+    console.error('❌ 获取资产信息失败:', error)
+    
+    // 发生异常时重置为默认值
+    assets.stakedVGAU = '0'
+    assets.stakingYield = '0'
+    assets.collateralVGAU = '0'
+    points.value = '0'
+    
+    // 不显示错误提示，静默处理
+    console.log('📊 使用默认值显示资产信息')
   }
+}
+
+// 格式化数字显示
+const formatNumber = (value) => {
+  if (value === null || value === undefined) {
+    return '0'
+  }
+  
+  const num = parseFloat(value)
+  if (isNaN(num)) {
+    return '0'
+  }
+  
+  // 如果数字很大，使用千分位分隔符
+  if (num >= 1000) {
+    return num.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })
+  }
+  
+  // 保留2位小数
+  return num.toFixed(2)
 }
 
 // 图片加载错误处理

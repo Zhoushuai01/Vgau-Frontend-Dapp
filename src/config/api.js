@@ -66,7 +66,8 @@ export const API_ENDPOINTS = {
   // 借贷配置
   LOAN: {
     CONFIG: '/loan/config',
-    ORDERS: '/loan/orders'
+    ORDERS: '/loan/orders',
+    SUMMARY: '/loan/summary'
   },
   
   // 用户管理
@@ -109,6 +110,17 @@ export const API_ENDPOINTS = {
     ORDERS: '/stake/orders',
     STATISTICS: '/stake/statistics',
     REDEEM: '/stake/orders/{orderId}/redeem'
+  },
+  
+  // 积分管理
+  POINTS: {
+    MY_STATISTICS: '/points/my/statistics'
+  },
+  
+  // VGAU储蓄管理
+  VGAU_SAVINGS: {
+    CLAIMABLE_INTEREST: '/vgau-savings/claimable-interest',
+    CLAIM_INTEREST: '/vgau-savings/claim-interest'
   }
 }
 

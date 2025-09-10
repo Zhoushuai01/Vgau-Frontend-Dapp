@@ -238,7 +238,23 @@ class ApiService {
     // 获取借贷配置
     getConfig: () => this.get(this.endpoints.LOAN.CONFIG),
     // 创建借贷订单
-    createOrder: (data) => this.post(this.endpoints.LOAN.ORDERS, data)
+    createOrder: (data) => this.post(this.endpoints.LOAN.ORDERS, data),
+    // 获取借贷汇总信息
+    getSummary: () => this.get(this.endpoints.LOAN.SUMMARY)
+  }
+  
+  // 积分管理相关API
+  points = {
+    // 获取我的积分统计
+    getMyStatistics: () => this.get(this.endpoints.POINTS.MY_STATISTICS)
+  }
+  
+  // VGAU储蓄管理相关API
+  vgauSavings = {
+    // 获取可领取利息
+    getClaimableInterest: () => this.get(this.endpoints.VGAU_SAVINGS.CLAIMABLE_INTEREST),
+    // 领取利息
+    claimInterest: (data) => this.post(this.endpoints.VGAU_SAVINGS.CLAIM_INTEREST, data)
   }
 }
 
@@ -259,6 +275,8 @@ export const inviteAPI = apiService.invite
 export const stakeAPI = apiService.stake
 export const userFundsAPI = apiService.userFunds
 export const loanAPI = apiService.loan
+export const pointsAPI = apiService.points
+export const vgauSavingsAPI = apiService.vgauSavings
 
 // 导出基础配置
 export { BASE_URL, API_ENDPOINTS } 
