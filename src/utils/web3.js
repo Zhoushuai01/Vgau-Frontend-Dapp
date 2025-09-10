@@ -100,17 +100,13 @@ class Web3Service {
             return false
           }
         } else {
-          // 没有存储的地址，使用MetaMask当前选中的地址（首次连接）
-          this.accounts = accounts
-          this.currentAccount = accounts[0]
-          this.isConnected = true
-          
-          // 存储当前连接的钱包地址
-          localStorage.setItem('connectedWalletAddress', this.currentAccount)
-          localStorage.setItem('walletLastConnectedAt', new Date().toISOString())
-          
-          console.log('首次连接钱包账户:', this.currentAccount)
-          return true
+          // 没有存储的地址，不自动连接，需要用户主动连接
+          console.log('没有之前连接的钱包地址记录，需要用户主动连接')
+          console.log('MetaMask可用地址:', accounts)
+          this.accounts = []
+          this.currentAccount = null
+          this.isConnected = false
+          return false
         }
       } else {
         // 没有连接的账户
@@ -191,8 +187,8 @@ class Web3Service {
       // 清除本地缓存状态
       this.clearLocalCache()
     } else if (accounts[0] !== this.currentAccount) {
-      if (isInitialConnection || !this.currentAccount) {
-        // 初始连接或当前没有连接，允许设置地址
+      if (isInitialConnection) {
+        // 只有明确标记为初始连接时才允许设置地址
         this.accounts = accounts
         this.currentAccount = accounts[0]
         this.isConnected = true
@@ -211,21 +207,28 @@ class Web3Service {
         // 清除本地缓存状态
         this.clearLocalCache()
       } else {
-        // 用户切换了账户，但不允许自动切换
-        console.log('检测到钱包地址变化，但应用保持当前连接的钱包地址')
+        // 用户切换了账户，或者当前没有连接但不是初始连接
+        console.log('检测到钱包地址变化或无连接状态，但不自动连接')
         console.log('MetaMask中的地址:', accounts[0])
-        console.log('应用当前连接的地址:', this.currentAccount)
+        console.log('应用当前连接的地址:', this.currentAccount || '无')
         
-        // 记录地址变化事件，但不切换
-        localStorage.setItem('walletAddressChangedAt', new Date().toISOString())
-        localStorage.setItem('metaMaskCurrentAddress', accounts[0])
+        if (this.currentAccount) {
+          // 如果当前有连接的账户，记录变化但不切换
+          localStorage.setItem('walletAddressChangedAt', new Date().toISOString())
+          localStorage.setItem('metaMaskCurrentAddress', accounts[0])
+          
+          // 提示用户地址不匹配
+          this.handleWalletAddressMismatch(accounts[0])
+        } else {
+          // 如果当前没有连接的账户，也不自动连接
+          console.log('当前无连接账户，不自动连接MetaMask地址')
+          localStorage.setItem('metaMaskCurrentAddress', accounts[0])
+        }
         
-        // 不更新当前账户，保持原有连接
+        // 不更新当前账户，保持原有连接状态
         // 不触发合约重新初始化
         // 不清除本地缓存状态
-        
-        // 可以在这里添加用户提示逻辑
-        this.handleWalletAddressMismatch(accounts[0])
+        // 不设置connectedWalletAddress
       }
     }
   }
