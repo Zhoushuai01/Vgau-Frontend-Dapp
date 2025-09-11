@@ -158,16 +158,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatShortAddress } from '@/utils/addressUtils'
 import { authAPI, stakeAPI, loanAPI, pointsAPI } from '@/api/apiService.js'
-import { checkWalletConnection } from '@/utils/walletService.js'
+import web3Service from '@/utils/web3.js'
 
 const { t, locale } = useI18n()
 
 // 响应式数据
 const walletAddress = ref('')
+const walletConnected = ref(false)
 
 const userInfo = reactive({
   username: 'User123',
@@ -192,11 +193,14 @@ const setupWalletEventListeners = () => {
     // 监听账户变化
     window.ethereum.on('accountsChanged', (accounts) => {
       console.log('🔄 钱包账户已切换:', accounts)
-      if (accounts.length > 0) {
-        walletAddress.value = accounts[0]
-        console.log('✅ 更新钱包地址:', accounts[0])
+      // 使用web3Service获取当前账户，保持与Home.vue一致
+      if (web3Service.isConnected && web3Service.currentAccount) {
+        walletAddress.value = web3Service.currentAccount
+        walletConnected.value = true
+        console.log('✅ 更新钱包地址:', web3Service.currentAccount)
       } else {
         walletAddress.value = ''
+        walletConnected.value = false
         console.log('⚠️ 钱包已断开连接')
       }
     })
@@ -206,6 +210,47 @@ const setupWalletEventListeners = () => {
       console.log('🔄 网络已切换:', chainId)
       // 可以在这里添加网络切换的处理逻辑
     })
+  }
+}
+
+// 定期检查钱包连接状态
+let walletCheckInterval = null
+
+const startWalletStatusCheck = () => {
+  // 每5秒检查一次钱包连接状态
+  walletCheckInterval = setInterval(async () => {
+    try {
+      const wasConnected = walletConnected.value
+      const wasAddress = walletAddress.value
+      
+      // 检查web3Service状态
+      if (web3Service.isConnected && web3Service.currentAccount) {
+        if (!wasConnected || wasAddress !== web3Service.currentAccount) {
+          walletAddress.value = web3Service.currentAccount
+          walletConnected.value = true
+          console.log('🔄 定期检查: 钱包状态更新', {
+            wasConnected,
+            nowConnected: true,
+            address: web3Service.currentAccount
+          })
+        }
+      } else {
+        if (wasConnected) {
+          walletAddress.value = ''
+          walletConnected.value = false
+          console.log('🔄 定期检查: 钱包已断开连接')
+        }
+      }
+    } catch (error) {
+      console.error('定期检查钱包状态失败:', error)
+    }
+  }, 5000) // 每5秒检查一次
+}
+
+const stopWalletStatusCheck = () => {
+  if (walletCheckInterval) {
+    clearInterval(walletCheckInterval)
+    walletCheckInterval = null
   }
 }
 
@@ -279,18 +324,26 @@ const showToast = (message) => {
 const getConnectedWalletAddress = async () => {
   try {
     console.log('🔍 获取连接的钱包地址...')
-    const connectedAddress = await checkWalletConnection()
     
-    if (connectedAddress) {
-      walletAddress.value = connectedAddress
-      console.log('✅ 获取到钱包地址:', connectedAddress)
+    // 确保web3Service已初始化
+    if (!web3Service.web3) {
+      await web3Service.init()
+    }
+    
+    // 使用web3Service获取当前账户，与Home.vue保持一致
+    if (web3Service.isConnected && web3Service.currentAccount) {
+      walletAddress.value = web3Service.currentAccount
+      walletConnected.value = true
+      console.log('✅ 获取到钱包地址:', web3Service.currentAccount)
     } else {
       console.log('⚠️ 未检测到连接的钱包')
       walletAddress.value = ''
+      walletConnected.value = false
     }
   } catch (error) {
     console.error('获取钱包地址失败:', error)
     walletAddress.value = ''
+    walletConnected.value = false
   }
 }
 
@@ -849,10 +902,11 @@ const clearUserData = () => {
 onMounted(async () => {
   await getConnectedWalletAddress()
   
-  // 如果钱包已连接，设置事件监听
-  if (walletAddress.value) {
-    setupWalletEventListeners()
-  }
+  // 设置事件监听（无论是否连接都设置，以便监听连接状态变化）
+  setupWalletEventListeners()
+  
+  // 启动定期检查钱包状态
+  startWalletStatusCheck()
   
   getUserInfo()
   getAssetsInfo()
@@ -896,6 +950,11 @@ onMounted(async () => {
       }
     }
   }
+})
+
+// 页面卸载时清理定时器
+onUnmounted(() => {
+  stopWalletStatusCheck()
 })
 </script>
 
