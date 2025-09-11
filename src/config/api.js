@@ -122,6 +122,11 @@ export const API_ENDPOINTS = {
   VGAU_SAVINGS: {
     CLAIMABLE_INTEREST: '/vgau-savings/claimable-interest',
     CLAIM_INTEREST: '/vgau-savings/claim-interest'
+  },
+  
+  // DeFi 相关
+  DEFI: {
+    DEPOSITS_ORDERS: '/defi/deposits/orders'
   }
 }
 

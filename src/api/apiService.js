@@ -69,10 +69,51 @@ class ApiService {
 
   // POST请求
   async post(url, data = {}) {
-    return this.request(url, {
-      method: 'POST',
-      data
-    })
+    console.log('🚀🚀🚀 使用最新的POST方法 - 版本2024')
+    console.log('📋 原始数据:', data)
+    
+    try {
+      console.log('📤 开始发送POST请求...')
+      
+      const response = await new Promise((resolve, reject) => {
+        uni.request({
+          url: this.baseURL + url,
+          method: 'POST',
+          data: data, // 不要JSON.stringify，让uni.request自动处理
+          header: {
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000,
+          success: (res) => {
+            console.log('✅ uni.request success:', res)
+            console.log('📊 响应数据详情:', JSON.stringify(res.data, null, 2))
+            resolve(res)
+          },
+          fail: (err) => {
+            console.error('❌ uni.request fail:', err)
+            reject(err)
+          }
+        })
+      })
+      
+      console.log('📡 POST响应详情:', {
+        statusCode: response.statusCode,
+        data: response.data,
+        header: response.header
+      })
+      
+      // 检查响应状态
+      if (RESPONSE_CONFIG.successCodes.includes(response.statusCode)) {
+        return response.data
+      } else {
+        console.error('❌ POST响应状态码错误:', response.statusCode, response.data)
+        throw new Error(response.data?.message || `Request failed with status ${response.statusCode}`)
+      }
+    } catch (error) {
+      console.error('💥 POST请求异常:', error)
+      RESPONSE_CONFIG.errorHandler(error)
+      throw error
+    }
   }
 
   // PUT请求
@@ -261,6 +302,15 @@ class ApiService {
     // 领取利息
     claimInterest: (data) => this.post(this.endpoints.VGAU_SAVINGS.CLAIM_INTEREST, data)
   }
+  
+  // DeFi相关API
+  defi = {
+    // 创建充值订单
+    createDepositOrder: (orderData) => {
+      console.log('🔧 createDepositOrder 调用 post 方法')
+      return this.post(this.endpoints.DEFI.DEPOSITS_ORDERS, orderData)
+    }
+  }
 }
 
 // 创建API服务实例
@@ -282,6 +332,7 @@ export const userFundsAPI = apiService.userFunds
 export const loanAPI = apiService.loan
 export const pointsAPI = apiService.points
 export const vgauSavingsAPI = apiService.vgauSavings
+export const defiAPI = apiService.defi
 
 // 导出基础配置
 export { BASE_URL, API_ENDPOINTS } 

@@ -137,6 +137,8 @@
   import { useI18n } from 'vue-i18n'
   import contractService from '@/utils/contractService.js'
   import mobileErrorDetector from '@/utils/mobileErrorDetector.js'
+  import { defiAPI } from '@/api/apiService.js'
+  import web3Service from '@/utils/web3.js'
   
   // 响应式数据
   const amount = ref('')
@@ -160,6 +162,15 @@
   })
   
   const { t } = useI18n()
+  
+  // 生成幂等键（UUID格式）
+  const generateIdempotencyKey = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0
+      const v = c === 'x' ? r : (r & 0x3 | 0x8)
+      return v.toString(16)
+    })
+  }
   
   // 页面加载时初始化
   onMounted(async () => {
@@ -327,26 +338,71 @@
       // 执行完整的VGAU充值流程（授权+充值）
       const result = await contractService.completeVGAURecharge(rechargeAmount)
       
-      uni.hideLoading()
-      
       if (result && result.transactionHash) {
-        uni.showToast({
-          title: t('rechargePage.rechargeSuccess'),
-          icon: 'success',
-          duration: 3000
-        })
+        console.log('✅ VGAU充值交易成功，开始创建订单...')
         
-        // 刷新余额
-        await loadUserData()
-        
-        // 清空输入
-        amount.value = ''
-        
-        // 立即返回上一页
-        uni.navigateBack()
+        try {
+          // 获取网络信息
+          const networkInfo = await contractService.getNetworkInfo()
+          console.log('🌐 VGAU网络信息:', networkInfo)
+          
+          // 准备订单数据
+          const orderData = {
+            txHash: result.transactionHash,
+            tokenType: 'VGAU',
+            amountRaw: parseFloat(rechargeAmount), // 直接传number数字类型
+            fromAddress: networkInfo.currentAccount,
+            chainId: typeof networkInfo.chainId === 'bigint' ? Number(networkInfo.chainId) : networkInfo.chainId,
+            idempotencyKey: generateIdempotencyKey() // 生成幂等键
+          }
+          
+          console.log('📋 VGAU订单数据:', orderData)
+          
+          // 验证订单数据
+          if (!orderData.txHash || !orderData.fromAddress || !orderData.chainId) {
+            throw new Error('VGAU订单数据不完整')
+          }
+          
+          // 调用后端接口创建订单
+          const orderResult = await defiAPI.createDepositOrder(orderData)
+          console.log('✅ VGAU订单创建成功:', orderResult)
+          
+          uni.showToast({
+            title: t('rechargePage.rechargeSuccess'),
+            icon: 'success',
+            duration: 3000
+          })
+          
+          // 刷新余额
+          await loadUserData()
+          
+          // 清空输入
+          amount.value = ''
+          
+          // 立即返回上一页
+          uni.navigateBack()
+          
+        } catch (orderError) {
+          console.error('❌ 创建VGAU订单失败:', orderError)
+          
+          // 即使订单创建失败，充值交易已经成功，仍然显示成功消息
+          uni.showToast({
+            title: t('rechargePage.rechargeSuccess'),
+            icon: 'success',
+            duration: 3000
+          })
+          
+          // 刷新余额
+          await loadUserData()
+          
+          // 清空输入
+          amount.value = ''
+          
+          // 立即返回上一页
+          uni.navigateBack()
+        }
       }
     } catch (error) {
-      uni.hideLoading()
       console.error('❌ 充值执行失败:', error)
       
       // 检查是否是RPC错误，提供重试选项
@@ -357,6 +413,7 @@
         showRechargeErrorModal(error)
       }
     } finally {
+      uni.hideLoading()
       isLoading.value = false
     }
   }

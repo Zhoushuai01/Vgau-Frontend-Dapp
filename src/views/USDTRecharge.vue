@@ -80,6 +80,8 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import contractService from '@/utils/contractService.js'
+import { defiAPI } from '@/api/apiService.js'
+import web3Service from '@/utils/web3.js'
 
 // 响应式数据
 const inputAmount = ref('')
@@ -90,9 +92,24 @@ const showConfirmModal = ref(false)
 const pendingAmount = ref('')
 const { t } = useI18n()
 
+// 生成幂等键（UUID格式）- 强制更新版本
+const generateIdempotencyKey = () => {
+  console.log('🔧 使用新的UUID生成函数')
+  const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+  console.log('🔑 生成的UUID:', uuid)
+  return uuid
+}
+
 // 页面加载时初始化
 onMounted(async () => {
   try {
+    // 测试API服务
+    console.log('🧪 测试API服务:', defiAPI)
+    
     await initContractService()
     await loadUserData()
   } catch (error) {
@@ -183,26 +200,107 @@ const executeRecharge = async (amount) => {
     // 执行完整的USDT充值流程（授权+充值）
     const result = await contractService.completeUSDTRecharge(amount)
     
-    uni.hideLoading()
-    
     if (result && result.transactionHash) {
-      uni.showToast({
-        title: t('rechargePage.rechargeSuccess'),
-        icon: 'success',
-        duration: 3000
-      })
+      console.log('✅ 充值交易成功，开始创建订单...')
       
-      // 刷新余额
-      await loadUserData()
-      
-      // 清空输入
-      inputAmount.value = ''
-      
-      // 立即返回上一页
-      uni.navigateBack()
+      try {
+        // 获取网络信息
+        const networkInfo = await contractService.getNetworkInfo()
+        console.log('🌐 网络信息:', networkInfo)
+        
+        // 处理chainId的BigInt问题
+        const chainIdNumber = typeof networkInfo.chainId === 'bigint' 
+          ? Number(networkInfo.chainId) 
+          : networkInfo.chainId
+        console.log('🔢 chainId处理:', {
+          original: networkInfo.chainId,
+          type: typeof networkInfo.chainId,
+          converted: chainIdNumber,
+          convertedType: typeof chainIdNumber
+        })
+        
+        // 生成幂等键
+        const idempotencyKey = generateIdempotencyKey()
+        console.log('🔑 生成的幂等键:', idempotencyKey)
+        
+        // 准备订单数据
+        const orderData = {
+          txHash: result.transactionHash,
+          tokenType: 'USDT',
+          amountRaw: parseFloat(amount), // 直接传number数字类型
+          fromAddress: networkInfo.currentAccount,
+          chainId: chainIdNumber, // 使用处理过的chainId
+          idempotencyKey: idempotencyKey // 使用生成的幂等键
+        }
+        
+        console.log('📋 订单数据:', orderData)
+        console.log('📋 订单数据JSON:', JSON.stringify(orderData, null, 2))
+        console.log('📋 订单数据类型检查:', {
+          txHash: typeof orderData.txHash,
+          tokenType: typeof orderData.tokenType,
+          amountRaw: typeof orderData.amountRaw,
+          fromAddress: typeof orderData.fromAddress,
+          chainId: typeof orderData.chainId,
+          idempotencyKey: typeof orderData.idempotencyKey
+        })
+        
+        // 检查数据是否有问题
+        Object.keys(orderData).forEach(key => {
+          const value = orderData[key]
+          if (value === null || value === undefined) {
+            console.error(`❌ 字段 ${key} 的值为空:`, value)
+          }
+          if (typeof value === 'object' && value !== null) {
+            console.error(`❌ 字段 ${key} 是对象类型:`, value)
+          }
+        })
+        
+        // 验证订单数据
+        if (!orderData.txHash || !orderData.fromAddress || !orderData.chainId) {
+          throw new Error('订单数据不完整')
+        }
+        
+        // 调用后端接口创建订单
+        console.log('🚀 开始调用后端接口...')
+        const orderResult = await defiAPI.createDepositOrder(orderData)
+        console.log('✅ 订单创建成功:', orderResult)
+        
+        uni.showToast({
+          title: t('rechargePage.rechargeSuccess'),
+          icon: 'success',
+          duration: 3000
+        })
+        
+        // 刷新余额
+        await loadUserData()
+        
+        // 清空输入
+        inputAmount.value = ''
+        
+        // 立即返回上一页
+        uni.navigateBack()
+        
+      } catch (orderError) {
+        console.error('❌ 创建订单失败:', orderError)
+        
+        // 即使订单创建失败，充值交易已经成功，仍然显示成功消息
+        uni.showToast({
+          title: t('rechargePage.rechargeSuccess'),
+          icon: 'success',
+          duration: 3000
+        })
+        
+        // 刷新余额
+        await loadUserData()
+        
+        // 清空输入
+        inputAmount.value = ''
+        
+        // 立即返回上一页
+        uni.navigateBack()
+      }
     }
   } catch (error) {
-    uni.hideLoading()
     console.error('❌ 充值执行失败:', error)
     
     let errorMessage = t('rechargePage.rechargeFailed')
@@ -220,6 +318,7 @@ const executeRecharge = async (amount) => {
       duration: 3000
     })
   } finally {
+    uni.hideLoading()
     isLoading.value = false
   }
 }

@@ -3919,18 +3919,18 @@
     "/api/defi/deposits/status": {
       "post": {
         "tags": [
-          "DeFi充值下单与状态"
+          "DeFi充值预订单API（仅新增，不改监听器）"
         ],
-        "summary": "按txHash查询充值状态",
+        "summary": "按txHash查询预充值单状态",
         "operationId": "status",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "string"
-                }
+                "type": "string"
+              },
+              "example": {
+                "txHash": "0xabc123"
               }
             }
           },
@@ -3938,11 +3938,15 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "未见到记录",
             "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+              "application/json": {
+                "example": {
+                  "code": 0,
+                  "message": "success",
+                  "data": {
+                    "status": "UNSEEN"
+                  }
                 }
               }
             }
@@ -3953,17 +3957,30 @@
     "/api/defi/deposits/orders": {
       "post": {
         "tags": [
-          "DeFi充值下单与状态"
+          "DeFi充值预订单API（仅新增，不改监听器）"
         ],
-        "summary": "创建预充值订单",
+        "summary": "创建预充值订单（前端拿到txHash后再调用）",
+        "description": "必填字段：chainId、fromAddress（用户钱包地址）、toAddress（平台收款地址）、amountRaw（最小单位字符串）、txHash。可选：tokenType、tokenAddress、idempotencyKey。",
         "operationId": "create",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "string"
+                "$ref": "#/components/schemas/CreateDefiDepositOrderRequest"
+              },
+              "examples": {
+                "CreateOrder": {
+                  "description": "CreateOrder",
+                  "value": {
+                    "chainId": 97,
+                    "tokenType": "USDT",
+                    "tokenAddress": "",
+                    "toAddress": "0xPlatformAddr",
+                    "fromAddress": "0xUserWallet",
+                    "amountRaw": "1000000",
+                    "txHash": "0xabc123",
+                    "idempotencyKey": "b7b0d7f1-4d27-4cb8-9f5a-1c2a3b4d5e6f"
+                  }
                 }
               }
             }
@@ -3972,11 +3989,17 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "创建成功",
             "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+              "application/json": {
+                "example": {
+                  "code": 0,
+                  "message": "success",
+                  "data": {
+                    "orderId": "dep_xxx",
+                    "status": "SUBMITTED",
+                    "txHash": "0xabc123"
+                  }
                 }
               }
             }
@@ -3987,9 +4010,9 @@
     "/api/defi/deposits/orders/{orderId}/tx": {
       "post": {
         "tags": [
-          "DeFi充值下单与状态"
+          "DeFi充值预订单API（仅新增，不改监听器）"
         ],
-        "summary": "订单回填交易哈希",
+        "summary": "订单回填交易哈希（可选）",
         "operationId": "attachTx",
         "parameters": [
           {
@@ -4005,10 +4028,54 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "string"
+                "type": "string"
+              },
+              "example": {
+                "txHash": "0xabc123"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "回填成功",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": 0,
+                  "message": "success",
+                  "data": {
+                    "orderId": "dep_xxx",
+                    "status": "SUBMITTED",
+                    "txHash": "0xabc123"
+                  }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/defi/deposits/orders/list": {
+      "post": {
+        "tags": [
+          "DeFi充值预订单API（仅新增，不改监听器）"
+        ],
+        "summary": "查询用户预充值订单历史（POST，便于携带筛选参数）",
+        "description": "按状态、代币类型筛选，分页返回订单。status 可为 PENDING/SUBMITTED/SUCCESS/FAILED",
+        "operationId": "getOrders_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              },
+              "example": {
+                "page": 0,
+                "size": 20,
+                "status": "",
+                "tokenType": "USDT"
               }
             }
           },
@@ -4020,7 +4087,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                  "$ref": "#/components/schemas/CommonApiResponseListMapStringObject"
                 }
               }
             }
@@ -16876,7 +16943,7 @@
         ],
         "summary": "获取订单列表",
         "description": "获取所有质押订单列表，支持分页和多维度筛选。\n\n## 筛选条件\n- **状态筛选**: 可按订单状态筛选（ACTIVE、COMPLETED、CANCELLED）\n- **用户筛选**: 可按用户ID筛选特定用户的订单\n- **分页查询**: 支持分页查询，避免数据量过大\n\n## 返回数据\n- 包含订单的完整信息：质押金额、利率、期限、状态等\n- 计算字段：剩余天数、已计息天数\n- 资金池相关信息（如果适用）\n\n## 权限要求\n- 需要管理员权限 (ROLE_ADMIN)\n",
-        "operationId": "getOrders_1",
+        "operationId": "getOrders_2",
         "parameters": [
           {
             "name": "status",
@@ -22375,11 +22442,11 @@
             "example": 1000.5,
             "minimum": 0
           },
-          "collateralAmountInStandardUnit": {
-            "type": "number"
-          },
           "collateralAmountInWei": {
             "type": "integer"
+          },
+          "collateralAmountInStandardUnit": {
+            "type": "number"
           },
           "loanAmountInStandardUnit": {
             "type": "number"
@@ -22492,10 +22559,10 @@
           "additionalCollateralAmountInStandardUnit": {
             "type": "number"
           },
-          "newTotalCollateralAmountInStandardUnit": {
+          "previousCollateralAmountInStandardUnit": {
             "type": "number"
           },
-          "previousCollateralAmountInStandardUnit": {
+          "newTotalCollateralAmountInStandardUnit": {
             "type": "number"
           }
         }
@@ -22595,11 +22662,11 @@
             "maxLength": 500,
             "minLength": 0
           },
-          "formattedFileSize": {
-            "type": "string"
-          },
           "validMimeTypeForFileType": {
             "type": "boolean"
+          },
+          "formattedFileSize": {
+            "type": "string"
           },
           "validFileSizeForFileType": {
             "type": "boolean"
@@ -22934,6 +23001,91 @@
         "required": [
           "uploadToken"
         ]
+      },
+      "CreateDefiDepositOrderRequest": {
+        "type": "object",
+        "description": "创建充值预订单请求体",
+        "properties": {
+          "chainId": {
+            "type": "integer",
+            "format": "int32",
+            "description": "链ID（如BSC测试网97，主网56等）",
+            "example": 97
+          },
+          "tokenType": {
+            "type": "string",
+            "description": "代币类型，可选：USDT/VGAU等（用于推断默认合约地址，不传tokenAddress也可）",
+            "example": "USDT"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址（可选）。说明：后端已按链ID+代币类型配置了默认合约映射；若为原生币或前端不便传此字段，可留空，由后端根据 chainId+tokenType 解析。"
+          },
+          "toAddress": {
+            "type": "string",
+            "description": "平台接收地址（合约或收款地址）",
+            "example": "0xPlatformAddr"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "用户钱包地址（fromAddress）",
+            "example": "0xUserWallet"
+          },
+          "amountRaw": {
+            "type": "string",
+            "description": "充值金额（最小单位字符串：USDT一般为6位，VGAU为18位）",
+            "example": 1000000
+          },
+          "txHash": {
+            "type": "string",
+            "description": "交易哈希（钱包确认后获取）",
+            "example": "0xabc123..."
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "幂等键（可选，建议使用UUID）",
+            "example": "b7b0d7f1-4d27-4cb8-9f5a-1c2a3b4d5e6f"
+          }
+        },
+        "required": [
+          "amountRaw",
+          "chainId",
+          "fromAddress",
+          "toAddress",
+          "txHash"
+        ]
+      },
+      "CommonApiResponseListMapStringObject": {
+        "type": "object",
+        "description": "统一API响应结构",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "请求是否成功",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "操作成功"
+          },
+          "data": {
+            "type": "array",
+            "description": "响应数据（必须使用 DTO 包装，不能是单一值）",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+
+              }
+            }
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "错误码",
+            "example": 0
+          }
+        }
       },
       "RegisterRequest": {
         "type": "object",
@@ -23284,11 +23436,11 @@
             "maxLength": 500,
             "minLength": 0
           },
-          "validOnchainInfo": {
-            "type": "boolean"
-          },
           "parsedAmount": {
             "type": "integer"
+          },
+          "validOnchainInfo": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -23937,11 +24089,11 @@
           "validationError": {
             "type": "string"
           },
-          "validRevokeReason": {
-            "type": "boolean"
-          },
           "formattedRevokeReason": {
             "type": "string"
+          },
+          "validRevokeReason": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -23974,13 +24126,13 @@
           "statusDescription": {
             "type": "string"
           },
-          "approved": {
+          "validReviewStatus": {
             "type": "boolean"
           },
           "rejected": {
             "type": "boolean"
           },
-          "validReviewStatus": {
+          "approved": {
             "type": "boolean"
           }
         },
@@ -24297,16 +24449,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SavingsInterestDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -24315,6 +24457,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SavingsInterestDto"
+            }
           }
         }
       },
@@ -24392,16 +24544,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SavingsClaimDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -24410,6 +24552,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SavingsClaimDto"
+            }
           }
         }
       },
@@ -24876,16 +25028,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PointsRecordResponse"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -24894,6 +25036,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PointsRecordResponse"
+            }
           }
         }
       },
@@ -25001,26 +25153,26 @@
             "description": "记录创建时间",
             "example": "2024-01-20T08:30:00"
           },
-          "systemOperation": {
-            "type": "boolean"
-          },
-          "adminOperation": {
-            "type": "boolean"
-          },
-          "userOperation": {
-            "type": "boolean"
-          },
-          "earnRecord": {
-            "type": "boolean"
-          },
-          "consumeRecord": {
-            "type": "boolean"
-          },
           "operationTypeClass": {
             "type": "string"
           },
           "operatorTypeClass": {
             "type": "string"
+          },
+          "consumeRecord": {
+            "type": "boolean"
+          },
+          "adminOperation": {
+            "type": "boolean"
+          },
+          "systemOperation": {
+            "type": "boolean"
+          },
+          "earnRecord": {
+            "type": "boolean"
+          },
+          "userOperation": {
+            "type": "boolean"
           }
         }
       },
@@ -25258,20 +25410,20 @@
           "actualReceiveAmount": {
             "type": "number"
           },
+          "collateralAmountStandard": {
+            "type": "number"
+          },
           "statusDescription": {
             "type": "string"
           },
           "annualRateAsPercentage": {
             "type": "number"
           },
-          "collateralAmountStandard": {
-            "type": "number"
+          "finalStatus": {
+            "type": "boolean"
           },
           "ltvRatioAsPercentage": {
             "type": "number"
-          },
-          "finalStatus": {
-            "type": "boolean"
           }
         }
       },
@@ -25353,16 +25505,16 @@
           "averageLtvRatioAsPercentage": {
             "type": "number"
           },
-          "borrowingExperienceLevel": {
+          "riskNotice": {
             "type": "string"
-          },
-          "maxLtvRatioAsPercentage": {
-            "type": "number"
           },
           "repaymentCompletionRate": {
             "type": "number"
           },
-          "riskNotice": {
+          "maxLtvRatioAsPercentage": {
+            "type": "number"
+          },
+          "borrowingExperienceLevel": {
             "type": "string"
           }
         }
@@ -25400,16 +25552,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LoanOrderDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -25418,6 +25560,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoanOrderDto"
+            }
           }
         }
       },
@@ -25688,19 +25840,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": {
-
-              }
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -25709,6 +25848,19 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+
+              }
+            }
           }
         }
       },
@@ -26137,16 +26289,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserFundsOperationDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -26155,6 +26297,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserFundsOperationDto"
+            }
           }
         }
       },
@@ -26191,16 +26343,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserFundsWithdrawAuditDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -26209,6 +26351,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserFundsWithdrawAuditDto"
+            }
           }
         }
       },
@@ -27166,16 +27318,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserFundsLedgerDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -27184,6 +27326,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserFundsLedgerDto"
+            }
           }
         }
       },
@@ -27583,16 +27735,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RequestLog"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -27601,6 +27743,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestLog"
+            }
           }
         }
       },
@@ -28079,23 +28231,8 @@
               "type": "string"
             }
           },
-          "priceChangeRate": {
+          "initialLtvRatioAsPercentage": {
             "type": "number"
-          },
-          "rateModified": {
-            "type": "boolean"
-          },
-          "statusDescription": {
-            "type": "string"
-          },
-          "annualRateAtCreationAsPercentage": {
-            "type": "number"
-          },
-          "currentCollateralValue": {
-            "type": "number"
-          },
-          "riskLevelDescription": {
-            "type": "string"
           },
           "collateralAmountStandard": {
             "type": "number"
@@ -28106,7 +28243,22 @@
           "currentAnnualRateAsPercentage": {
             "type": "number"
           },
-          "initialLtvRatioAsPercentage": {
+          "statusDescription": {
+            "type": "string"
+          },
+          "rateModified": {
+            "type": "boolean"
+          },
+          "priceChangeRate": {
+            "type": "number"
+          },
+          "riskLevelDescription": {
+            "type": "string"
+          },
+          "currentCollateralValue": {
+            "type": "number"
+          },
+          "annualRateAtCreationAsPercentage": {
             "type": "number"
           }
         }
@@ -28144,16 +28296,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminLoanOrderDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -28162,6 +28304,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminLoanOrderDto"
+            }
           }
         }
       },
@@ -28430,13 +28582,19 @@
       "PageKycApplicationResponse": {
         "type": "object",
         "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
           },
           "size": {
             "type": "integer",
@@ -28454,12 +28612,6 @@
           },
           "sort": {
             "$ref": "#/components/schemas/SortObject"
-          },
-          "first": {
-            "type": "boolean"
-          },
-          "last": {
-            "type": "boolean"
           },
           "numberOfElements": {
             "type": "integer",
@@ -28483,9 +28635,6 @@
           "sort": {
             "$ref": "#/components/schemas/SortObject"
           },
-          "paged": {
-            "type": "boolean"
-          },
           "pageNumber": {
             "type": "integer",
             "format": "int32"
@@ -28493,6 +28642,9 @@
           "pageSize": {
             "type": "integer",
             "format": "int32"
+          },
+          "paged": {
+            "type": "boolean"
           },
           "unpaged": {
             "type": "boolean"
@@ -29448,16 +29600,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminCashoutApplicationDetailResponse"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
@@ -29466,6 +29608,16 @@
           "current": {
             "type": "integer",
             "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminCashoutApplicationDetailResponse"
+            }
           }
         }
       },
