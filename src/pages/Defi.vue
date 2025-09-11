@@ -229,8 +229,9 @@
 </template>
 
 <script setup>
-  import { ref, onMounted, reactive } from 'vue'
+  import { ref, onMounted, onUnmounted, reactive } from 'vue'
   import { smartUserVerify } from '@/utils/walletService.js'
+  import web3Service from '@/utils/web3.js'
   import { useI18n } from 'vue-i18n'
   import { userFundsAPI, vgauSavingsAPI } from '@/api/apiService.js'
  
@@ -262,6 +263,21 @@
     isChecking: false,
     isBound: false,
     walletAddress: null
+  })
+  
+  // 会话状态管理
+  const sessionStatus = ref({
+    isAuthenticated: false,
+    walletAddress: null,
+    authenticatedAt: null,
+    sessionId: null
+  })
+  
+  // 钱包连接状态
+  const walletConnectionStatus = ref({
+    isConnected: false,
+    walletAddress: null,
+    lastConnectedAt: null
   })
   
   // 余额数据
@@ -299,6 +315,128 @@
     return num.toFixed(2)
   }
   
+  // 会话管理函数
+  const initSession = () => {
+    try {
+      const storedSession = localStorage.getItem('defi_session')
+      if (storedSession) {
+        const session = JSON.parse(storedSession)
+        // 检查会话是否过期（24小时）
+        const now = Date.now()
+        const sessionAge = now - session.authenticatedAt
+        const maxAge = 24 * 60 * 60 * 1000 // 24小时
+        
+        if (sessionAge < maxAge) {
+          sessionStatus.value = session
+          console.log('✅ 恢复会话状态:', session)
+          return true
+        } else {
+          console.log('⚠️ 会话已过期，清除会话')
+          clearSession()
+          return false
+        }
+      }
+      return false
+    } catch (error) {
+      console.error('初始化会话失败:', error)
+      clearSession()
+      return false
+    }
+  }
+  
+  const createSession = (walletAddress) => {
+    const session = {
+      isAuthenticated: true,
+      walletAddress: walletAddress,
+      authenticatedAt: Date.now(),
+      sessionId: `defi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    }
+    
+    sessionStatus.value = session
+    localStorage.setItem('defi_session', JSON.stringify(session))
+    console.log('✅ 创建新会话:', session)
+  }
+  
+  const clearSession = () => {
+    sessionStatus.value = {
+      isAuthenticated: false,
+      walletAddress: null,
+      authenticatedAt: null,
+      sessionId: null
+    }
+    localStorage.removeItem('defi_session')
+    console.log('🗑️ 清除会话状态')
+  }
+  
+  const isSessionValid = () => {
+    return sessionStatus.value.isAuthenticated && 
+           sessionStatus.value.walletAddress && 
+           sessionStatus.value.authenticatedAt
+  }
+  
+  // 检查钱包连接状态
+  const checkWalletConnection = async () => {
+    try {
+      // 检查web3Service连接状态
+      if (web3Service.isConnected && web3Service.currentAccount) {
+        const currentAddress = web3Service.currentAccount
+        
+        // 检查地址是否发生变化
+        if (walletConnectionStatus.value.walletAddress !== currentAddress) {
+          console.log('🔄 检测到钱包地址变化:', {
+            old: walletConnectionStatus.value.walletAddress,
+            new: currentAddress
+          })
+          
+          // 地址变化，清除会话并要求重新认证
+          clearSession()
+          
+          // 更新连接状态
+          walletConnectionStatus.value = {
+            isConnected: true,
+            walletAddress: currentAddress,
+            lastConnectedAt: Date.now()
+          }
+          
+          return true
+        }
+        
+        // 地址未变化，更新连接状态
+        walletConnectionStatus.value = {
+          isConnected: true,
+          walletAddress: currentAddress,
+          lastConnectedAt: walletConnectionStatus.value.lastConnectedAt || Date.now()
+        }
+        
+        return true
+      } else {
+        // 钱包未连接
+        if (walletConnectionStatus.value.isConnected) {
+          console.log('⚠️ 钱包已断开连接')
+          // 清除会话状态
+          clearSession()
+        }
+        
+        walletConnectionStatus.value = {
+          isConnected: false,
+          walletAddress: null,
+          lastConnectedAt: null
+        }
+        
+        return false
+      }
+    } catch (error) {
+      console.error('检查钱包连接状态失败:', error)
+      return false
+    }
+  }
+  
+  // 检查操作是否可用
+  const isOperationAvailable = () => {
+    return walletConnectionStatus.value.isConnected && 
+           walletConnectionStatus.value.walletAddress
+  }
+  
   // 获取可领取利息
   const getClaimableInterest = async () => {
     try {
@@ -326,6 +464,22 @@
   
   // 领取利息
   const handleClaimInterest = async () => {
+    // 检查钱包连接状态
+    if (!isOperationAvailable()) {
+      uni.showToast({
+        title: '请先连接钱包',
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+    
+    // 检查是否需要重新认证
+    const isWalletBound = await checkWalletBinding()
+    if (!isWalletBound) {
+      return
+    }
+    
     try {
       // 获取待领取金额
       const pendingAmountStr = yieldData.pending.replace(/,/g, '')
@@ -429,30 +583,50 @@
     }
   }
   
-  // 智能用户验证（优先检查登录状态）
+  // 钱包验证
   const checkWalletBinding = async () => {
     try {
       walletBindStatus.value.isChecking = true
       
+      // 首先检查钱包连接状态
+      const isWalletConnected = await checkWalletConnection()
+      
+      if (!isWalletConnected) {
+        console.log('❌ 钱包未连接，无法进行操作')
+        uni.showToast({
+          title: '请先连接钱包',
+          icon: 'none',
+          duration: 2000
+        })
+        return false
+      }
+      
+      // 检查是否有有效的会话（且钱包地址匹配）
+      if (isSessionValid() && 
+          sessionStatus.value.walletAddress === walletConnectionStatus.value.walletAddress) {
+        console.log('✅ 检测到有效会话，跳过钱包验证')
+        walletBindStatus.value.isBound = true
+        walletBindStatus.value.walletAddress = sessionStatus.value.walletAddress
+        return true
+      }
+      
+      console.log('⚠️ 无有效会话或钱包地址不匹配，开始钱包验证')
       const result = await smartUserVerify()
       
       if (result.success) {
-        // 用户验证成功
+        // 钱包验证成功，创建会话
         walletBindStatus.value.isBound = true
-        walletBindStatus.value.walletAddress = result.walletAddress || 'logged_in_user'
+        walletBindStatus.value.walletAddress = result.walletAddress
         
-        // 根据验证方式显示不同消息
-        if (result.skipWalletCheck) {
-          console.log('✅ 用户已登录，跳过钱包验证')
-          // 已登录用户不显示提示框，直接进入功能
-        } else {
-          console.log('✅ 钱包验证成功')
-          uni.showToast({
-            title: '登录成功',
-            icon: 'success',
-            duration: 1500
-          })
-        }
+        // 创建新会话
+        createSession(result.walletAddress)
+        
+        console.log('✅ 钱包验证成功，已创建会话')
+        uni.showToast({
+          title: '登录成功',
+          icon: 'success',
+          duration: 1500
+        })
         
         return true
       } else if (result.error === 'WALLET_NOT_BOUND') {
@@ -478,7 +652,7 @@
         return false
       }
     } catch (error) {
-      console.error('用户验证失败:', error)
+      console.error('钱包验证失败:', error)
       uni.showToast({
         title: t('wallet.bind.checkFailed'),
         icon: 'none',
@@ -492,6 +666,15 @@
   
   // 操作按钮事件处理
   const handleRecharge = async () => {
+    if (!isOperationAvailable()) {
+      uni.showToast({
+        title: '请先连接钱包',
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+    
     const isWalletBound = await checkWalletBinding()
     if (isWalletBound) {
       currentAction.value = 'deposit'
@@ -500,6 +683,15 @@
   }
   
   const handleWithdraw = async () => {
+    if (!isOperationAvailable()) {
+      uni.showToast({
+        title: '请先连接钱包',
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+    
     const isWalletBound = await checkWalletBinding()
     if (isWalletBound) {
       currentAction.value = 'withdraw'
@@ -508,6 +700,15 @@
   }
   
   const handleFinance = async () => {
+    if (!isOperationAvailable()) {
+      uni.showToast({
+        title: '请先连接钱包',
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+    
     const isWalletBound = await checkWalletBinding()
     if (isWalletBound) {
       currentAction.value = 'finance'
@@ -516,6 +717,15 @@
   }
   
   const handleLending = async () => {
+    if (!isOperationAvailable()) {
+      uni.showToast({
+        title: '请先连接钱包',
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+    
     const isWalletBound = await checkWalletBinding()
     if (isWalletBound) {
       currentAction.value = 'lending'
@@ -644,14 +854,133 @@
     })
   }
   
+  // 手动清除会话（用于调试或重新认证）
+  const clearSessionManually = () => {
+    clearSession()
+    uni.showToast({
+      title: '会话已清除，下次操作需要重新签名',
+      icon: 'success',
+      duration: 2000
+    })
+  }
+  
+  // 设置钱包事件监听
+  const setupWalletEventListeners = () => {
+    if (typeof window.ethereum !== 'undefined') {
+      // 监听账户变化
+      window.ethereum.on('accountsChanged', async (accounts) => {
+        console.log('🔄 钱包账户已切换:', accounts)
+        
+        if (accounts.length > 0) {
+          // 有账户连接
+          const wasConnected = walletConnectionStatus.value.isConnected
+          const wasAddress = walletConnectionStatus.value.walletAddress
+          const newAddress = accounts[0]
+          
+          // 更新连接状态
+          walletConnectionStatus.value = {
+            isConnected: true,
+            walletAddress: newAddress,
+            lastConnectedAt: Date.now()
+          }
+          
+          if (!wasConnected) {
+            console.log('✅ 检测到钱包重新连接')
+            uni.showToast({
+              title: '钱包已重新连接',
+              icon: 'success',
+              duration: 1500
+            })
+          } else if (wasAddress !== newAddress) {
+            console.log('🔄 检测到钱包地址变化')
+            // 地址变化，清除会话
+            clearSession()
+            uni.showToast({
+              title: '钱包地址已变化，需要重新签名',
+              icon: 'none',
+              duration: 2000
+            })
+          }
+        } else {
+          // 没有账户连接
+          if (walletConnectionStatus.value.isConnected) {
+            console.log('⚠️ 检测到钱包断开连接')
+            // 清除会话状态
+            clearSession()
+            walletConnectionStatus.value = {
+              isConnected: false,
+              walletAddress: null,
+              lastConnectedAt: null
+            }
+            uni.showToast({
+              title: '钱包已断开连接',
+              icon: 'none',
+              duration: 2000
+            })
+          }
+        }
+      })
+      
+      // 监听网络变化
+      window.ethereum.on('chainChanged', (chainId) => {
+        console.log('🔄 网络已切换:', chainId)
+        // 网络变化时清除会话，需要重新签名
+        clearSession()
+        uni.showToast({
+          title: '网络已切换，需要重新签名',
+          icon: 'none',
+          duration: 2000
+        })
+      })
+    }
+  }
+  
+  const removeWalletEventListeners = () => {
+    if (typeof window.ethereum !== 'undefined') {
+      window.ethereum.removeAllListeners('accountsChanged')
+      window.ethereum.removeAllListeners('chainChanged')
+    }
+  }
+  
+  // 开发环境下添加调试功能
+  if (process.env.NODE_ENV === 'development') {
+    // 在开发环境下添加全局调试方法
+    if (typeof window !== 'undefined') {
+      window.clearDefiSession = clearSessionManually
+      window.getDefiSession = () => {
+        console.log('当前会话状态:', sessionStatus.value)
+        return sessionStatus.value
+      }
+      window.getWalletStatus = () => {
+        console.log('当前钱包连接状态:', walletConnectionStatus.value)
+        return walletConnectionStatus.value
+      }
+    }
+  }
+  
   
   onMounted(async () => {
     console.log('DeFi页面加载完成')
+    
+    // 初始化会话状态
+    initSession()
+    
+    // 初始化钱包连接状态
+    await checkWalletConnection()
+    
+    // 设置钱包事件监听
+    setupWalletEventListeners()
+    
     // 获取用户余额和可领取利息
     await Promise.all([
       getBalances(),
       getClaimableInterest()
     ])
+  })
+  
+  // 页面卸载时清理事件监听
+  onUnmounted(() => {
+    removeWalletEventListeners()
   })
 </script>
 

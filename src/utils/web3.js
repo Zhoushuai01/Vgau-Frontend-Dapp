@@ -330,13 +330,22 @@ class Web3Service {
   async getCurrentChainId() {
     try {
       if (this.web3 && this.web3.eth) {
-        return await this.web3.eth.net.getId()
+        const chainId = await this.web3.eth.net.getId()
+        // 确保返回10进制数字
+        const decimalChainId = parseInt(chainId, 10)
+        console.log('🔗 获取到链ID:', { original: chainId, decimal: decimalChainId })
+        return decimalChainId
       }
       return null
     } catch (error) {
       console.error('获取链ID失败:', error)
       return null
     }
+  }
+
+  // 公开的获取链ID方法
+  async getChainId() {
+    return await this.getCurrentChainId()
   }
 
   // 获取当前网络信息

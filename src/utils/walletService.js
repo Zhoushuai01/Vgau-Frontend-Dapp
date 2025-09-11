@@ -1,5 +1,6 @@
 // 钱包服务工具
 import { walletAuthAPI, authAPI } from '@/api/apiService.js'
+import web3Service from './web3.js'
 
 // 检查用户是否已登录 - 强制从后端获取最新数据
 export const checkUserLoginStatus = async () => {
@@ -34,11 +35,18 @@ export const checkUserLoginStatus = async () => {
 // 检查钱包是否已连接
 export const checkWalletConnection = async () => {
   try {
-    // 检查是否有可用的钱包
-    if (typeof window.ethereum !== 'undefined') {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' })
-      return accounts.length > 0 ? accounts[0] : null
+    // 确保web3Service已初始化
+    if (!web3Service.web3) {
+      await web3Service.init()
     }
+    
+    // 使用web3Service获取当前账户
+    if (web3Service.isConnected && web3Service.currentAccount) {
+      console.log('✅ 通过web3Service获取到钱包地址:', web3Service.currentAccount)
+      return web3Service.currentAccount
+    }
+    
+    console.log('⚠️ web3Service未连接或没有当前账户')
     return null
   } catch (error) {
     console.error('检查钱包连接失败:', error)
@@ -49,11 +57,19 @@ export const checkWalletConnection = async () => {
 // 连接钱包
 export const connectWallet = async () => {
   try {
-    if (typeof window.ethereum !== 'undefined') {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      return accounts[0]
+    // 确保web3Service已初始化
+    if (!web3Service.web3) {
+      await web3Service.init()
+    }
+    
+    // 使用web3Service连接钱包
+    const result = await web3Service.connectWallet()
+    
+    if (result.success) {
+      console.log('✅ 通过web3Service连接钱包成功:', result.account)
+      return result.account
     } else {
-      throw new Error('未检测到MetaMask钱包')
+      throw new Error(result.message || '钱包连接失败')
     }
   } catch (error) {
     console.error('连接钱包失败:', error)
@@ -80,8 +96,16 @@ export const createSignatureChallenge = async (walletAddress, chainId) => {
     }
     
     // 验证chainId格式
+    console.log('🔍 验证链ID:', { 
+      chainId, 
+      type: typeof chainId, 
+      isNumber: typeof chainId === 'number',
+      isInteger: Number.isInteger(chainId),
+      isPositive: chainId > 0
+    })
+    
     if (!validateChainId(chainId)) {
-      throw new Error('链ID格式无效，必须是10进制数字')
+      throw new Error(`链ID格式无效，必须是10进制数字。当前值: ${chainId} (类型: ${typeof chainId})`)
     }
     
     console.log('🔥 调用挑战接口 /wallet/login/challenge，参数:', { 
@@ -135,27 +159,12 @@ export const verifySignature = async (data) => {
   }
 }
 
-// 智能用户验证（优先检查登录状态，未登录才进行钱包验证）
+// 智能用户验证（直接进行钱包验证）
 export const smartUserVerify = async () => {
   try {
-    console.log('🚀 开始智能用户验证...')
+    console.log('🚀 开始钱包验证...')
     
-    // 1. 首先检查用户是否已经登录
-    const loginStatus = await checkUserLoginStatus()
-    
-    if (loginStatus.isLoggedIn) {
-      console.log('✅ 用户已登录，跳过钱包验证')
-      return {
-        success: true,
-        isLoggedIn: true,
-        userData: loginStatus.userData,
-        skipWalletCheck: true
-      }
-    }
-    
-    console.log('⚠️ 用户未登录，需要进行钱包验证')
-    
-    // 2. 如果用户未登录，执行钱包登录流程
+    // 直接执行钱包登录流程
     const walletResult = await walletLogin()
     
     if (walletResult.success) {
@@ -172,11 +181,11 @@ export const smartUserVerify = async () => {
     }
     
   } catch (error) {
-    console.error('智能用户验证失败:', error)
+    console.error('钱包验证失败:', error)
     return {
       success: false,
-      error: 'SMART_VERIFY_FAILED',
-      message: error.message || '用户验证失败'
+      error: 'WALLET_VERIFY_FAILED',
+      message: error.message || '钱包验证失败'
     }
   }
 }
@@ -204,13 +213,15 @@ export const walletLogin = async () => {
       }
     }
     
+    console.log('🔗 获取到钱包信息:', { walletAddress, chainId })
+    
     // 4. 创建签名挑战
     const challengeResponse = await createSignatureChallenge(walletAddress, chainId)
     
-    // 5. 签名挑战消息 - 使用正确的字段名
+    // 5. 签名挑战消息
     const signature = await signMessage(challengeResponse.data.challengeMessage, walletAddress)
     
-    // 6. 验证签名 - 使用最新API文档要求的格式（已删除challengeId）
+    // 6. 验证签名
     const verifyData = {
       signature,
       signerAddress: walletAddress
@@ -258,11 +269,25 @@ export const walletLogin = async () => {
 // 获取当前链ID
 export const getCurrentChainId = async () => {
   try {
-    if (typeof window.ethereum !== 'undefined') {
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' })
-      // 将16进制转换为10进制数字
-      return parseInt(chainId, 16)
+    // 确保web3Service已初始化
+    if (!web3Service.web3) {
+      await web3Service.init()
     }
+    
+    // 使用web3Service获取链ID
+    const chainId = await web3Service.getChainId()
+    
+    if (chainId) {
+      console.log('✅ 通过web3Service获取到链ID:', { 
+        chainId, 
+        type: typeof chainId,
+        isNumber: typeof chainId === 'number',
+        isInteger: Number.isInteger(chainId)
+      })
+      return chainId
+    }
+    
+    console.log('⚠️ 无法获取链ID')
     return null
   } catch (error) {
     console.error('获取链ID失败:', error)
