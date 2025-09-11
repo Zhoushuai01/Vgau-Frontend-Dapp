@@ -377,6 +377,21 @@
   // 检查钱包连接状态
   const checkWalletConnection = async () => {
     try {
+      // 确保web3Service已初始化
+      if (!web3Service.web3) {
+        console.log('🔧 web3Service未初始化，开始初始化...')
+        const initResult = await web3Service.init()
+        if (!initResult) {
+          console.log('❌ web3Service初始化失败')
+          walletConnectionStatus.value = {
+            isConnected: false,
+            walletAddress: null,
+            lastConnectedAt: null
+          }
+          return false
+        }
+      }
+      
       // 检查web3Service连接状态
       if (web3Service.isConnected && web3Service.currentAccount) {
         const currentAddress = web3Service.currentAccount
@@ -433,6 +448,12 @@
   
   // 检查操作是否可用
   const isOperationAvailable = () => {
+    // 确保web3Service已初始化
+    if (!web3Service.web3) {
+      console.log('⚠️ web3Service未初始化，操作不可用')
+      return false
+    }
+    
     return walletConnectionStatus.value.isConnected && 
            walletConnectionStatus.value.walletAddress
   }
@@ -464,8 +485,9 @@
   
   // 领取利息
   const handleClaimInterest = async () => {
-    // 检查钱包连接状态
-    if (!isOperationAvailable()) {
+    // 先检查并初始化钱包连接状态
+    const isWalletConnected = await checkWalletConnection()
+    if (!isWalletConnected) {
       uni.showToast({
         title: '请先连接钱包',
         icon: 'none',
@@ -666,7 +688,9 @@
   
   // 操作按钮事件处理
   const handleRecharge = async () => {
-    if (!isOperationAvailable()) {
+    // 先检查并初始化钱包连接状态
+    const isWalletConnected = await checkWalletConnection()
+    if (!isWalletConnected) {
       uni.showToast({
         title: '请先连接钱包',
         icon: 'none',
@@ -683,7 +707,9 @@
   }
   
   const handleWithdraw = async () => {
-    if (!isOperationAvailable()) {
+    // 先检查并初始化钱包连接状态
+    const isWalletConnected = await checkWalletConnection()
+    if (!isWalletConnected) {
       uni.showToast({
         title: '请先连接钱包',
         icon: 'none',
@@ -700,7 +726,9 @@
   }
   
   const handleFinance = async () => {
-    if (!isOperationAvailable()) {
+    // 先检查并初始化钱包连接状态
+    const isWalletConnected = await checkWalletConnection()
+    if (!isWalletConnected) {
       uni.showToast({
         title: '请先连接钱包',
         icon: 'none',
@@ -717,7 +745,9 @@
   }
   
   const handleLending = async () => {
-    if (!isOperationAvailable()) {
+    // 先检查并初始化钱包连接状态
+    const isWalletConnected = await checkWalletConnection()
+    if (!isWalletConnected) {
       uni.showToast({
         title: '请先连接钱包',
         icon: 'none',
