@@ -240,6 +240,8 @@ class ApiService {
   loan = {
     // 获取借贷配置
     getConfig: () => this.get(this.endpoints.LOAN.CONFIG),
+    // 获取借贷订单列表
+    getOrders: () => this.get(this.endpoints.LOAN.ORDERS),
     // 创建借贷订单
     createOrder: (data) => this.post(this.endpoints.LOAN.ORDERS, data),
     // 获取借贷汇总信息

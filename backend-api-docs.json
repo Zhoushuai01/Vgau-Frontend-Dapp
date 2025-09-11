@@ -3916,6 +3916,118 @@
         }
       }
     },
+    "/api/defi/deposits/status": {
+      "post": {
+        "tags": [
+          "DeFi充值下单与状态"
+        ],
+        "summary": "按txHash查询充值状态",
+        "operationId": "status",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/defi/deposits/orders": {
+      "post": {
+        "tags": [
+          "DeFi充值下单与状态"
+        ],
+        "summary": "创建预充值订单",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/defi/deposits/orders/{orderId}/tx": {
+      "post": {
+        "tags": [
+          "DeFi充值下单与状态"
+        ],
+        "summary": "订单回填交易哈希",
+        "operationId": "attachTx",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/content/links/{id}/click": {
       "post": {
         "tags": [
@@ -22483,20 +22595,20 @@
             "maxLength": 500,
             "minLength": 0
           },
-          "fileExtension": {
+          "formattedFileSize": {
             "type": "string"
-          },
-          "validFileSizeForFileType": {
-            "type": "boolean"
           },
           "validMimeTypeForFileType": {
             "type": "boolean"
           },
-          "formattedFileSize": {
-            "type": "string"
+          "validFileSizeForFileType": {
+            "type": "boolean"
           },
           "extensionMatchesMimeType": {
             "type": "boolean"
+          },
+          "fileExtension": {
+            "type": "string"
           }
         },
         "required": [
@@ -22744,14 +22856,14 @@
             "description": "营业执照备注信息",
             "example": "公司营业执照正本"
           },
+          "multipleFilesValidationError": {
+            "type": "string"
+          },
           "validationError": {
             "type": "string"
           },
           "complete": {
             "type": "boolean"
-          },
-          "multipleFilesValidationError": {
-            "type": "string"
           },
           "allFileIds": {
             "type": "array",
@@ -22759,10 +22871,10 @@
               "type": "string"
             }
           },
-          "otherDocumentDescriptionRequired": {
+          "usingMultipleFileMode": {
             "type": "boolean"
           },
-          "usingMultipleFileMode": {
+          "otherDocumentDescriptionRequired": {
             "type": "boolean"
           }
         },
@@ -22934,9 +23046,9 @@
             "type": "string",
             "description": "验证方法",
             "enum": [
-              "TwoFactorAuthMethod{code='EMAIL_VERIFY_CODE', displayName='邮箱验证码', forcePass=false}",
-              "TwoFactorAuthMethod{code='TOTP_CODE', displayName='TOTP验证码', forcePass=false}",
-              "TwoFactorAuthMethod{code='BACKUP_CODE', displayName='备用恢复码', forcePass=true}"
+              "EMAIL_VERIFY_CODE",
+              "TOTP_CODE",
+              "BACKUP_CODE"
             ],
             "examples": [
               "EMAIL_VERIFY_CODE",
@@ -23825,11 +23937,11 @@
           "validationError": {
             "type": "string"
           },
-          "formattedRevokeReason": {
-            "type": "string"
-          },
           "validRevokeReason": {
             "type": "boolean"
+          },
+          "formattedRevokeReason": {
+            "type": "string"
           }
         },
         "required": [
@@ -23862,10 +23974,10 @@
           "statusDescription": {
             "type": "string"
           },
-          "rejected": {
+          "approved": {
             "type": "boolean"
           },
-          "approved": {
+          "rejected": {
             "type": "boolean"
           },
           "validReviewStatus": {
@@ -24195,14 +24307,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -24290,14 +24402,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -24774,14 +24886,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -24892,16 +25004,16 @@
           "systemOperation": {
             "type": "boolean"
           },
-          "userOperation": {
-            "type": "boolean"
-          },
           "adminOperation": {
             "type": "boolean"
           },
-          "consumeRecord": {
+          "userOperation": {
             "type": "boolean"
           },
           "earnRecord": {
+            "type": "boolean"
+          },
+          "consumeRecord": {
             "type": "boolean"
           },
           "operationTypeClass": {
@@ -25149,17 +25261,17 @@
           "statusDescription": {
             "type": "string"
           },
+          "annualRateAsPercentage": {
+            "type": "number"
+          },
           "collateralAmountStandard": {
             "type": "number"
           },
-          "annualRateAsPercentage": {
+          "ltvRatioAsPercentage": {
             "type": "number"
           },
           "finalStatus": {
             "type": "boolean"
-          },
-          "ltvRatioAsPercentage": {
-            "type": "number"
           }
         }
       },
@@ -25244,14 +25356,14 @@
           "borrowingExperienceLevel": {
             "type": "string"
           },
-          "riskNotice": {
-            "type": "string"
+          "maxLtvRatioAsPercentage": {
+            "type": "number"
           },
           "repaymentCompletionRate": {
             "type": "number"
           },
-          "maxLtvRatioAsPercentage": {
-            "type": "number"
+          "riskNotice": {
+            "type": "string"
           }
         }
       },
@@ -25298,14 +25410,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -25589,14 +25701,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -26035,14 +26147,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -26089,14 +26201,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -27064,14 +27176,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -27481,14 +27593,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -27967,20 +28079,14 @@
               "type": "string"
             }
           },
+          "priceChangeRate": {
+            "type": "number"
+          },
+          "rateModified": {
+            "type": "boolean"
+          },
           "statusDescription": {
             "type": "string"
-          },
-          "currentAnnualRateAsPercentage": {
-            "type": "number"
-          },
-          "initialLtvRatioAsPercentage": {
-            "type": "number"
-          },
-          "collateralAmountStandard": {
-            "type": "number"
-          },
-          "currentLtvRatioAsPercentage": {
-            "type": "number"
           },
           "annualRateAtCreationAsPercentage": {
             "type": "number"
@@ -27991,11 +28097,17 @@
           "riskLevelDescription": {
             "type": "string"
           },
-          "priceChangeRate": {
+          "collateralAmountStandard": {
             "type": "number"
           },
-          "rateModified": {
-            "type": "boolean"
+          "currentLtvRatioAsPercentage": {
+            "type": "number"
+          },
+          "currentAnnualRateAsPercentage": {
+            "type": "number"
+          },
+          "initialLtvRatioAsPercentage": {
+            "type": "number"
           }
         }
       },
@@ -28042,14 +28154,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -29346,14 +29458,14 @@
             "type": "integer",
             "format": "int64"
           },
-          "current": {
-            "type": "integer",
-            "format": "int64"
-          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
+          },
+          "current": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

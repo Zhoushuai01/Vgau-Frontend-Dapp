@@ -26,71 +26,58 @@
       <view class="total-liabilities-section">
         <view class="liabilities-card">
           <text class="liabilities-label">{{ $t('components.borrowOrder.totalLiabilities') }}</text>
-          <text class="liabilities-value">512.16516151</text>
+          <text class="liabilities-value">{{ totalLiabilities }}</text>
         </view>
       </view>
 
-      <!-- 抵押项目列表 -->
-      <view class="collateral-list">
-        <!-- 第一个抵押项目 -->
-        <view class="collateral-card">
-                     <view class="order-number">
-             <text class="order-number-label">{{ $t('components.borrowOrder.orderNumber') }}</text>
-             <text class="order-number-value">LOAN_20250120_1234567890</text>
-           </view>
-          <view class="collateral-header">
-            <text class="collateral-title">{{ $t('components.borrowOrder.collateralAmount') }}</text>
-            <text class="collateral-amount">100</text>
-          </view>
-          
-          <view class="collateral-details">
-            <view class="detail-item">
-              <text class="detail-label">{{ $t('components.borrowOrder.pledgeRatio') }}</text>
-              <text class="detail-value">80%</text>
-            </view>
-            <view class="detail-item">
-              <text class="detail-label">{{ $t('components.borrowOrder.netAnnualizedInterestRate') }}</text>
-              <text class="detail-value positive">20.24%</text>
-            </view>
-            <view class="detail-item">
-              <text class="detail-label">{{ $t('components.borrowOrder.liquidationReferencePrice') }}</text>
-              <text class="detail-value">84.225</text>
-            </view>
-          </view>
-          
-          <view class="action-buttons">
-            <view class="action-btn" @click="increaseCollateral">
-              <text class="btn-text">{{ $t('components.borrowOrder.increaseCollateralAmount') }}</text>
-            </view>
-            <view class="action-btn" @click="adjustPledgeRatio">
-              <text class="btn-text">{{ $t('components.borrowOrder.adjustPledgeRatio') }}</text>
-            </view>
-          </view>
-        </view>
 
-        <!-- 第二个抵押项目 -->
-        <view class="collateral-card">
-                     <view class="order-number">
-             <text class="order-number-label">{{ $t('components.borrowOrder.orderNumber') }}</text>
-             <text class="order-number-value">LOAN_20250120_9876543210</text>
-           </view>
+      <!-- 加载状态 -->
+      <view v-if="loading" class="loading-section">
+        <text class="loading-text">{{ $t('common.loading') || '加载中...' }}</text>
+      </view>
+
+      <!-- 错误状态 -->
+      <view v-else-if="error" class="error-section">
+        <text class="error-text">{{ error }}</text>
+        <view class="retry-button" @click="fetchLoanOrders">
+          <text class="retry-text">{{ $t('common.retry') || '重试' }}</text>
+        </view>
+      </view>
+
+      <!-- 空数据状态 -->
+      <view v-else-if="orders.length === 0" class="empty-section">
+        <text class="empty-text">{{ $t('common.noData') || '暂无订单数据' }}</text>
+      </view>
+
+      <!-- 抵押项目列表 -->
+      <view v-else class="collateral-list">
+        <view 
+          v-for="order in orders" 
+          :key="order.id" 
+          class="collateral-card"
+        >
+          <view class="order-number">
+            <text class="order-number-label">{{ $t('components.borrowOrder.orderNumber') }}</text>
+            <text class="order-number-value">{{ order.orderNumber }}</text>
+          </view>
+          
           <view class="collateral-header">
             <text class="collateral-title">{{ $t('components.borrowOrder.collateralAmount') }}</text>
-            <text class="collateral-amount">100</text>
+            <text class="collateral-amount">{{ order.collateralAmount }}</text>
           </view>
           
           <view class="collateral-details">
             <view class="detail-item">
               <text class="detail-label">{{ $t('components.borrowOrder.pledgeRatio') }}</text>
-              <text class="detail-value">30%</text>
+              <text class="detail-value">{{ order.ltvRatio }}%</text>
             </view>
             <view class="detail-item">
               <text class="detail-label">{{ $t('components.borrowOrder.netAnnualizedInterestRate') }}</text>
-              <text class="detail-value negative">-2.24%</text>
+              <text class="detail-value">{{ calculateRepayAmount(order) }} USDT</text>
             </view>
             <view class="detail-item">
               <text class="detail-label">{{ $t('components.borrowOrder.liquidationReferencePrice') }}</text>
-              <text class="detail-value">84.225</text>
+              <text class="detail-value">{{ order.liquidationPrice }}</text>
             </view>
           </view>
           
@@ -114,13 +101,112 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { loanAPI } from '@/api/apiService.js'
 
 const { t, locale } = useI18n()
 
 // 响应式数据
 const showRecordsData = ref(false)
+const orders = ref([])
+const loading = ref(false)
+const error = ref(null)
+
+// 计算总负债
+const totalLiabilities = computed(() => {
+  return orders.value.reduce((total, order) => {
+    return total + (order.borrowAmount || 0)
+  }, 0).toFixed(8)
+})
+
+// 计算每个订单需要还款的USDT金额
+const calculateRepayAmount = (order) => {
+  // 根据API返回的数据计算
+  // 如果API返回了需还USDT字段，直接使用
+  if (order.repayAmount) {
+    return order.repayAmount
+  }
+  
+  // 否则根据借款金额和利率计算
+  const borrowAmount = order.borrowAmount || 0
+  const interestRate = order.interestRate || 0
+  const interest = borrowAmount * Math.abs(interestRate)
+  return (borrowAmount + interest).toFixed(8)
+}
+
+// 获取借贷订单数据
+const fetchLoanOrders = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    console.log('📡 开始获取借贷订单数据...')
+    const response = await loanAPI.getOrders()
+    
+    console.log('✅ 借贷订单数据获取成功')
+    
+    if (response && response.success && response.data) {
+      
+      // 检查data是否为数组，如果不是则尝试获取各种可能的字段
+      let dataArray = []
+      if (Array.isArray(response.data)) {
+        dataArray = response.data
+      } else if (response.data.records && Array.isArray(response.data.records)) {
+        dataArray = response.data.records
+      } else if (response.data.orders && Array.isArray(response.data.orders)) {
+        dataArray = response.data.orders
+      } else if (response.data.list && Array.isArray(response.data.list)) {
+        dataArray = response.data.list
+      } else {
+        console.warn('⚠️ 无法找到订单数组，data结构:', Object.keys(response.data))
+        
+        // 如果data不是数组，但包含订单信息，将其作为单个订单处理
+        if (response.data && typeof response.data === 'object') {
+          dataArray = [response.data]
+        } else {
+          dataArray = []
+        }
+      }
+      
+      // 映射API返回的字段到前端使用的字段
+      orders.value = dataArray.map((item, index) => ({
+        id: item.id || index + 1,
+        orderNumber: item.orderNumber, // 订单号
+        collateralAmount: item.collateralAmount, // 抵押品数量（VGAU）
+        ltvRatio: item.ltvRatio, // 质押比率
+        borrowAmount: item.borrowAmount || 0, // 借款金额
+        interestRate: item.interestRate || 0, // 利率
+        repayAmount: item.repayAmount || null, // 需还USDT（如果API返回）
+        liquidationPrice: item.liquidationPrice || null, // 清算参考价格（如果API返回）
+        status: item.status || 'active'
+      }))
+      
+      console.log('📊 订单数据加载完成，共', orders.value.length, '个订单')
+    } else {
+      console.warn('⚠️ API返回数据格式异常:', response)
+      orders.value = []
+    }
+  } catch (err) {
+    console.error('❌ 获取借贷订单失败:', err)
+    error.value = err.message || '获取订单数据失败'
+    orders.value = []
+    
+    // 显示错误提示
+    uni.showToast({
+      title: error.value,
+      icon: 'none',
+      duration: 3000
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+// 页面加载时获取数据
+onMounted(() => {
+  fetchLoanOrders()
+})
 
 // 调试国际化 - 验证翻译是否正常工作
 console.log('Current locale:', locale.value)
@@ -239,6 +325,7 @@ const goBack = () => {
   height: 48rpx;
 }
 
+
 /* 主要内容区域 */
 .main-content {
   flex: 1;
@@ -269,6 +356,7 @@ const goBack = () => {
   flex-direction: column;
   margin-bottom: 32rpx;
 }
+
 
 .liabilities-card {
   display: flex;
@@ -406,6 +494,73 @@ const goBack = () => {
 }
 
 .btn-text {
+  font-size: 24rpx;
+  color: #FFFFFF;
+  font-weight: 400;
+}
+
+/* 加载状态 */
+.loading-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80rpx 0;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+/* 错误状态 */
+.error-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 32rpx;
+  gap: 32rpx;
+}
+
+.error-text {
+  font-size: 28rpx;
+  color: #FF5722;
+  font-weight: 400;
+  text-align: center;
+}
+
+/* 空数据状态 */
+.empty-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80rpx 0;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.retry-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 32rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  border-radius: 12rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-button:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.98);
+}
+
+.retry-text {
   font-size: 24rpx;
   color: #FFFFFF;
   font-weight: 400;
