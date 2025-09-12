@@ -122,17 +122,13 @@ const totalLiabilities = computed(() => {
 
 // 计算每个订单需要还款的USDT金额
 const calculateRepayAmount = (order) => {
-  // 根据API返回的数据计算
   // 如果API返回了需还USDT字段，直接使用
   if (order.repayAmount) {
     return order.repayAmount
   }
   
-  // 否则根据借款金额和利率计算
-  const borrowAmount = order.borrowAmount || 0
-  const interestRate = order.interestRate || 0
-  const interest = borrowAmount * Math.abs(interestRate)
-  return (borrowAmount + interest).toFixed(8)
+  // 接口暂无此字段，返回空值
+  return '--'
 }
 
 // 获取借贷订单数据
@@ -174,12 +170,14 @@ const fetchLoanOrders = async () => {
         id: item.id || index + 1,
         orderNumber: item.orderNumber, // 订单号
         collateralAmount: item.collateralAmount, // 抵押品数量（VGAU）
-        ltvRatio: item.ltvRatio, // 质押比率
+        ltvRatio: item.ltvRatioAsPercentage, // 质押比率 - 使用API返回的ltvRatioAsPercentage
         borrowAmount: item.borrowAmount || 0, // 借款金额
-        interestRate: item.interestRate || 0, // 利率
-        repayAmount: item.repayAmount || null, // 需还USDT（如果API返回）
+        interestRate: item.annualRateAsPercentage || 0, // 年化利率 - 使用API返回的annualRateAsPercentage
+        repayAmount: null, // 需还USDT - 接口暂无此字段，先设为空
         liquidationPrice: item.liquidationPrice || null, // 清算参考价格（如果API返回）
-        status: item.status || 'active'
+        status: item.status || 'active',
+        statusDescription: item.statusDescription || null, // 状态描述 - 使用API返回的statusDescription
+        finalStatus: item.finalStatus || false // 最终状态 - 使用API返回的finalStatus
       }))
       
       console.log('📊 订单数据加载完成，共', orders.value.length, '个订单')

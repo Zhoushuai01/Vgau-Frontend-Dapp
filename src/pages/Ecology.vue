@@ -2,129 +2,205 @@
   <view class="content">
     <!-- 主要内容区域 -->
     <view class="main-content">
-      <!-- 顶部轮播图区域 -->
-      <view class="hero-section">
-        <view class="hero-image">
-          <view class="banner-placeholder">
-            <text class="banner-text">VGAU Ecosystem Banner</text>
-          </view>
-          <view class="hero-overlay">
-            <text class="hero-title">VGAU Ecosystem</text>
-            <text class="hero-subtitle">Building a comprehensive DeFi ecosystem</text>
+      <!-- 顶部热门外链区域 -->
+      <view class="hero-section" v-if="!loading && popularLinks.length > 0">
+        <view class="popular-links-container">
+          <view 
+            class="popular-link-item" 
+            v-for="(link, index) in popularLinks" 
+            :key="link.id"
+            @click="handleLinkClick(link)"
+            :class="{ 'active': index === 0 }"
+          >
+            <view class="popular-link-image">
+              <image 
+                v-if="link.imageUrl" 
+                :src="link.imageUrl" 
+                class="popular-image"
+                mode="aspectFill"
+              />
+              <view v-else class="popular-image-placeholder">
+                <text class="placeholder-text">{{ link.name }}</text>
+              </view>
+              <view class="popular-overlay">
+                <text class="popular-title">{{ link.name }}</text>
+                <text class="popular-description">{{ link.description || '点击访问' }}</text>
+              </view>
+            </view>
           </view>
         </view>
-        <view class="carousel-dots">
-          <view class="dot active"></view>
-          <view class="dot"></view>
-          <view class="dot"></view>
+        <view class="popular-dots">
+          <view 
+            class="dot" 
+            v-for="(link, index) in popularLinks" 
+            :key="index"
+            :class="{ 'active': index === 0 }"
+          ></view>
+        </view>
+      </view>
+      
+      <!-- 顶部加载状态 -->
+      <view class="hero-section" v-if="loading">
+        <view class="hero-loading">
+          <view class="loading-spinner"></view>
+          <text class="loading-text">加载热门链接中...</text>
+        </view>
+      </view>
+      
+      <!-- 顶部错误状态 -->
+      <view class="hero-section" v-if="error && !loading">
+        <view class="hero-error">
+          <text class="error-text">Load Failed</text>
         </view>
       </view>
 
       <!-- 横向游戏图标区域 -->
-      <view class="horizontal-games">
-        <view class="game-item">
+      <view class="horizontal-games" v-if="!loading && links.length > 0">
+        <view 
+          class="game-item" 
+          v-for="(link, index) in links.slice(0, 4)" 
+          :key="link.id"
+          @click="handleLinkClick(link)"
+        >
           <view class="game-icon">
-            <text class="game-icon-text">🎮</text>
+            <image 
+              v-if="link.iconUrl" 
+              :src="link.iconUrl" 
+              class="game-icon-image"
+              mode="aspectFit"
+            />
+            <text v-else class="game-icon-text">🎮</text>
           </view>
-          <text class="game-label">Eco Mini Game</text>
+          <text class="game-label">{{ link.name }}</text>
         </view>
-        <view class="game-item">
-          <view class="game-icon">
-            <text class="game-icon-text">🏆</text>
-          </view>
-          <text class="game-label">Eco Mini Game</text>
-        </view>
-        <view class="game-item">
-          <view class="game-icon">
-            <text class="game-icon-text">🌟</text>
-          </view>
-          <text class="game-label">Eco Mini Game</text>
-        </view>
-        <view class="game-item">
-          <view class="game-icon">
-            <text class="game-icon-text">💎</text>
-          </view>
-          <text class="game-label">Eco Mini Game</text>
-        </view>
+      </view>
+      
+      <!-- 加载状态 -->
+      <view class="loading-container" v-if="loading">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">加载中...</text>
+      </view>
+      
+      <!-- 错误状态 -->
+      <view class="error-container" v-if="error && !loading">
+        <text class="error-text">Load Failed</text>
       </view>
                  
       <!-- 垂直游戏列表区域 -->
-      <view class="vertical-games">
-        <view class="game-row">
+      <view class="vertical-games" v-if="!loading && links.length > 0">
+        <view 
+          class="game-row" 
+          v-for="(link, index) in links.slice(4)" 
+          :key="link.id"
+          @click="handleLinkClick(link)"
+        >
           <view class="game-icon-small">
-            <text class="game-icon-text-small">🚀</text>
+            <image 
+              v-if="link.iconUrl" 
+              :src="link.iconUrl" 
+              class="game-icon-image-small"
+              mode="aspectFit"
+            />
+            <text v-else class="game-icon-text-small">🎮</text>
           </view>
           <view class="game-info">
-            <text class="game-title">Eco Mini Games</text>
-            <text class="game-description">Description</text>
+            <text class="game-title">{{ link.name }}</text>
+            <text class="game-description">{{ link.description || '点击访问' }}</text>
           </view>
           <view class="game-arrow">▶</view>
         </view>
-        
-        <view class="game-row">
-          <view class="game-icon-small">
-            <text class="game-icon-text-small">🎯</text>
-          </view>
-          <view class="game-info">
-            <text class="game-title">Eco Mini Games</text>
-            <text class="game-description">Description</text>
-          </view>
-          <view class="game-arrow">▶</view>
-        </view>
-        
-        <view class="game-row">
-          <view class="game-icon-small">
-            <text class="game-icon-text-small">🎲</text>
-          </view>
-          <view class="game-info">
-            <text class="game-title">Eco Mini Games</text>
-            <text class="game-description">Description</text>
-          </view>
-          <view class="game-arrow">▶</view>
-        </view>
-        
-        <view class="game-row">
-          <view class="game-icon-small">
-            <text class="game-icon-text-small">🎪</text>
-          </view>
-          <view class="game-info">
-            <text class="game-title">Eco Mini Games</text>
-            <text class="game-description">Description</text>
-          </view>
-          <view class="game-arrow">▶</view>
-        </view>
-        
-        <view class="game-row">
-          <view class="game-icon-small">
-            <text class="game-icon-text-small">🎨</text>
-          </view>
-          <view class="game-info">
-            <text class="game-title">Eco Mini Games</text>
-            <text class="game-description">Description</text>
-          </view>
-          <view class="game-arrow">▶</view>
-        </view>
-        
-        <view class="game-row">
-          <view class="game-icon-small placeholder">
-            <text class="game-icon-text-small">?</text>
-          </view>
-          <view class="game-info">
-            <text class="game-title">Eco Mini Games</text>
-            <text class="game-description">Description</text>
-          </view>
-          <view class="game-arrow">▶</view>
-        </view>
+      </view>
+      
+      <!-- 空状态 -->
+      <view class="empty-container" v-if="!loading && links.length === 0">
+        <text class="empty-text">暂无外链数据</text>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import { contentAPI } from '@/api/apiService.js'
+
+// 响应式数据
+const links = ref([])
+const popularLinks = ref([])
+const loading = ref(false)
+const error = ref('')
+
+// 获取外链数据
+const fetchLinks = async () => {
+  try {
+    loading.value = true
+    error.value = ''
+    
+    console.log('🌐 开始获取外链数据...')
+    
+    // 并行获取所有外链和热门外链
+    const [linksResponse, popularResponse] = await Promise.all([
+      contentAPI.getLinks(),
+      contentAPI.getPopularLinks({ limit: 3 }) // 获取前3个热门外链
+    ])
+    
+    console.log('📡 外链数据响应:', linksResponse)
+    console.log('📡 热门外链响应:', popularResponse)
+    
+    if (linksResponse.success && linksResponse.data) {
+      links.value = linksResponse.data
+      console.log('✅ 外链数据获取成功:', links.value)
+    } else {
+      throw new Error(linksResponse.message || '获取外链数据失败')
+    }
+    
+    if (popularResponse.success && popularResponse.data) {
+      popularLinks.value = popularResponse.data
+      console.log('✅ 热门外链数据获取成功:', popularLinks.value)
+    } else {
+      console.warn('⚠️ 热门外链获取失败:', popularResponse.message)
+    }
+  } catch (err) {
+    console.error('❌ 获取外链数据失败:', err)
+    error.value = err.message || '获取外链数据失败'
+  } finally {
+    loading.value = false
+  }
+}
+
+// 处理外链点击
+const handleLinkClick = (link) => {
+  console.log('🔗 点击外链:', link)
+  
+  if (!link.targetUrl) {
+    uni.showToast({
+      title: '链接地址无效',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
+  // 在外部浏览器中打开链接
+  // #ifdef H5
+  window.open(link.targetUrl, '_blank')
+  // #endif
+  
+  // #ifdef APP-PLUS
+  plus.runtime.openURL(link.targetUrl)
+  // #endif
+  
+  // #ifdef MP
+  uni.showToast({
+    title: '请在浏览器中打开',
+    icon: 'none',
+    duration: 2000
+  })
+  // #endif
+}
 
 onMounted(() => {
   console.log('Ecology页面加载完成')
+  fetchLinks()
 })
 </script>
 
@@ -163,23 +239,47 @@ onMounted(() => {
   background-color: #0A0A0A;
 }
 
-/* 顶部轮播图区域 */
+/* 顶部热门外链区域 */
 .hero-section {
   display: flex;
   flex-direction: column;
   margin-bottom: 40rpx;
 }
 
-.hero-image {
+.popular-links-container {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+  overflow-x: auto;
+  padding: 0 0 16rpx 0;
+}
+
+.popular-link-item {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 600rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.popular-link-item:active {
+  transform: scale(0.98);
+}
+
+.popular-link-image {
   position: relative;
   width: 100%;
   height: 352rpx;
   border-radius: 16rpx;
   overflow: hidden;
-  margin-bottom: 24rpx;
 }
 
-.banner-placeholder {
+.popular-image {
+  width: 100%;
+  height: 100%;
+}
+
+.popular-image-placeholder {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #1A1A1A 0%, #333333 100%);
@@ -188,19 +288,14 @@ onMounted(() => {
   justify-content: center;
 }
 
-.banner-text {
+.placeholder-text {
   font-size: 32rpx;
   color: rgba(255, 255, 255, 0.6);
   font-family: Inter, sans-serif;
   text-align: center;
 }
 
-.banner-img {
-  width: 100%;
-  height: 100%;
-}
-
-.hero-overlay {
+.popular-overlay {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -212,23 +307,59 @@ onMounted(() => {
   gap: 16rpx;
 }
 
-.hero-title {
+.popular-title {
   font-size: 48rpx;
   font-weight: 700;
   color: #FFFFFF;
   font-family: Inter, sans-serif;
 }
 
-.hero-subtitle {
+.popular-description {
   font-size: 28rpx;
   color: rgba(255, 255, 255, 0.8);
   font-family: Inter, sans-serif;
 }
 
-.carousel-dots {
+.popular-dots {
   display: flex;
   justify-content: center;
   gap: 16rpx;
+}
+
+/* 顶部加载状态 */
+.hero-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 352rpx;
+  gap: 24rpx;
+  background: linear-gradient(135deg, #1A1A1A 0%, #333333 100%);
+  border-radius: 16rpx;
+}
+
+.hero-loading .loading-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: Inter, sans-serif;
+}
+
+/* 顶部错误状态 */
+.hero-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 352rpx;
+  gap: 24rpx;
+  background: linear-gradient(135deg, #1A1A1A 0%, #333333 100%);
+  border-radius: 16rpx;
+}
+
+.hero-error .error-text {
+  font-size: 28rpx;
+  color: #FF6B6B;
+  font-family: Inter, sans-serif;
 }
 
 .dot {
@@ -277,7 +408,8 @@ onMounted(() => {
   color: #FFFFFF;
 }
 
-.game-icon image {
+.game-icon image,
+.game-icon-image {
   width: 100%;
   height: 100%;
 }
@@ -328,7 +460,8 @@ onMounted(() => {
   color: #FFFFFF;
 }
 
-.game-icon-small image {
+.game-icon-small image,
+.game-icon-image-small {
   width: 100%;
   height: 100%;
 }
@@ -370,18 +503,102 @@ onMounted(() => {
   font-size: 20rpx;
 }
 
+/* 加载状态样式 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+  gap: 24rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.1);
+  border-top: 4rpx solid #FFFFFF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: Inter, sans-serif;
+}
+
+/* 错误状态样式 */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+  gap: 24rpx;
+}
+
+.error-text {
+  font-size: 28rpx;
+  color: #FF6B6B;
+  font-family: Inter, sans-serif;
+  text-align: center;
+}
+
+
+/* 空状态样式 */
+.empty-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: Inter, sans-serif;
+}
+
+/* 点击效果 */
+.game-item,
+.game-row {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.game-item:active,
+.game-row:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .main-content {
     padding: 0 24rpx;
   }
   
-  .hero-title {
+  .popular-title {
     font-size: 40rpx;
   }
   
-  .hero-subtitle {
+  .popular-description {
     font-size: 24rpx;
+  }
+  
+  .popular-link-image {
+    height: 280rpx;
+  }
+  
+  .hero-loading,
+  .hero-error {
+    height: 280rpx;
   }
   
   .game-icon {

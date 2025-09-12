@@ -149,7 +149,10 @@ class ApiService {
     getMe: () => this.get(this.endpoints.AUTH.ME),
     
     // 2FA 验证（/auth/2fa/verify）
-    verify2FA: (data) => this.post(this.endpoints.AUTH_2FA.VERIFY, data)
+    verify2FA: (data) => this.post(this.endpoints.AUTH_2FA.VERIFY, data),
+    
+    // 发送邮箱验证码
+    sendEmailCode: () => this.post(this.endpoints.AUTH_2FA.SEND_EMAIL_CODE)
   }
 
   // 钱包认证相关API
@@ -218,7 +221,8 @@ class ApiService {
 
   // 新版 2FA 验证接口（/auth/2fa/verify）
   auth2fa = {
-    verify: (data) => this.post(this.endpoints.AUTH_2FA.VERIFY, data)
+    verify: (data) => this.post(this.endpoints.AUTH_2FA.VERIFY, data),
+    sendEmailCode: () => this.post(this.endpoints.AUTH_2FA.SEND_EMAIL_CODE)
   }
 
   // 文件管理相关API
@@ -309,7 +313,28 @@ class ApiService {
     createDepositOrder: (orderData) => {
       console.log('🔧 createDepositOrder 调用 post 方法')
       return this.post(this.endpoints.DEFI.DEPOSITS_ORDERS, orderData)
+    },
+    
+    // 获取充值订单列表
+    getDepositOrdersList: (params = {}) => {
+      console.log('🔧 getDepositOrdersList 调用 get 方法', params)
+      return this.get(this.endpoints.DEFI.DEPOSITS_ORDERS_LIST, params)
     }
+  }
+  
+  // 内容管理相关API
+  content = {
+    // 获取所有外链
+    getLinks: () => this.get(this.endpoints.CONTENT.LINKS),
+    
+    // 获取热门外链
+    getPopularLinks: () => this.get(this.endpoints.CONTENT.POPULAR_LINKS),
+    
+    // 根据分类获取外链
+    getLinksByCategory: (category) => this.get(`${this.endpoints.CONTENT.LINKS_BY_CATEGORY}/${category}`),
+    
+    // 获取外链分类
+    getLinkCategories: () => this.get(this.endpoints.CONTENT.LINK_CATEGORIES)
   }
 }
 
@@ -333,6 +358,7 @@ export const loanAPI = apiService.loan
 export const pointsAPI = apiService.points
 export const vgauSavingsAPI = apiService.vgauSavings
 export const defiAPI = apiService.defi
+export const contentAPI = apiService.content
 
 // 导出基础配置
 export { BASE_URL, API_ENDPOINTS } 

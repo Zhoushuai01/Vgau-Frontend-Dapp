@@ -24,7 +24,6 @@
                </view>
               <view class="amount-row">
                 <text class="transaction-amount" :class="transactionData.amountClass">{{ transactionData.amount }}</text>
-                                 <text class="order-number">Order {{ transactionData.orderNumber }}</text>
               </view>
             </view>
           </view>
@@ -33,19 +32,19 @@
          <view class="detail-list">
                        <view class="detail-item">
               <text class="detail-label">{{ t('transactionDetail.transactionTime') }}</text>
-              <text class="detail-value">{{ transactionData.date }}</text>
-            </view>
-            <view class="detail-item">
-              <text class="detail-label">{{ t('transactionDetail.serialNumber') }}</text>
-              <text class="detail-value">{{ transactionData.serialNumber }}</text>
+              <text class="detail-value">{{ formatDateTime(transactionData.date) }}</text>
             </view>
             <view class="detail-item">
               <text class="detail-label">{{ t('transactionDetail.orderId') }}</text>
               <text class="detail-value">{{ transactionData.orderId }}</text>
             </view>
-            <view class="detail-item">
-              <text class="detail-label">{{ t('transactionDetail.recordNumber') }}</text>
-              <text class="detail-value">{{ transactionData.recordNumber }}</text>
+            <view class="detail-item" v-if="transactionData.currency">
+              <text class="detail-label">{{ t('transactionDetail.currency') }}</text>
+              <text class="detail-value">{{ transactionData.currency }}</text>
+            </view>
+            <view class="detail-item" v-if="transactionData.amountRaw">
+              <text class="detail-label">{{ t('transactionDetail.amount') }}</text>
+              <text class="detail-value">{{ transactionData.amountRaw }}</text>
             </view>
          </view>
       </view>
@@ -89,12 +88,11 @@ const transactionData = ref({
   amountClass: 'negative',
   status: t('transactionDetail.defaultStatus'),
   date: '2024-01-15 14:30',
-  orderNumber: 'L-202503-0133',
-  serialNumber: 'TX202401150001',
   orderId: 'ORD202401150001',
-  recordNumber: '842,255',
   walletAddress: '0x7eCfbF2D6DEa2371ea8f237c056B024dA4Bc87af',
-  transactionHash: '--'
+  transactionHash: '--',
+  currency: 'VGAU',
+  amountRaw: '5000'
 })
 
 // 页面加载时获取传递的数据
@@ -112,6 +110,20 @@ onMounted(() => {
     }
   }
 })
+
+// 格式化日期时间
+const formatDateTime = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
 
 // 返回上一页
 const goBack = () => {

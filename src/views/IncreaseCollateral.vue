@@ -24,20 +24,24 @@
           <view class="collateral-info-card">
             <view class="info-header">
               <text class="info-title">{{ t('components.increaseCollateral.collateralAmount') }}</text>
-              <text class="info-value">100 </text>
+              <text class="info-value">{{ orderData.collateralAmount }} VGAU</text>
             </view>
             <view class="info-details">
               <view class="detail-item">
+                <text class="detail-label">{{ t('components.increaseCollateral.insuranceFee') }}</text>
+                <text class="detail-value">{{ orderData.insuranceFee }}</text>
+              </view>
+              <view class="detail-item">
                 <text class="detail-label">{{ t('components.increaseCollateral.initialCollateralRatio') }}</text>
-                <text class="detail-value">80%</text>
+                <text class="detail-value">{{ orderData.ltvRatio }}%</text>
               </view>
               <view class="detail-item">
                 <text class="detail-label">{{ t('components.increaseCollateral.stakingRatio') }}</text>
-                <text class="detail-value">80%</text>
+                <text class="detail-value">{{ orderData.currentStakingRatio }}</text>
               </view>
               <view class="detail-item">
                 <text class="detail-label">{{ t('components.increaseCollateral.stakingRatioAfterIncrease') }}</text>
-                <text class="detail-value">--</text>
+                <text class="detail-value">{{ orderData.increaseAmount }}</text>
               </view>
             </view>
           </view>
@@ -49,7 +53,7 @@
           <view class="amount-input-container">
             <input class="amount-input" 
                    type="number" 
-                   placeholder="Amount" 
+                   :placeholder="t('components.increaseCollateral.amountPlaceholder')" 
                    v-model="increaseAmount"
                    :adjust-position="false" />
             <view class="input-suffix">
@@ -60,7 +64,7 @@
           </view>
           <view class="available-balance-container">
             <text class="available-balance">{{ t('components.increaseCollateral.availableAssets') }}</text>
-            <text class="balance-amount">48,456,156 VGAU</text>
+            <text class="balance-amount">{{ vgauAvailableBalance }} VGAU</text>
           </view>
         </view>
 
@@ -92,8 +96,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { userFundsAPI, loanAPI } from '@/api/apiService'
 
 const { t } = useI18n()
 
@@ -103,6 +108,18 @@ const increaseAmount = ref('')
 // 弹窗显示数据
 const increasedAmount = ref('0VGAU') // 增加的金额，例如 '77VGAU'
 const newCollateralRatio = ref('0%') // 增加抵押后的质押率，例如 '65%'
+
+// VGAU 可用余额
+const vgauAvailableBalance = ref('0')
+
+// 订单数据
+const orderData = ref({
+  collateralAmount: '0', // 抵押金额
+  ltvRatio: 0, // 初始质押率
+  insuranceFee: '--', // 强平保险费（后端暂无数据）
+  currentStakingRatio: '--', // 当前质押率（后端暂无数据）
+  increaseAmount: '--' // 增加抵押金额（后端暂无数据）
+})
 
 // 计算属性：格式化增加成功消息，高亮金额和VGAU
 const formattedIncreaseSuccess = computed(() => {
@@ -136,7 +153,71 @@ const showHelp = () => {
 
 // 设置最大金额
 const setMaxAmount = () => {
-  increaseAmount.value = '1000'
+  increaseAmount.value = vgauAvailableBalance.value
+}
+
+// 加载用户资金余额
+const loadUserBalances = async () => {
+  try {
+    console.log('🔄 加载用户资金余额...')
+    const response = await userFundsAPI.getBalances()
+    console.log('✅ 用户资金余额响应:', response)
+    
+    if (response && response.data) {
+      // 查找 VGAU 的可用余额
+      const vgauBalance = response.data.find(balance => balance.currency === 'VGAU')
+      if (vgauBalance && vgauBalance.availableAmount) {
+        vgauAvailableBalance.value = vgauBalance.availableAmount
+        console.log('✅ VGAU 可用余额:', vgauAvailableBalance.value)
+      } else {
+        console.log('⚠️ 未找到 VGAU 余额信息')
+        vgauAvailableBalance.value = '0'
+      }
+    }
+  } catch (error) {
+    console.error('❌ 加载用户资金余额失败:', error)
+    vgauAvailableBalance.value = '0'
+  }
+}
+
+// 加载订单数据
+const loadOrderData = async () => {
+  try {
+    console.log('🔄 加载订单数据...')
+    const response = await loanAPI.getOrders()
+    console.log('✅ 订单数据响应:', response)
+    
+    if (response && response.data) {
+      // 获取订单列表
+      let orders = []
+      if (Array.isArray(response.data)) {
+        orders = response.data
+      } else if (response.data.records && Array.isArray(response.data.records)) {
+        orders = response.data.records
+      } else if (response.data.orders && Array.isArray(response.data.orders)) {
+        orders = response.data.orders
+      } else if (response.data.list && Array.isArray(response.data.list)) {
+        orders = response.data.list
+      }
+      
+      if (orders.length > 0) {
+        // 使用第一个订单的数据（实际应该根据传入的订单ID获取）
+        const order = orders[0]
+        orderData.value = {
+          collateralAmount: order.collateralAmount || '0',
+          ltvRatio: order.ltvRatioAsPercentage || 0,
+          insuranceFee: '--', // 后端暂无数据
+          currentStakingRatio: '--', // 后端暂无数据
+          increaseAmount: '--' // 后端暂无数据
+        }
+        console.log('✅ 订单数据加载完成:', orderData.value)
+      } else {
+        console.log('⚠️ 未找到订单数据')
+      }
+    }
+  } catch (error) {
+    console.error('❌ 加载订单数据失败:', error)
+  }
 }
 
 // 显示确认弹窗
@@ -180,6 +261,12 @@ const confirmModalAction = () => {
   // 返回上一页
   uni.navigateBack()
 }
+
+// 页面加载时获取用户余额和订单数据
+onMounted(() => {
+  loadUserBalances()
+  loadOrderData()
+})
 </script>
 
 <style lang="scss" scoped>

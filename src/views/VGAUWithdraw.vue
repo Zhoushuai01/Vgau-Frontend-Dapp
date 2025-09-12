@@ -143,13 +143,30 @@
           
           <!-- 验证码输入 -->
           <view v-if="selectedMethod" class="code-input-section">
-            <input 
-              class="code-input" 
-              type="text" 
-              v-model="twoFACode" 
-              :placeholder="getCodePlaceholder()" 
-              maxlength="6"
-            />
+            <view class="code-input-container">
+              <input 
+                class="code-input" 
+                type="text" 
+                v-model="twoFACode" 
+                :placeholder="getCodePlaceholder()" 
+                maxlength="6"
+              />
+              <!-- 邮箱验证码发送按钮 -->
+              <view 
+                v-if="selectedMethod === 'EMAIL_VERIFY_CODE'" 
+                class="send-code-btn"
+                :class="{ disabled: emailCodeSending || emailCodeCountdown > 0 }"
+                @click="sendEmailCode"
+              >
+                <text class="send-code-text">
+                  {{ emailCodeSending ? '发送中...' : emailCodeCountdown > 0 ? `${emailCodeCountdown}s` : '发送验证码' }}
+                </text>
+              </view>
+            </view>
+            <!-- 邮箱验证码发送状态提示 -->
+            <view v-if="selectedMethod === 'EMAIL_VERIFY_CODE' && emailCodeSent" class="email-code-tip">
+              <text class="tip-text">验证码已发送到您的邮箱，请查收</text>
+            </view>
           </view>
           
           <!-- 确认按钮 -->
@@ -186,6 +203,11 @@ const submitting = ref(false)
 let pendingWithdraw = null
 const availableMethods = ref([]) // ["EMAIL_VERIFY_CODE", "TOTP_CODE"]
 const selectedMethod = ref('')
+
+// 邮箱验证码发送相关
+const emailCodeSent = ref(false)
+const emailCodeSending = ref(false)
+const emailCodeCountdown = ref(0)
 
 // 加载后端可用余额
 const loadVgauAvailable = async () => {
@@ -339,6 +361,62 @@ const cancel2FA = () => {
 const selectMethod = (method) => {
   selectedMethod.value = method
   twoFACode.value = '' // 清空之前输入的验证码
+  
+  // 如果选择邮箱验证，重置邮箱验证码状态
+  if (method === 'EMAIL_VERIFY_CODE') {
+    emailCodeSent.value = false
+    emailCodeCountdown.value = 0
+  }
+}
+
+// 发送邮箱验证码
+const sendEmailCode = async () => {
+  if (emailCodeSending.value || emailCodeCountdown.value > 0) {
+    return
+  }
+  
+  try {
+    emailCodeSending.value = true
+    uni.showLoading({ title: '发送中...' })
+    
+    const response = await authAPI.sendEmailCode()
+    
+    if (response?.success) {
+      emailCodeSent.value = true
+      uni.showToast({ 
+        title: '验证码已发送', 
+        icon: 'success', 
+        duration: 2000 
+      })
+      
+      // 开始倒计时
+      startCountdown()
+    } else {
+      throw new Error(response?.message || '发送失败')
+    }
+  } catch (error) {
+    console.error('发送邮箱验证码失败:', error)
+    uni.showToast({ 
+      title: error.message || '发送失败', 
+      icon: 'none', 
+      duration: 2000 
+    })
+  } finally {
+    emailCodeSending.value = false
+    uni.hideLoading()
+  }
+}
+
+// 开始倒计时
+const startCountdown = () => {
+  emailCodeCountdown.value = 300 // 300秒倒计时（5分钟）
+  
+  const timer = setInterval(() => {
+    emailCodeCountdown.value--
+    if (emailCodeCountdown.value <= 0) {
+      clearInterval(timer)
+    }
+  }, 1000)
 }
 
 // 获取验证码输入框占位符
@@ -785,8 +863,15 @@ const getCodePlaceholder = () => {
   margin-bottom: 48rpx;
 }
 
+.code-input-container {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
 .code-input {
-  width: 100%;
+  flex: 1;
   height: 96rpx;
   background: rgba(255, 255, 255, 0.05);
   border: 2rpx solid rgba(255, 255, 255, 0.2);
@@ -802,6 +887,55 @@ const getCodePlaceholder = () => {
 .code-input:focus {
   border-color: #FFC107;
   outline: none;
+}
+
+.send-code-btn {
+  height: 96rpx;
+  padding: 0 24rpx;
+  background: linear-gradient(90deg, #FEDA78 0%, #B07920 100%);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 160rpx;
+}
+
+.send-code-btn:active {
+  transform: scale(0.98);
+}
+
+.send-code-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.send-code-btn.disabled:active {
+  transform: none;
+}
+
+.send-code-text {
+  font-size: 24rpx;
+  color: #000000;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.email-code-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1rpx solid rgba(0, 255, 136, 0.3);
+  border-radius: 12rpx;
+}
+
+.tip-text {
+  font-size: 24rpx;
+  color: #00FF88;
+  font-weight: 400;
 }
 
 .auth-modal-actions {

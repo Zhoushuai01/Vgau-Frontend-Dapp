@@ -86,7 +86,8 @@ export const API_ENDPOINTS = {
 
   // 新版 2FA 验证（/auth/2fa/verify）
   AUTH_2FA: {
-    VERIFY: '/auth/2fa/verify'
+    VERIFY: '/auth/2fa/verify',
+    SEND_EMAIL_CODE: '/auth/2fa/email/send-code'
   },
   
   // 文件管理
@@ -126,7 +127,16 @@ export const API_ENDPOINTS = {
   
   // DeFi 相关
   DEFI: {
-    DEPOSITS_ORDERS: '/defi/deposits/orders'
+    DEPOSITS_ORDERS: '/defi/deposits/orders',
+    DEPOSITS_ORDERS_LIST: '/defi/deposits/orders/list'
+  },
+  
+  // 内容管理相关
+  CONTENT: {
+    LINKS: '/content/links',
+    POPULAR_LINKS: '/content/links/popular',
+    LINKS_BY_CATEGORY: '/content/links/category',
+    LINK_CATEGORIES: '/content/links/categories'
   }
 }
 

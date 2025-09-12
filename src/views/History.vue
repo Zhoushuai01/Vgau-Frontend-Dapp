@@ -54,24 +54,29 @@
            </view>
          </view>
 
-         <!-- 交易记录列表 -->
-         <view class="transaction-list">
-           <!-- 交易记录项 -->
-           <view class="transaction-item" v-for="(transaction, index) in filteredTransactions" :key="index" @click="viewTransactionDetail(transaction)">
-             <view class="transaction-left">
-               <text class="transaction-type">{{ transaction.type }}</text>
-               <text class="transaction-amount" :class="transaction.amountClass">
-                 {{ transaction.amount }}
-               </text>
-             </view>
-             <view class="transaction-right">
-               <text class="transaction-date">{{ transaction.date }}</text>
-               <text class="transaction-status" :class="transaction.statusClass">
-                 {{ transaction.status }}
-               </text>
-             </view>
-           </view>
-         </view>
+        <!-- 加载状态 -->
+        <view class="loading-state" v-if="loading">
+          <text class="loading-text">{{ t('common.loading') }}</text>
+        </view>
+
+        <!-- 交易记录列表 -->
+        <view class="transaction-list" v-else>
+          <!-- 交易记录项 -->
+          <view class="transaction-item" v-for="(transaction, index) in filteredTransactions" :key="index" @click="viewTransactionDetail(transaction)">
+            <view class="transaction-left">
+              <text class="transaction-type">{{ transaction.type }}</text>
+              <text class="transaction-amount" :class="transaction.amountClass">
+                {{ transaction.amount }}
+              </text>
+            </view>
+            <view class="transaction-right">
+              <text class="transaction-date">{{ transaction.date }}</text>
+              <text class="transaction-status" :class="transaction.statusClass">
+                {{ transaction.status }}
+              </text>
+            </view>
+          </view>
+        </view>
 
          <!-- 加载更多 -->
          <view class="load-more" v-if="hasMore" @click="loadMore">
@@ -248,6 +253,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { defiAPI } from '@/api/apiService'
 
 const { t } = useI18n()
 
@@ -256,34 +262,10 @@ const topActiveTab = ref('account')
 const activeTab = ref('all')
 const earnActiveTab = ref('all')
 const hasMore = ref(true)
+const loading = ref(false)
 
-// 模拟交易数据
-const transactions = ref([
-  {
-    type: t('history.transaction.deposit'),
-    amount: '+100 VGAU',
-    amountClass: 'positive',
-    date: '2025-01-15',
-    status: t('history.transaction.done'),
-    statusClass: 'success'
-  },
-  {
-    type: t('history.transaction.withdraw'),
-    amount: '-50 USDT',
-    amountClass: 'negative',
-    date: '2025-01-14',
-    status: t('history.transaction.done'),
-    statusClass: 'success'
-  },
-  {
-    type: t('history.transaction.transfer'),
-    amount: '+200 VGAU',
-    amountClass: 'positive',
-    date: '2025-01-13',
-    status: t('history.transaction.ongoing'),
-    statusClass: 'pending'
-  }
-])
+// 充值订单数据
+const depositOrders = ref([])
 
 // Earn 交易数据
 const earnTransactions = ref([
@@ -307,16 +289,37 @@ const earnTransactions = ref([
   }
 ])
 
-// 计算属性
+// 计算属性 - 处理充值订单数据
+const processedTransactions = computed(() => {
+  return depositOrders.value.map(order => {
+    const isVGAU = order.currency === 'VGAU'
+    const amount = isVGAU ? order.amountRaw : order.amountRaw
+    const currency = order.currency
+    
+    return {
+      id: order.orderId,
+      type: t('history.transaction.deposit'),
+      amount: `+${amount} ${currency}`,
+      amountClass: 'positive',
+      date: formatDate(order.processedAt),
+      status: getStatusText(order.status),
+      statusClass: getStatusClass(order.status),
+      currency: currency,
+      rawData: order // 保存原始数据用于详情页
+    }
+  })
+})
+
+// 计算属性 - 筛选交易记录
 const filteredTransactions = computed(() => {
   if (activeTab.value === 'all') {
-    return transactions.value
+    return processedTransactions.value
   }
-  return transactions.value.filter(tx => {
+  return processedTransactions.value.filter(tx => {
     if (activeTab.value === 'vgau') {
-      return tx.amount.includes('VGAU')
+      return tx.currency === 'VGAU'
     } else if (activeTab.value === 'usdt') {
-      return tx.amount.includes('USDT')
+      return tx.currency === 'USDT'
     }
     return true
   })
@@ -354,15 +357,96 @@ const setEarnActiveTab = (tab) => {
   earnActiveTab.value = tab
 }
 
+// 格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toISOString().split('T')[0] // 返回 YYYY-MM-DD 格式
+}
+
+// 获取状态文本
+const getStatusText = (status) => {
+  const statusMap = {
+    'PENDING': t('history.transaction.pending'),
+    'PROCESSING': t('history.transaction.processing'),
+    'COMPLETED': t('history.transaction.done'),
+    'FAILED': t('history.transaction.failed'),
+    'CANCELLED': t('history.transaction.cancelled')
+  }
+  return statusMap[status] || status
+}
+
+// 获取状态样式类
+const getStatusClass = (status) => {
+  const classMap = {
+    'PENDING': 'pending',
+    'PROCESSING': 'processing',
+    'COMPLETED': 'success',
+    'FAILED': 'failed',
+    'CANCELLED': 'cancelled'
+  }
+  return classMap[status] || 'pending'
+}
+
+// 获取充值订单列表
+const fetchDepositOrders = async () => {
+  try {
+    loading.value = true
+    console.log('📡 开始获取充值订单列表...')
+    
+    const response = await defiAPI.getDepositOrdersList()
+    console.log('📡 充值订单列表响应:', response)
+    
+    if (response && response.data) {
+      depositOrders.value = response.data
+      console.log('✅ 充值订单列表获取成功:', depositOrders.value.length, '条记录')
+    } else {
+      console.warn('⚠️ 充值订单列表响应格式异常:', response)
+      depositOrders.value = []
+    }
+  } catch (error) {
+    console.error('❌ 获取充值订单列表失败:', error)
+    uni.showToast({
+      title: t('common.error.networkError'),
+      icon: 'none',
+      duration: 2000
+    })
+    depositOrders.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
 
 
 
 
 // 查看交易详情
 const viewTransactionDetail = (transaction) => {
-  uni.navigateTo({
-    url: `/views/TransactionDetail?transaction=${encodeURIComponent(JSON.stringify(transaction))}`
-  })
+  // 如果是充值记录，传递原始数据
+  if (transaction.rawData) {
+    const detailData = {
+      type: transaction.type,
+      amount: transaction.amount,
+      amountClass: transaction.amountClass,
+      status: transaction.status,
+      date: transaction.rawData.processedAt,
+      orderId: transaction.rawData.orderId,
+      fromAddress: transaction.rawData.fromAddress,
+      transactionHash: transaction.rawData.txHash,
+      currency: transaction.rawData.currency,
+      amountRaw: transaction.rawData.amountRaw
+    }
+    
+    uni.navigateTo({
+      url: `/views/TransactionDetail?transaction=${encodeURIComponent(JSON.stringify(detailData))}`
+    })
+  } else {
+    // 其他类型的交易记录
+    uni.navigateTo({
+      url: `/views/TransactionDetail?transaction=${encodeURIComponent(JSON.stringify(transaction))}`
+    })
+  }
 }
 
 // 查看Earn交易详情
@@ -405,6 +489,7 @@ const loadMore = () => {
 // 页面加载
 onMounted(() => {
   // 初始化逻辑
+  fetchDepositOrders()
 })
 </script>
 
@@ -670,6 +755,20 @@ onMounted(() => {
 .no-more-text {
   font-size: 28rpx;
   color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 400;
 }
 
