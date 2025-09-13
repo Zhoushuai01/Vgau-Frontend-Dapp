@@ -226,7 +226,7 @@ const executeRecharge = async (amount) => {
         // 准备订单数据
         const orderData = {
           txHash: result.transactionHash,
-          tokenType: 'USDT',
+          currency: 'USDT', // 币种字段
           amountRaw: parseFloat(amount), // 直接传number数字类型
           fromAddress: networkInfo.currentAccount,
           chainId: chainIdNumber, // 使用处理过的chainId

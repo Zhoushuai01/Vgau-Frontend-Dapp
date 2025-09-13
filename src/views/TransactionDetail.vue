@@ -20,7 +20,7 @@
             <view class="left-section">
                              <view class="type-row">
                  <text class="transaction-type">{{ transactionData.type }}</text>
-                 <text class="status-text" :class="{ done: transactionData.status === 'Done' }">{{ transactionData.status }}</text>
+                 <text class="status-text" :class="{ done: isSuccessStatus(transactionData.status) }">{{ getStatusText(transactionData.status) }}</text>
                </view>
               <view class="amount-row">
                 <text class="transaction-amount" :class="transactionData.amountClass">{{ transactionData.amount }}</text>
@@ -32,19 +32,11 @@
          <view class="detail-list">
                        <view class="detail-item">
               <text class="detail-label">{{ t('transactionDetail.transactionTime') }}</text>
-              <text class="detail-value">{{ formatDateTime(transactionData.date) }}</text>
+              <text class="detail-value">{{ formatDateTime(transactionData.createdAt) }}</text>
             </view>
             <view class="detail-item">
               <text class="detail-label">{{ t('transactionDetail.orderId') }}</text>
-              <text class="detail-value">{{ transactionData.orderId }}</text>
-            </view>
-            <view class="detail-item" v-if="transactionData.currency">
-              <text class="detail-label">{{ t('transactionDetail.currency') }}</text>
-              <text class="detail-value">{{ transactionData.currency }}</text>
-            </view>
-            <view class="detail-item" v-if="transactionData.amountRaw">
-              <text class="detail-label">{{ t('transactionDetail.amount') }}</text>
-              <text class="detail-value">{{ transactionData.amountRaw }}</text>
+              <text class="detail-value order-id">{{ transactionData.orderId }}</text>
             </view>
          </view>
       </view>
@@ -54,7 +46,7 @@
                            <view class="info-item">
             <text class="info-label">{{ t('transactionDetail.walletAddress') }}</text>
             <view class="info-value-container">
-              <text class="info-value">{{ formatShortAddress(transactionData.walletAddress) }}</text>
+              <text class="info-value">{{ formatShortAddress(transactionData.fromAddress) }}</text>
               <view class="copy-icon" @click="copyAddress">
                 <image src="/static/fuzhi.png" mode="aspectFit" class="copy-image" />
               </view>
@@ -87,12 +79,10 @@ const transactionData = ref({
   amount: '-5,000 VGAU',
   amountClass: 'negative',
   status: t('transactionDetail.defaultStatus'),
-  date: '2024-01-15 14:30',
+  createdAt: '2025-01-15T14:30:25',
   orderId: 'ORD202401150001',
-  walletAddress: '0x7eCfbF2D6DEa2371ea8f237c056B024dA4Bc87af',
-  transactionHash: '--',
-  currency: 'VGAU',
-  amountRaw: '5000'
+  fromAddress: '0x7eCfbF2D6DEa2371ea8f237c056B024dA4Bc87af',
+  transactionHash: '--'
 })
 
 // 页面加载时获取传递的数据
@@ -114,15 +104,61 @@ onMounted(() => {
 // 格式化日期时间
 const formatDateTime = (dateString) => {
   if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
+  
+  try {
+    const date = new Date(dateString)
+    
+    // 检查日期是否有效
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date string:', dateString)
+      return dateString // 返回原始字符串
+    }
+    
+    // 格式化为中文日期时间，显示到秒
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false // 使用24小时制
+    })
+  } catch (error) {
+    console.error('Date formatting error:', error)
+    return dateString // 返回原始字符串
+  }
+}
+
+// 获取状态文本
+const getStatusText = (status) => {
+  if (!status) return ''
+  
+  const statusMap = {
+    'PENDING': t('transactionDetail.status.pending'),
+    'PROCESSING': t('transactionDetail.status.processing'),
+    'SUCCESS': t('transactionDetail.status.success'),
+    'COMPLETED': t('transactionDetail.status.completed'),
+    'FAILED': t('transactionDetail.status.failed'),
+    'CANCELLED': t('transactionDetail.status.cancelled'),
+    'TIMEOUT': t('transactionDetail.status.timeout'),
+    'SUBMITTED': t('transactionDetail.status.processing'),
+    'Done': t('transactionDetail.status.done'),
+    'Ongoing': t('transactionDetail.status.ongoing')
+  }
+  
+  // 如果状态已经翻译过（包含中文字符），直接返回
+  if (/[\u4e00-\u9fa5]/.test(status)) {
+    return status
+  }
+  
+  return statusMap[status] || status
+}
+
+// 判断是否为成功状态
+const isSuccessStatus = (status) => {
+  const successStatuses = ['SUCCESS', 'COMPLETED', 'Done', '已完成', '成功']
+  return successStatuses.includes(status)
 }
 
 // 返回上一页
@@ -133,7 +169,7 @@ const goBack = () => {
 // 复制钱包地址
 const copyAddress = () => {
   uni.setClipboardData({
-    data: transactionData.value.walletAddress,
+    data: transactionData.value.fromAddress,
     success: () => {
       uni.showToast({
         title: t('transactionDetail.addressCopied'),
@@ -321,6 +357,10 @@ const copyHash = () => {
   font-size: 32rpx;
   color: #FFFFFF;
   font-weight: 400;
+}
+
+.detail-value.order-id {
+  font-size: 28rpx;
 }
 
 /* 钱包信息 */

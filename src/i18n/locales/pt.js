@@ -237,7 +237,11 @@ export default {
       transfer: 'Transferência',
       swap: 'Troca',
       ongoing: 'Em Andamento',
-      done: 'Concluído'
+      done: 'Concluído',
+      pending: 'Pendente',
+      processing: 'Processando',
+      failed: 'Falhou',
+      cancelled: 'Cancelado'
     },
     loadMore: 'Carregar Mais',
     noMoreData: 'Não Há Mais Dados',
@@ -428,7 +432,18 @@ export default {
     defaultStatus: 'Em Andamento',
     addressCopied: 'Endereço Copiado',
     hashCopied: 'Hash Copiado',
-    noHashToCopy: 'Nenhum Hash de Transação para Copiar'
+    noHashToCopy: 'Nenhum Hash de Transação para Copiar',
+    status: {
+      pending: 'Pendente',
+      processing: 'Processando',
+      success: 'Sucesso',
+      completed: 'Concluído',
+      failed: 'Falhou',
+      cancelled: 'Cancelado',
+      timeout: 'Tempo Esgotado',
+      done: 'Concluído',
+      ongoing: 'Em Andamento'
+    }
   },
 
   // 钱包
@@ -840,7 +855,8 @@ export default {
       netAnnualizedInterestRate: 'USDT a Pagar',
       liquidationReferencePrice: 'Preço de Referência de Liquidação (VGAU/USDT)',
       increaseCollateralAmount: 'Aumentar Valor da Garantia',
-      adjustPledgeRatio: 'Pagamento Total',
+      adjustPledgeRatio: 'Ajustar Taxa de Empenho',
+      fullRepayment: 'Pagamento Total',
       allLoaded: 'Tudo carregado',
       recordsFeature: 'Funcionalidade de registros em breve',
       adjustPledgeRatioFeature: 'Funcionalidade de pagamento total em breve',

@@ -249,7 +249,11 @@ export default {
       transfer: 'Transfer',
       swap: 'Swap',
       ongoing: 'Ongoing',
-      done: 'Done'
+      done: 'Done',
+      pending: 'Pending',
+      processing: 'Processing',
+      failed: 'Failed',
+      cancelled: 'Cancelled'
     },
     loadMore: 'Load More',
     noMoreData: 'No More Data',
@@ -443,7 +447,18 @@ export default {
     defaultStatus: 'Ongoing',
     addressCopied: 'Address Copied',
     hashCopied: 'Hash Copied',
-    noHashToCopy: 'No Transaction Hash'
+    noHashToCopy: 'No Transaction Hash',
+    status: {
+      pending: 'Pending',
+      processing: 'Processing',
+      success: 'Success',
+      completed: 'Completed',
+      failed: 'Failed',
+      cancelled: 'Cancelled',
+      timeout: 'Timeout',
+      done: 'Done',
+      ongoing: 'Ongoing'
+    }
   },
 
   // Wallet
@@ -868,7 +883,8 @@ export default {
       netAnnualizedInterestRate: 'USDT to Repay',
       liquidationReferencePrice: 'Liquidation Reference Price (VGAU/USDT)',
       increaseCollateralAmount: 'Increase Collateral Amount',
-      adjustPledgeRatio: 'Full Repayment',
+      adjustPledgeRatio: 'Adjust Pledge Ratio',
+      fullRepayment: 'Full Repayment',
       allLoaded: 'All loaded',
       recordsFeature: 'Records feature coming soon',
       adjustPledgeRatioFeature: 'Full repayment feature coming soon',

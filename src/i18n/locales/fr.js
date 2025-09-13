@@ -237,7 +237,11 @@ export default {
       transfer: 'Transfert',
       swap: 'Échange',
       ongoing: 'En Cours',
-      done: 'Terminé'
+      done: 'Terminé',
+      pending: 'En Attente',
+      processing: 'En Traitement',
+      failed: 'Échoué',
+      cancelled: 'Annulé'
     },
     loadMore: 'Charger Plus',
     noMoreData: 'Plus de Données',
@@ -428,7 +432,18 @@ export default {
     defaultStatus: 'En Cours',
     addressCopied: 'Adresse Copiée',
     hashCopied: 'Hash Copié',
-    noHashToCopy: 'Aucun Hash de Transaction à Copier'
+    noHashToCopy: 'Aucun Hash de Transaction à Copier',
+    status: {
+      pending: 'En Attente',
+      processing: 'En Traitement',
+      success: 'Succès',
+      completed: 'Terminé',
+      failed: 'Échec',
+      cancelled: 'Annulé',
+      timeout: 'Délai Dépassé',
+      done: 'Terminé',
+      ongoing: 'En Cours'
+    }
   },
 
   // 钱包
@@ -840,7 +855,8 @@ export default {
       netAnnualizedInterestRate: 'USDT à Rembourser',
       liquidationReferencePrice: 'Prix de Référence de Liquidation (VGAU/USDT)',
       increaseCollateralAmount: 'Augmenter la Valeur de Garantie',
-      adjustPledgeRatio: 'Remboursement Intégral',
+      adjustPledgeRatio: 'Ajuster le Taux d\'Engagement',
+      fullRepayment: 'Remboursement Intégral',
       allLoaded: 'Tout chargé',
       recordsFeature: 'Fonctionnalité d\'enregistrements bientôt disponible',
       adjustPledgeRatioFeature: 'Fonctionnalité de remboursement intégral bientôt disponible',

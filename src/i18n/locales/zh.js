@@ -451,7 +451,18 @@ export default {
     defaultStatus: '進行中',
     addressCopied: '地址已複製',
     hashCopied: '哈希已複製',
-    noHashToCopy: '暫無交易哈希'
+    noHashToCopy: '暫無交易哈希',
+    status: {
+      pending: '待處理',
+      processing: '處理中',
+      success: '成功',
+      completed: '已完成',
+      failed: '失敗',
+      cancelled: '已取消',
+      timeout: '超時',
+      done: '已完成',
+      ongoing: '進行中'
+    }
   },
 
   // 钱包
@@ -886,7 +897,8 @@ export default {
       netAnnualizedInterestRate: '需還USDT',
       liquidationReferencePrice: '清算參考價格 (VGAU/USDT)',
       increaseCollateralAmount: '增加抵押金額',
-      adjustPledgeRatio: '全額還款',
+      adjustPledgeRatio: '調整質押比率',
+      fullRepayment: '全額還款',
       allLoaded: '全部載入完成',
       recordsFeature: '記錄功能即將推出',
       adjustPledgeRatioFeature: '全額還款功能即將推出',

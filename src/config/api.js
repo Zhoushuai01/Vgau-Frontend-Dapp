@@ -67,7 +67,10 @@ export const API_ENDPOINTS = {
   LOAN: {
     CONFIG: '/loan/config',
     ORDERS: '/loan/orders',
-    SUMMARY: '/loan/summary'
+    ORDER_DETAIL: '/loan/orders',
+    SUMMARY: '/loan/summary',
+    ADD_COLLATERAL: '/loan/orders/add-collateral',
+    REPAY: '/loan/repay'
   },
   
   // 用户管理

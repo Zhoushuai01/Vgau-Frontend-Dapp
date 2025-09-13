@@ -287,10 +287,16 @@ class ApiService {
     getConfig: () => this.get(this.endpoints.LOAN.CONFIG),
     // 获取借贷订单列表
     getOrders: () => this.get(this.endpoints.LOAN.ORDERS),
+    // 获取订单详情
+    getOrderDetail: (orderNumber) => this.get(`${this.endpoints.LOAN.ORDER_DETAIL}/${orderNumber}`),
     // 创建借贷订单
     createOrder: (data) => this.post(this.endpoints.LOAN.ORDERS, data),
     // 获取借贷汇总信息
-    getSummary: () => this.get(this.endpoints.LOAN.SUMMARY)
+    getSummary: () => this.get(this.endpoints.LOAN.SUMMARY),
+    // 增加抵押金额
+    addCollateral: (data) => this.post(this.endpoints.LOAN.ADD_COLLATERAL, data),
+    // 全额还款
+    repay: (data) => this.post(this.endpoints.LOAN.REPAY, data)
   }
   
   // 积分管理相关API

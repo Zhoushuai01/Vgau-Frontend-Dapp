@@ -21,7 +21,7 @@
       <!-- 赎回比率信息 -->
       <view class="rate-info">
         <view class="rate-info-content">
-          <text class="rate-text">{{ t('components.redeem.rateText') }}</text>
+          <text class="rate-text">1 VGAU = {{ exchangeRate }} USDT</text>
         </view>
         <!-- 分隔线 -->
         <view class="divider-line"></view>
@@ -101,10 +101,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import i18n from '@/i18n/i18n.js'
 import contractExchange from '@/utils/contractExchange.js'
+import vgauService from '@/utils/vgauService.js'
 
 const { t } = useI18n()
 
@@ -112,7 +113,12 @@ const { t } = useI18n()
 const redeemAmount = ref('')
 const showSuccessModal = ref(false)
 const isLoading = ref(false)
-const currentPrice = ref(120) // 默认价格，将从合约获取
+
+// 汇率数据
+const exchangeRate = ref('123.4561')
+
+// 汇率更新定时器
+let exchangeRateTimer = null
 
 // 自定义错误弹窗相关状态
 const showErrorModal = ref(false)
@@ -147,16 +153,49 @@ const calculateRequiredUSDT = async () => {
   }
 }
 
-// 获取最新价格
-const getLatestPrice = async () => {
+// 获取汇率数据（与DeFi页面保持一致）
+const getExchangeRate = async () => {
   try {
-    const price = await contractExchange.getLatestGoldPrice()
-    // 黄金价格通常有8位小数
-    currentPrice.value = parseFloat(price) / Math.pow(10, 8)
-    console.log('获取到最新黄金价格:', currentPrice.value)
+    console.log('💰 开始获取汇率数据...')
+    
+    if (vgauService.isInitialized) {
+      const stats = await vgauService.getPlatformStats()
+      if (stats && stats.price) {
+        exchangeRate.value = parseFloat(stats.price).toFixed(4)
+        console.log('✅ 汇率数据更新:', exchangeRate.value)
+      }
+    } else {
+      console.log('⚠️ vgauService未初始化，使用默认汇率')
+      exchangeRate.value = '123.4561'
+    }
   } catch (error) {
-    console.error('获取价格失败:', error)
-    currentPrice.value = 120
+    console.error('❌ 获取汇率数据失败:', error)
+    // 发生异常时使用默认值
+    exchangeRate.value = '123.4561'
+  }
+}
+
+// 启动汇率更新定时器
+const startExchangeRateTimer = () => {
+  // 清除现有定时器
+  if (exchangeRateTimer) {
+    clearInterval(exchangeRateTimer)
+  }
+  
+  // 每30秒更新一次汇率
+  exchangeRateTimer = setInterval(async () => {
+    await getExchangeRate()
+  }, 30000)
+  
+  console.log('✅ 赎回页面汇率更新定时器已启动（30秒间隔）')
+}
+
+// 停止汇率更新定时器
+const stopExchangeRateTimer = () => {
+  if (exchangeRateTimer) {
+    clearInterval(exchangeRateTimer)
+    exchangeRateTimer = null
+    console.log('⏹️ 赎回页面汇率更新定时器已停止')
   }
 }
 
@@ -305,13 +344,28 @@ watch(redeemAmount, () => {
   calculateRequiredUSDT()
 }, { immediate: false })
 
-// 页面加载时获取最新价格
+// 页面加载时获取汇率数据
 onMounted(async () => {
   try {
-    await getLatestPrice()
+    // 初始化vgauService
+    if (!vgauService.isInitialized) {
+      console.log('🔧 初始化vgauService...')
+      await vgauService.init()
+    }
+    
+    // 获取汇率数据
+    await getExchangeRate()
+    
+    // 启动汇率更新定时器
+    startExchangeRateTimer()
   } catch (error) {
-    console.error('初始化价格失败:', error)
+    console.error('初始化汇率失败:', error)
   }
+})
+
+// 页面卸载时清理定时器
+onUnmounted(() => {
+  stopExchangeRateTimer()
 })
 </script>
 

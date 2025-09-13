@@ -349,7 +349,7 @@
           // 准备订单数据
           const orderData = {
             txHash: result.transactionHash,
-            tokenType: 'VGAU',
+            currency: 'VGAU', // 币种字段
             amountRaw: parseFloat(rechargeAmount), // 直接传number数字类型
             fromAddress: networkInfo.currentAccount,
             chainId: typeof networkInfo.chainId === 'bigint' ? Number(networkInfo.chainId) : networkInfo.chainId,

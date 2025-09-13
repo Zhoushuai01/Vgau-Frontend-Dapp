@@ -29,7 +29,7 @@
             <view class="info-details">
               <view class="detail-item">
                 <text class="detail-label">{{ t('components.increaseCollateral.insuranceFee') }}</text>
-                <text class="detail-value">{{ orderData.insuranceFee }}</text>
+                <text class="detail-value">{{ formatInsuranceFee(orderData.insuranceFee) }}</text>
               </view>
               <view class="detail-item">
                 <text class="detail-label">{{ t('components.increaseCollateral.initialCollateralRatio') }}</text>
@@ -37,11 +37,11 @@
               </view>
               <view class="detail-item">
                 <text class="detail-label">{{ t('components.increaseCollateral.stakingRatio') }}</text>
-                <text class="detail-value">{{ orderData.currentStakingRatio }}</text>
+                <text class="detail-value">{{ formatCurrentLtvRatio(orderData.currentStakingRatio) }}</text>
               </view>
               <view class="detail-item">
                 <text class="detail-label">{{ t('components.increaseCollateral.stakingRatioAfterIncrease') }}</text>
-                <text class="detail-value">{{ orderData.increaseAmount }}</text>
+                <text class="detail-value">{{ formatCurrentLtvRatio(orderData.newLtvRatioAfterAdditional) }}</text>
               </view>
             </view>
           </view>
@@ -116,9 +116,10 @@ const vgauAvailableBalance = ref('0')
 const orderData = ref({
   collateralAmount: '0', // 抵押金额
   ltvRatio: 0, // 初始质押率
-  insuranceFee: '--', // 强平保险费（后端暂无数据）
-  currentStakingRatio: '--', // 当前质押率（后端暂无数据）
-  increaseAmount: '--' // 增加抵押金额（后端暂无数据）
+  insuranceFee: '--', // 强平保险费
+  currentStakingRatio: '--', // 当前质押率
+  increaseAmount: '--', // 增加抵押金额（后端暂无数据）
+  newLtvRatioAfterAdditional: '--' // 增加抵押金额后的质押率
 })
 
 // 计算属性：格式化增加成功消息，高亮金额和VGAU
@@ -140,6 +141,37 @@ const formattedNewCollateralRatio = computed(() => {
 // 返回上一页
 const goBack = () => {
   uni.navigateBack()
+}
+
+// 格式化强平保险费显示
+const formatInsuranceFee = (value) => {
+  if (!value || value === '--' || value === null || value === undefined) {
+    return '--'
+  }
+  
+  const num = parseFloat(value)
+  if (isNaN(num)) {
+    return '--'
+  }
+  
+  // 先格式化为4位小数，然后去除末尾的零
+  return parseFloat(num.toFixed(4)).toString()
+}
+
+// 格式化当前质押率显示
+const formatCurrentLtvRatio = (value) => {
+  if (!value || value === '--' || value === null || value === undefined) {
+    return '--'
+  }
+  
+  const num = parseFloat(value)
+  if (isNaN(num)) {
+    return '--'
+  }
+  
+  // 转换为百分比并格式化
+  const percentage = (num * 100).toFixed(2)
+  return parseFloat(percentage).toString() + '%'
 }
 
 // 显示帮助
@@ -184,36 +216,55 @@ const loadUserBalances = async () => {
 const loadOrderData = async () => {
   try {
     console.log('🔄 加载订单数据...')
-    const response = await loanAPI.getOrders()
-    console.log('✅ 订单数据响应:', response)
     
-    if (response && response.data) {
-      // 获取订单列表
-      let orders = []
-      if (Array.isArray(response.data)) {
-        orders = response.data
-      } else if (response.data.records && Array.isArray(response.data.records)) {
-        orders = response.data.records
-      } else if (response.data.orders && Array.isArray(response.data.orders)) {
-        orders = response.data.orders
-      } else if (response.data.list && Array.isArray(response.data.list)) {
-        orders = response.data.list
+    let order = null
+    
+    if (currentOrderNumber.value) {
+      // 如果有特定订单号，获取该订单的详情
+      console.log('📋 获取特定订单详情:', currentOrderNumber.value)
+      const response = await loanAPI.getOrderDetail(currentOrderNumber.value)
+      if (response && response.success && response.data) {
+        order = response.data
+        console.log('✅ 特定订单数据获取成功:', order)
       }
+    } else {
+      // 如果没有特定订单号，获取订单列表并使用第一个
+      const response = await loanAPI.getOrders()
+      console.log('✅ 订单数据响应:', response)
       
-      if (orders.length > 0) {
-        // 使用第一个订单的数据（实际应该根据传入的订单ID获取）
-        const order = orders[0]
-        orderData.value = {
-          collateralAmount: order.collateralAmount || '0',
-          ltvRatio: order.ltvRatioAsPercentage || 0,
-          insuranceFee: '--', // 后端暂无数据
-          currentStakingRatio: '--', // 后端暂无数据
-          increaseAmount: '--' // 后端暂无数据
+      if (response && response.data) {
+        // 获取订单列表
+        let orders = []
+        if (Array.isArray(response.data)) {
+          orders = response.data
+        } else if (response.data.records && Array.isArray(response.data.records)) {
+          orders = response.data.records
+        } else if (response.data.orders && Array.isArray(response.data.orders)) {
+          orders = response.data.orders
+        } else if (response.data.list && Array.isArray(response.data.list)) {
+          orders = response.data.list
         }
-        console.log('✅ 订单数据加载完成:', orderData.value)
-      } else {
-        console.log('⚠️ 未找到订单数据')
+        
+        if (orders.length > 0) {
+          order = orders[0]
+          currentOrderNumber.value = order.orderNumber // 保存订单号
+        }
       }
+    }
+    
+    if (order) {
+      orderData.value = {
+        collateralAmount: order.collateralAmount || '0',
+        ltvRatio: order.ltvRatioAsPercentage || 0,
+        insuranceFee: order.insuranceFeeAmount || '--', // 强平保险费
+        currentStakingRatio: order.currentLtvRatio || '--', // 当前质押率
+        increaseAmount: '--', // 后端暂无数据
+        newLtvRatioAfterAdditional: order.newLtvRatioAfterAdditional || '--' // 增加抵押金额后的质押率
+      }
+      console.log('✅ 订单数据加载完成:', orderData.value)
+      console.log('📋 当前订单号:', currentOrderNumber.value)
+    } else {
+      console.log('⚠️ 未找到订单数据')
     }
   } catch (error) {
     console.error('❌ 加载订单数据失败:', error)
@@ -223,8 +274,52 @@ const loadOrderData = async () => {
 // 显示确认弹窗
 const showConfirmModal = ref(false)
 
+// 当前订单号
+const currentOrderNumber = ref('')
+
+// 增加抵押金额API调用
+const addCollateral = async () => {
+  try {
+    console.log('📡 开始增加抵押金额...')
+    
+    if (!currentOrderNumber.value) {
+      throw new Error('无法获取订单号')
+    }
+    
+    // 确保金额是有效的数字
+    const amount = parseFloat(increaseAmount.value)
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error('请输入有效的增加金额')
+    }
+    
+    const requestData = {
+      orderNumber: currentOrderNumber.value,
+      additionalCollateralAmount: amount
+    }
+    
+    console.log('📤 请求数据:', requestData)
+    
+    const response = await loanAPI.addCollateral(requestData)
+    console.log('✅ 增加抵押金额成功:', response)
+    
+    if (response && response.success) {
+      // 设置成功后的数据
+      increasedAmount.value = `${increaseAmount.value}VGAU`
+      newCollateralRatio.value = response.data?.newLtvRatio || '65%'
+      
+      // 显示确认弹窗
+      showConfirmModal.value = true
+    } else {
+      throw new Error(response?.message || '增加抵押金额失败')
+    }
+  } catch (error) {
+    console.error('❌ 增加抵押金额API调用失败:', error)
+    throw error
+  }
+}
+
 // 处理确认
-const handleConfirm = () => {
+const handleConfirm = async () => {
   if (!increaseAmount.value || parseFloat(increaseAmount.value) <= 0) {
     uni.showToast({
       title: t('common.pleaseEnterValidAmount'),
@@ -245,12 +340,17 @@ const handleConfirm = () => {
     return
   }
   
-     // 模拟成功操作后获取到的数据
-   increasedAmount.value = `${increaseAmount.value}VGAU` // 假设增加的金额就是输入金额
-   newCollateralRatio.value = '65%' // 假设新的质押率为65% (实际应由后端返回)
-
-   // 显示确认弹窗
-   showConfirmModal.value = true
+  try {
+    // 调用增加抵押金额API
+    await addCollateral()
+  } catch (error) {
+    console.error('❌ 增加抵押金额失败:', error)
+    uni.showToast({
+      title: error.message || '操作失败',
+      icon: 'none',
+      duration: 3000
+    })
+  }
 }
 
 // 确认弹窗确认操作
@@ -264,6 +364,16 @@ const confirmModalAction = () => {
 
 // 页面加载时获取用户余额和订单数据
 onMounted(() => {
+  // 从URL参数获取订单号
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const options = currentPage.options || {}
+  
+  if (options.orderNumber) {
+    currentOrderNumber.value = options.orderNumber
+    console.log('📋 从URL参数获取订单号:', currentOrderNumber.value)
+  }
+  
   loadUserBalances()
   loadOrderData()
 })

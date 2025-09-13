@@ -26,7 +26,7 @@
       <view class="total-liabilities-section">
         <view class="liabilities-card">
           <text class="liabilities-label">{{ $t('components.borrowOrder.totalLiabilities') }}</text>
-          <text class="liabilities-value">{{ totalLiabilities }}</text>
+          <text class="liabilities-value">{{ formatTotalLiabilities(totalLiabilities) }}</text>
         </view>
       </view>
 
@@ -73,20 +73,20 @@
             </view>
             <view class="detail-item">
               <text class="detail-label">{{ $t('components.borrowOrder.netAnnualizedInterestRate') }}</text>
-              <text class="detail-value">{{ calculateRepayAmount(order) }} USDT</text>
+              <text class="detail-value">{{ formatDebtUsdt(order.totalDebtUsdt) }} USDT</text>
             </view>
             <view class="detail-item">
               <text class="detail-label">{{ $t('components.borrowOrder.liquidationReferencePrice') }}</text>
-              <text class="detail-value">{{ order.liquidationPrice }}</text>
+              <text class="detail-value">{{ formatLiquidationPrice(order.liquidationReferencePrice) }}</text>
             </view>
           </view>
           
           <view class="action-buttons">
-            <view class="action-btn" @click="increaseCollateral">
+            <view class="action-btn" @click="increaseCollateral(order)">
               <text class="btn-text">{{ $t('components.borrowOrder.increaseCollateralAmount') }}</text>
             </view>
-            <view class="action-btn" @click="adjustPledgeRatio">
-              <text class="btn-text">{{ $t('components.borrowOrder.adjustPledgeRatio') }}</text>
+            <view class="action-btn" @click="repay(order)">
+              <text class="btn-text">{{ $t('components.borrowOrder.fullRepayment') }}</text>
             </view>
           </view>
         </view>
@@ -113,22 +113,80 @@ const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
 
-// 计算总负债
-const totalLiabilities = computed(() => {
-  return orders.value.reduce((total, order) => {
-    return total + (order.borrowAmount || 0)
-  }, 0).toFixed(8)
-})
+// 总负债数据
+const totalLiabilities = ref('0')
 
-// 计算每个订单需要还款的USDT金额
-const calculateRepayAmount = (order) => {
-  // 如果API返回了需还USDT字段，直接使用
-  if (order.repayAmount) {
-    return order.repayAmount
+// 格式化总负债显示
+const formatTotalLiabilities = (value) => {
+  if (!value || value === null || value === undefined) {
+    return '0'
   }
   
-  // 接口暂无此字段，返回空值
-  return '--'
+  const num = parseFloat(value)
+  if (isNaN(num)) {
+    return '0'
+  }
+  
+  // 先格式化为4位小数，然后去除末尾的零
+  return parseFloat(num.toFixed(4)).toString()
+}
+
+// 格式化需还USDT，保留小数点后四位，舍弃多余的零
+const formatDebtUsdt = (value) => {
+  if (!value || value === null || value === undefined) {
+    return '--'
+  }
+  
+  const num = parseFloat(value)
+  if (isNaN(num)) {
+    return '--'
+  }
+  
+  // 先格式化为4位小数，然后去除末尾的零
+  return parseFloat(num.toFixed(4)).toString()
+}
+
+// 格式化清算参考价格
+const formatLiquidationPrice = (value) => {
+  if (!value || value === null || value === undefined) {
+    return '--'
+  }
+  
+  const num = parseFloat(value)
+  if (isNaN(num)) {
+    return '--'
+  }
+  
+  // 保留适当的小数位数，根据数值大小决定
+  if (num >= 1000) {
+    return num.toFixed(2)
+  } else if (num >= 1) {
+    return num.toFixed(4)
+  } else {
+    return num.toFixed(6)
+  }
+}
+
+
+// 获取总负债数据
+const fetchLoanSummary = async () => {
+  try {
+    console.log('📡 开始获取总负债数据...')
+    const response = await loanAPI.getSummary()
+    
+    console.log('✅ 总负债数据获取成功:', response)
+    
+    if (response && response.success && response.data) {
+      totalLiabilities.value = response.data.totalActiveDebt || '0'
+      console.log('💰 总负债金额:', totalLiabilities.value)
+    } else {
+      console.warn('⚠️ 总负债数据格式异常:', response)
+      totalLiabilities.value = '0'
+    }
+  } catch (err) {
+    console.error('❌ 获取总负债失败:', err)
+    totalLiabilities.value = '0'
+  }
 }
 
 // 获取借贷订单数据
@@ -173,8 +231,8 @@ const fetchLoanOrders = async () => {
         ltvRatio: item.ltvRatioAsPercentage, // 质押比率 - 使用API返回的ltvRatioAsPercentage
         borrowAmount: item.borrowAmount || 0, // 借款金额
         interestRate: item.annualRateAsPercentage || 0, // 年化利率 - 使用API返回的annualRateAsPercentage
-        repayAmount: null, // 需还USDT - 接口暂无此字段，先设为空
-        liquidationPrice: item.liquidationPrice || null, // 清算参考价格（如果API返回）
+        totalDebtUsdt: item.totalDebtUsdt || null, // 需还USDT - 使用API返回的totalDebtUsdt
+        liquidationReferencePrice: item.liquidationReferencePrice || null, // 清算参考价格 - 使用API返回的liquidationReferencePrice
         status: item.status || 'active',
         statusDescription: item.statusDescription || null, // 状态描述 - 使用API返回的statusDescription
         finalStatus: item.finalStatus || false // 最终状态 - 使用API返回的finalStatus
@@ -202,8 +260,11 @@ const fetchLoanOrders = async () => {
 }
 
 // 页面加载时获取数据
-onMounted(() => {
-  fetchLoanOrders()
+onMounted(async () => {
+  await Promise.all([
+    fetchLoanSummary(),
+    fetchLoanOrders()
+  ])
 })
 
 // 调试国际化 - 验证翻译是否正常工作
@@ -224,9 +285,18 @@ const showRecords = () => {
 }
 
 // 增加抵押金额
-const increaseCollateral = () => {
+const increaseCollateral = (order) => {
+  if (!order || !order.orderNumber) {
+    uni.showToast({
+      title: '订单信息不完整',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
   uni.navigateTo({
-    url: '/views/IncreaseCollateral'
+    url: `/views/IncreaseCollateral?orderNumber=${order.orderNumber}`
   })
 }
 
@@ -237,6 +307,52 @@ const adjustPledgeRatio = () => {
     icon: 'none',
     duration: 2000
   })
+}
+
+// 全额还款
+const repay = async (order) => {
+  if (!order || !order.orderNumber) {
+    uni.showToast({
+      title: '订单信息不完整',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
+  try {
+    console.log('📡 开始全额还款...')
+    
+    const requestData = {
+      orderNumber: order.orderNumber,
+      confirmRepayment: true
+    }
+    
+    console.log('📤 还款请求数据:', requestData)
+    
+    const response = await loanAPI.repay(requestData)
+    console.log('✅ 全额还款成功:', response)
+    
+    if (response && response.success) {
+      uni.showToast({
+        title: '还款成功',
+        icon: 'success',
+        duration: 2000
+      })
+      
+      // 刷新订单列表
+      await fetchLoanOrders()
+    } else {
+      throw new Error(response?.message || '还款失败')
+    }
+  } catch (error) {
+    console.error('❌ 全额还款失败:', error)
+    uni.showToast({
+      title: error.message || '还款失败',
+      icon: 'none',
+      duration: 3000
+    })
+  }
 }
 
 // 返回上一页

@@ -237,7 +237,11 @@ export default {
       transfer: 'تحويل',
       swap: 'تبديل',
       ongoing: 'جاري',
-      done: 'مكتمل'
+      done: 'مكتمل',
+      pending: 'في الانتظار',
+      processing: 'قيد المعالجة',
+      failed: 'فشل',
+      cancelled: 'ملغي'
     },
     loadMore: 'تحميل المزيد',
     noMoreData: 'لا توجد المزيد من البيانات',
@@ -428,7 +432,18 @@ export default {
     defaultStatus: 'جاري',
     addressCopied: 'تم نسخ العنوان',
     hashCopied: 'تم نسخ الهاش',
-    noHashToCopy: 'لا يوجد هاش معاملة للنسخ'
+    noHashToCopy: 'لا يوجد هاش معاملة للنسخ',
+    status: {
+      pending: 'في الانتظار',
+      processing: 'قيد المعالجة',
+      success: 'نجح',
+      completed: 'مكتمل',
+      failed: 'فشل',
+      cancelled: 'ملغي',
+      timeout: 'انتهت المهلة',
+      done: 'مكتمل',
+      ongoing: 'جاري'
+    }
   },
 
   // 钱包
@@ -840,7 +855,8 @@ export default {
       netAnnualizedInterestRate: 'USDT المطلوب سداده',
       liquidationReferencePrice: 'سعر مرجع التصفية (VGAU/USDT)',
       increaseCollateralAmount: 'زيادة مبلغ الضمان',
-      adjustPledgeRatio: 'سداد كامل',
+      adjustPledgeRatio: 'تعديل نسبة الرهان',
+      fullRepayment: 'سداد كامل',
       allLoaded: 'تم تحميل الكل',
       recordsFeature: 'ميزة السجلات قادمة قريباً',
       adjustPledgeRatioFeature: 'ميزة السداد الكامل قادمة قريباً',

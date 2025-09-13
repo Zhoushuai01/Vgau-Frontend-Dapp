@@ -71,9 +71,12 @@
             </view>
             <view class="transaction-right">
               <text class="transaction-date">{{ transaction.date }}</text>
-              <text class="transaction-status" :class="transaction.statusClass">
-                {{ transaction.status }}
-              </text>
+              <view class="status-container">
+                <text class="transaction-time">{{ formatTime(transaction.rawData?.createdAt) }}</text>
+                <text class="transaction-status" :class="transaction.statusClass">
+                  {{ getStatusText(transaction.status) }}
+                </text>
+              </view>
             </view>
           </view>
         </view>
@@ -299,10 +302,10 @@ const processedTransactions = computed(() => {
     return {
       id: order.orderId,
       type: t('history.transaction.deposit'),
-      amount: `+${amount} ${currency}`,
+      amount: `+${amount}`, // 只显示金额，不包含币种
       amountClass: 'positive',
       date: formatDate(order.processedAt),
-      status: getStatusText(order.status),
+      status: order.status, // 传递原始状态值，让详情页翻译
       statusClass: getStatusClass(order.status),
       currency: currency,
       rawData: order // 保存原始数据用于详情页
@@ -364,6 +367,28 @@ const formatDate = (dateString) => {
   return date.toISOString().split('T')[0] // 返回 YYYY-MM-DD 格式
 }
 
+// 格式化时间，精确到秒
+const formatTime = (dateString) => {
+  if (!dateString) return ''
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return ''
+    
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
+  } catch (error) {
+    console.error('时间格式化错误:', error)
+    return ''
+  }
+}
+
 // 获取状态文本
 const getStatusText = (status) => {
   const statusMap = {
@@ -371,7 +396,8 @@ const getStatusText = (status) => {
     'PROCESSING': t('history.transaction.processing'),
     'COMPLETED': t('history.transaction.done'),
     'FAILED': t('history.transaction.failed'),
-    'CANCELLED': t('history.transaction.cancelled')
+    'CANCELLED': t('history.transaction.cancelled'),
+    'SUBMITTED': t('history.transaction.pending') // 添加SUBMITTED状态
   }
   return statusMap[status] || status
 }
@@ -383,7 +409,8 @@ const getStatusClass = (status) => {
     'PROCESSING': 'processing',
     'COMPLETED': 'success',
     'FAILED': 'failed',
-    'CANCELLED': 'cancelled'
+    'CANCELLED': 'cancelled',
+    'SUBMITTED': 'pending' // 添加SUBMITTED状态
   }
   return classMap[status] || 'pending'
 }
@@ -429,13 +456,12 @@ const viewTransactionDetail = (transaction) => {
       type: transaction.type,
       amount: transaction.amount,
       amountClass: transaction.amountClass,
-      status: transaction.status,
-      date: transaction.rawData.processedAt,
+      currency: transaction.rawData.currency, // 传递币种信息
+      status: transaction.rawData.status, // 使用原始状态值
+      createdAt: transaction.rawData.createdAt,
       orderId: transaction.rawData.orderId,
       fromAddress: transaction.rawData.fromAddress,
-      transactionHash: transaction.rawData.txHash,
-      currency: transaction.rawData.currency,
-      amountRaw: transaction.rawData.amountRaw
+      transactionHash: transaction.rawData.txHash
     }
     
     uni.navigateTo({
@@ -686,6 +712,13 @@ onMounted(() => {
   align-items: flex-end;
 }
 
+.status-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  align-items: flex-end;
+}
+
 .transaction-type {
   font-size: 32rpx;
   color: #FFFFFF;
@@ -711,21 +744,44 @@ onMounted(() => {
   font-weight: 400;
 }
 
+.transaction-time {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 400;
+}
+
 .transaction-status {
   font-size: 24rpx;
   font-weight: 500;
+  color: #FFFFFF; /* 所有状态都显示为白色 */
 }
 
 .transaction-status.ongoing {
-  color: rgba(255, 255, 255, 0.7);
+  color: #FFFFFF;
 }
 
 .transaction-status.done {
-  color: rgba(255, 255, 255, 0.7);
+  color: #FFFFFF;
 }
 
 .transaction-status.success {
-  color: rgba(255, 255, 255, 0.7);
+  color: #FFFFFF;
+}
+
+.transaction-status.pending {
+  color: #FFFFFF;
+}
+
+.transaction-status.processing {
+  color: #FFFFFF;
+}
+
+.transaction-status.failed {
+  color: #FFFFFF;
+}
+
+.transaction-status.cancelled {
+  color: #FFFFFF;
 }
 
 /* 加载更多 */

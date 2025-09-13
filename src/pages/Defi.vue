@@ -38,7 +38,7 @@
       <view class="exchange-rate-section">
         <view class="rate-info">
           <text class="rate-label">{{ $t('defi.exchangeRate') }}</text>
-          <text class="rate-value">1 VGAU=123.4561 USDT</text>
+          <text class="rate-value">1 VGAU={{ exchangeRate }} USDT</text>
         </view>
       </view>
 
@@ -232,6 +232,7 @@
   import { ref, onMounted, onUnmounted, reactive } from 'vue'
   import { smartUserVerify } from '@/utils/walletService.js'
   import web3Service from '@/utils/web3.js'
+  import vgauService from '@/utils/vgauService.js'
   import { useI18n } from 'vue-i18n'
   import { userFundsAPI, vgauSavingsAPI } from '@/api/apiService.js'
  
@@ -291,6 +292,12 @@
     currentApr: '0',
     pending: '0'
   })
+  
+  // 汇率数据
+  const exchangeRate = ref('123.4561')
+  
+  // 汇率更新定时器
+  let exchangeRateTimer = null
   
   // 格式化数字显示
   const formatNumber = (value) => {
@@ -456,6 +463,52 @@
     
     return walletConnectionStatus.value.isConnected && 
            walletConnectionStatus.value.walletAddress
+  }
+  
+  // 获取汇率数据
+  const getExchangeRate = async () => {
+    try {
+      console.log('💰 开始获取汇率数据...')
+      
+      if (vgauService.isInitialized) {
+        const stats = await vgauService.getPlatformStats()
+        if (stats && stats.price) {
+          exchangeRate.value = parseFloat(stats.price).toFixed(4)
+          console.log('✅ 汇率数据更新:', exchangeRate.value)
+        }
+      } else {
+        console.log('⚠️ vgauService未初始化，使用默认汇率')
+        exchangeRate.value = '123.4561'
+      }
+    } catch (error) {
+      console.error('❌ 获取汇率数据失败:', error)
+      // 发生异常时使用默认值
+      exchangeRate.value = '123.4561'
+    }
+  }
+  
+  // 启动汇率更新定时器
+  const startExchangeRateTimer = () => {
+    // 清除现有定时器
+    if (exchangeRateTimer) {
+      clearInterval(exchangeRateTimer)
+    }
+    
+    // 每30秒更新一次汇率
+    exchangeRateTimer = setInterval(async () => {
+      await getExchangeRate()
+    }, 30000)
+    
+    console.log('✅ DeFi页面汇率更新定时器已启动（30秒间隔）')
+  }
+  
+  // 停止汇率更新定时器
+  const stopExchangeRateTimer = () => {
+    if (exchangeRateTimer) {
+      clearInterval(exchangeRateTimer)
+      exchangeRateTimer = null
+      console.log('⏹️ DeFi页面汇率更新定时器已停止')
+    }
   }
   
   // 获取可领取利息
@@ -998,19 +1051,32 @@
     // 初始化钱包连接状态
     await checkWalletConnection()
     
+    // 初始化vgauService
+    if (!vgauService.isInitialized) {
+      console.log('🔧 初始化vgauService...')
+      await vgauService.init()
+    }
+    
     // 设置钱包事件监听
     setupWalletEventListeners()
     
-    // 获取用户余额和可领取利息
+    // 获取用户余额、可领取利息和汇率数据
     await Promise.all([
       getBalances(),
-      getClaimableInterest()
+      getClaimableInterest(),
+      getExchangeRate()
     ])
+    
+    // 启动汇率更新定时器（无论钱包是否连接）
+    startExchangeRateTimer()
   })
   
   // 页面卸载时清理事件监听
   onUnmounted(() => {
     removeWalletEventListeners()
+    
+    // 停止汇率更新定时器
+    stopExchangeRateTimer()
   })
 </script>
 

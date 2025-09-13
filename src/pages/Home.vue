@@ -247,7 +247,7 @@
   const currentAccount = ref('')
   const accountBalance = ref('0')
   const vgauBalance = ref('0')
-  const tvlData = ref('561,103')
+  const tvlData = ref('1,000')
   const vgauPrice = ref('123.4561')
   const aprData = ref('1%')
   const showWalletModal = ref(false)
@@ -263,6 +263,9 @@
   // 首页兑换相关状态
   const homeExchangeAmount = ref('')
   const isHomeExchangeLoading = ref(false)
+  
+  // 汇率更新定时器
+  let exchangeRateTimer = null
   
   // 复制合同地址到剪贴板
   const copyContractAddress = () => {
@@ -327,7 +330,7 @@
             // 获取VGAU余额
             await updateVGAUBalance()
             
-            // 获取平台数据
+            // 获取平台数据（包括汇率）
             await updatePlatformData()
           } catch (error) {
             console.error('获取数据失败:', error)
@@ -382,13 +385,83 @@
       if (vgauService.isInitialized) {
         const stats = await vgauService.getPlatformStats()
         if (stats) {
-          tvlData.value = parseFloat(stats.tvl).toLocaleString()
-          vgauPrice.value = parseFloat(stats.price).toFixed(2)
+          // TVL数据使用中心化接口，不通过合约获取
+          // tvlData.value = parseFloat(stats.tvl).toLocaleString()
+          vgauPrice.value = parseFloat(stats.price).toFixed(4)
           aprData.value = `${(stats.apr * 100).toFixed(2)}%`
         }
       }
     } catch (error) {
       console.error('获取平台数据失败:', error)
+    }
+  }
+  
+  // 获取TVL数据（中心化接口）
+  const getTVLData = async () => {
+    try {
+      console.log('💰 开始获取TVL数据...')
+      
+      // TODO: 后续对接中心化接口获取TVL数据
+      // 目前使用默认值
+      tvlData.value = '1,000'
+      console.log('✅ TVL数据更新:', tvlData.value)
+      
+      // 示例：对接中心化接口的代码结构
+      // const response = await fetch('/api/tvl')
+      // const data = await response.json()
+      // if (data.success) {
+      //   tvlData.value = parseFloat(data.tvl).toLocaleString()
+      // }
+    } catch (error) {
+      console.error('❌ 获取TVL数据失败:', error)
+      // 发生异常时使用默认值
+      tvlData.value = '1,000'
+    }
+  }
+  
+  // 获取汇率数据（独立于钱包连接状态）
+  const getExchangeRate = async () => {
+    try {
+      console.log('💰 开始获取汇率数据...')
+      
+      if (vgauService.isInitialized) {
+        const stats = await vgauService.getPlatformStats()
+        if (stats && stats.price) {
+          vgauPrice.value = parseFloat(stats.price).toFixed(4)
+          console.log('✅ 汇率数据更新:', vgauPrice.value)
+        }
+      } else {
+        console.log('⚠️ vgauService未初始化，使用默认汇率')
+        vgauPrice.value = '123.4561'
+      }
+    } catch (error) {
+      console.error('❌ 获取汇率数据失败:', error)
+      // 发生异常时使用默认值
+      vgauPrice.value = '123.4561'
+    }
+  }
+  
+  // 启动汇率更新定时器
+  const startExchangeRateTimer = () => {
+    // 清除现有定时器
+    if (exchangeRateTimer) {
+      clearInterval(exchangeRateTimer)
+    }
+    
+    // 每30秒更新一次汇率
+    exchangeRateTimer = setInterval(async () => {
+      await getExchangeRate()
+    }, 30000)
+    
+    console.log('✅ 汇率更新定时器已启动（30秒间隔）')
+  }
+  
+  // 停止汇率更新定时器
+  const stopExchangeRateTimer = () => {
+    if (exchangeRateTimer) {
+      clearInterval(exchangeRateTimer)
+      exchangeRateTimer = null
+      console.log('⏹️ 汇率更新定时器已停止')
     }
   }
   
@@ -613,8 +686,16 @@
         await updateVGAUBalance()
         await updatePlatformData()
       } else {
-        console.log('未检测到已连接的钱包')
+        // 即使钱包未连接，也要获取汇率数据
+        console.log('钱包未连接，但仍获取汇率数据')
+        await getExchangeRate()
       }
+      
+      // 获取TVL数据（无论钱包是否连接）
+      await getTVLData()
+      
+      // 启动汇率更新定时器（无论钱包是否连接）
+      startExchangeRateTimer()
     } catch (error) {
       console.error('服务初始化失败:', error)
     }
@@ -637,6 +718,9 @@
     document.removeEventListener('touchstart', handleClickOutside)
     document.removeEventListener('touchend', handleClickOutside)
     document.removeEventListener('walletAddressMismatch', handleWalletAddressMismatch)
+    
+    // 停止汇率更新定时器
+    stopExchangeRateTimer()
   })
   
   // 处理钱包地址不匹配事件
