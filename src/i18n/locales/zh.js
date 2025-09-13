@@ -57,6 +57,7 @@ export default {
     processing: '處理中...',
     operationSuccess: '操作成功',
     operationFailed: '操作失敗',
+    loadFailed: '加載失敗',
     insufficientFunds: '餘額不足',
     userRejected: '用戶取消操作',
     gasInsufficient: 'Gas費用不足',
@@ -293,13 +294,21 @@ export default {
       liquidationPriceValue: '$0.85',
       noMoreData: '沒有更多數據',
       completed: '已完成',
-      details: '詳情'
+      details: '詳情',
+      ordersList: '借貸訂單',
+      status: {
+        active: '進行中',
+        completed: '已完成',
+        liquidated: '已清算',
+        cancelled: '已取消',
+        pending: '待處理'
+      }
     },
 
     // 借貸詳情
     borrowingDetail: {
       title: '借貸詳情',
-      orderId: '訂單 L-202503-0133',
+      orderId: '訂單號',
       borrowingStatus: '借款中',
       completedStatus: '已完成',
       collatRate: '抵押率',
@@ -320,9 +329,12 @@ export default {
         completed: '已完成'
       },
       status: {
+        pending: '待處理',
         staking: '質押中',
         toClaim: '待領取',
-        completed: '已完成'
+        completed: '已完成',
+        cancelled: '已取消',
+        redeemed: '已贖回'
       },
       viewDetails: '查看詳情',
       noTransactionsFound: '暫無理財交易記錄'

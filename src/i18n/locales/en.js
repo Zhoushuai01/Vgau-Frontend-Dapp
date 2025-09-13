@@ -297,7 +297,7 @@ export default {
     // Borrowing Detail
     borrowingDetail: {
       title: 'Borrowing Details',
-      orderId: 'Order L-202503-0133',
+      orderId: 'Order ID',
       borrowingStatus: 'Borrowing',
       completedStatus: 'Completed',
       collatRate: 'Collat. Rate',
@@ -318,9 +318,12 @@ export default {
         completed: 'Completed'
       },
       status: {
+        pending: 'Pending',
         staking: 'Staking',
         toClaim: 'To Claim',
-        completed: 'Completed'
+        completed: 'Completed',
+        cancelled: 'Cancelled',
+        redeemed: 'Redeemed'
       },
       viewDetails: 'View Details',
       noTransactionsFound: 'No earn transactions found'

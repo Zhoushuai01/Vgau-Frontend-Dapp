@@ -15,29 +15,44 @@
       <view class="status-left">
         <text class="status-text" :class="{ 'completed': orderStatus === 'completed' }">{{ orderStatus === 'completed' ? t('history.borrowingDetail.completedStatus') : t('history.borrowingDetail.borrowingStatus') }}</text>
       </view>
-      <view class="order-id">
-        <text class="order-text">{{ t('history.borrowingDetail.orderId') }}</text>
-      </view>
+    </view>
+    
+    <!-- 订单号 -->
+    <view class="order-number-section">
+      <text class="order-text">{{ t('history.borrowingDetail.orderId') }}: {{ orderDetail.orderNumber || orderNumber }}</text>
     </view>
 
     <!-- 主要内容区域 -->
     <view class="main-content">
-      <!-- 借贷概览信息 -->
+      <!-- 加载状态 -->
+      <view v-if="loading" class="loading-container">
+        <text class="loading-text">{{ t('common.loading') || '加载中...' }}</text>
+      </view>
+      
+      <!-- 错误状态 -->
+      <view v-else-if="error" class="error-container">
+        <text class="error-text">{{ error }}</text>
+        <button class="retry-button" @click="fetchOrderDetail">{{ t('common.retry') || '重试' }}</button>
+      </view>
+      
+      <!-- 正常内容 -->
+      <template v-else>
+        <!-- 借贷概览信息 -->
       <view class="detail-item">
         <text class="detail-label">{{ t('history.borrowingDetail.collatRate') }}</text>
-        <text class="detail-value">80%</text>
+        <text class="detail-value">{{ orderDetail.currentLtvRatio ? orderDetail.currentLtvRatio.toFixed(2) + '%' : '--' }}</text>
       </view>
       <view class="detail-item">
         <text class="detail-label">{{ t('history.borrowingDetail.collateralVGAU') }}</text>
-        <text class="detail-value">1,700</text>
+        <text class="detail-value">{{ orderDetail.collateralAmount !== undefined && orderDetail.collateralAmount !== null ? orderDetail.collateralAmount.toLocaleString() : '--' }}</text>
       </view>
       <view class="detail-item">
         <text class="detail-label">{{ t('history.borrowingDetail.netAPR') }}</text>
-        <text class="detail-value">84.2255</text>
+        <text class="detail-value">{{ orderDetail.annualRateAsPercentage ? orderDetail.annualRateAsPercentage.toFixed(4) : '--' }}</text>
       </view>
       <view class="detail-item">
         <text class="detail-label">{{ t('history.borrowingDetail.liqPrice') }}</text>
-        <text class="detail-value">84.2255</text>
+        <text class="detail-value">{{ orderDetail.liquidationReferencePrice !== undefined && orderDetail.liquidationReferencePrice !== null ? orderDetail.liquidationReferencePrice.toFixed(4) : '--' }}</text>
       </view>
 
       <!-- 交易历史列表 -->
@@ -55,10 +70,11 @@
         </view>
       </view>
 
-      <!-- 底部提示 -->
-      <view class="footer-hint">
-        <text class="hint-text">{{ t('history.borrowingDetail.noMoreData') }}</text>
-      </view>
+        <!-- 底部提示 -->
+        <view class="footer-hint">
+          <text class="hint-text">{{ t('history.borrowingDetail.noMoreData') }}</text>
+        </view>
+      </template>
     </view>
   </view>
 </template>
@@ -66,62 +82,282 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import apiService from '@/api/apiService.js'
 
 const { t } = useI18n()
 
 // 订单状态 - 根据路由参数或页面来源动态设置
 const orderStatus = ref('borrowing') // 默认为 'borrowing'
+const orderNumber = ref('') // 订单号
+const loading = ref(false) // 加载状态
+const error = ref(null) // 错误信息
+
+// 订单详情数据
+const orderDetail = ref({
+  orderNumber: '',
+  status: '',
+  currentLtvRatio: 0,
+  collateralAmount: 0,
+  liquidationReferencePrice: 0,
+  totalDebtUsdt: 0,
+  annualRateAsPercentage: 0,
+  currentVgauPrice: 0,
+  riskLevel: '',
+  riskMessage: '',
+  createTime: '',
+  loanTime: ''
+})
 
 // 在页面加载时检查来源并设置状态
-onMounted(() => {
+onMounted(async () => {
   // 获取页面参数
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
   const options = currentPage.options || {}
   
-  // 从页面参数获取状态，或者根据其他条件判断
+  console.log('📋 页面参数:', options)
+  
+  // 处理从 History.vue 传递的 order 参数
+  if (options.order) {
+    try {
+      const orderData = JSON.parse(decodeURIComponent(options.order))
+      console.log('📋 解析的订单数据:', orderData)
+      
+      if (orderData.orderNumber) {
+        orderNumber.value = orderData.orderNumber
+      }
+      
+      if (orderData.status) {
+        orderStatus.value = orderData.status === 'COMPLETED' ? 'completed' : 'borrowing'
+      }
+      
+      // 如果有订单数据，先填充基本信息，然后获取完整详情
+      if (orderData.currentLtvRatio) {
+        orderDetail.value.currentLtvRatio = orderData.currentLtvRatio
+      }
+      if (orderData.collateralAmount) {
+        orderDetail.value.collateralAmount = orderData.collateralAmount
+      }
+    } catch (error) {
+      console.error('❌ 解析订单数据失败:', error)
+    }
+  }
+  
+  // 处理单独的 orderNumber 参数
+  if (options.orderNumber) {
+    orderNumber.value = options.orderNumber
+  }
+  
+  // 处理状态参数
   if (options.status) {
     orderStatus.value = options.status
   } else if (options.type === 'completed' || options.completed === 'true') {
     orderStatus.value = 'completed'
   }
+  
+  // 如果有订单号，获取订单详情
+  if (orderNumber.value) {
+    await fetchOrderDetail()
+  } else {
+    console.warn('⚠️ 没有订单号，无法获取订单详情')
+    // 如果没有订单号，尝试获取订单列表来测试 API 连接
+    await testApiConnection()
+  }
 })
 
+// 获取订单详情
+const fetchOrderDetail = async () => {
+  if (!orderNumber.value) {
+    console.warn('⚠️ 订单号为空，无法获取订单详情')
+    return
+  }
+  
+  try {
+    loading.value = true
+    error.value = null
+    
+    console.log('📡 开始获取订单详情，订单号:', orderNumber.value)
+    console.log('📡 API 端点:', `${apiService.baseURL}/loan/orders/${orderNumber.value}`)
+    
+    const response = await apiService.loan.getOrderDetail(orderNumber.value)
+    
+    console.log('✅ 订单详情获取成功:', response)
+    console.log('✅ 响应状态:', response?.success)
+    console.log('✅ 响应数据:', response?.data)
+    
+    if (response && response.success && response.data) {
+      const data = response.data
+      
+      console.log('✅ 抵押品数据:', {
+        collateralAmount: data.collateralAmount,
+        collateralAmountStandard: data.collateralAmountStandard,
+        collateralAmountInStandardUnit: data.collateralAmountInStandardUnit
+      })
+      console.log('✅ 清算价格:', data.liquidationReferencePrice)
+      
+      // 更新订单详情数据
+      orderDetail.value = {
+        orderNumber: data.orderNumber || '',
+        status: data.status || '',
+        currentLtvRatio: data.currentLtvRatioAsPercentage || data.currentLtvRatio || 0,
+        collateralAmount: data.collateralAmount || 
+                         data.collateralAmountStandard || 
+                         data.collateralAmountInStandardUnit || 
+                         (data.collateralAmount && typeof data.collateralAmount === 'number' && data.collateralAmount > 0 ? data.collateralAmount / 1e18 : 0) ||
+                         (data.totalCollateralAmount ? data.totalCollateralAmount : 0),
+        liquidationReferencePrice: data.liquidationReferencePrice !== undefined && data.liquidationReferencePrice !== null ? 
+          (typeof data.liquidationReferencePrice === 'string' ? parseFloat(data.liquidationReferencePrice) : data.liquidationReferencePrice) : 0,
+        totalDebtUsdt: data.totalDebtUsdt || 0,
+        annualRateAsPercentage: data.annualRateAsPercentage || 0,
+        currentVgauPrice: data.currentVgauPrice || 0,
+        riskLevel: data.riskLevel || '',
+        riskMessage: data.riskMessage || '',
+        createTime: data.createTime || '',
+        loanTime: data.loanTime || ''
+      }
+      
+      // 根据订单状态更新显示状态
+      if (data.status === 'COMPLETED' || data.finalStatus) {
+        orderStatus.value = 'completed'
+      } else if (data.status === 'ACTIVE') {
+        orderStatus.value = 'borrowing'
+      } else {
+        orderStatus.value = data.status?.toLowerCase() || 'borrowing'
+      }
+      
+      console.log('📊 订单详情数据更新完成，抵押品数量:', orderDetail.value.collateralAmount)
+      
+      // 生成交易历史
+      generateTransactionHistory()
+    } else {
+      console.warn('⚠️ API返回数据格式异常:', response)
+      error.value = '获取订单详情失败'
+    }
+  } catch (err) {
+    console.error('❌ 获取订单详情失败:', err)
+    error.value = err.message || '获取订单详情失败'
+    
+    // 显示错误提示
+    uni.showToast({
+      title: error.value,
+      icon: 'none',
+      duration: 3000
+    })
+  } finally {
+    loading.value = false
+  }
+}
 
+// 测试 API 连接
+const testApiConnection = async () => {
+  try {
+    console.log('🔍 测试 API 连接...')
+    const response = await apiService.loan.getOrders()
+    console.log('✅ API 连接测试成功:', response)
+    
+    if (response && response.success && response.data) {
+      console.log('📊 订单列表数据:', response.data)
+      // 如果有订单，使用第一个订单的详情
+      let orders = []
+      if (Array.isArray(response.data)) {
+        orders = response.data
+      } else if (response.data.records && Array.isArray(response.data.records)) {
+        orders = response.data.records
+      } else if (response.data.orders && Array.isArray(response.data.orders)) {
+        orders = response.data.orders
+      } else if (response.data.list && Array.isArray(response.data.list)) {
+        orders = response.data.list
+      }
+      
+      if (orders.length > 0) {
+        const firstOrder = orders[0]
+        console.log('📋 使用第一个订单:', firstOrder)
+        orderNumber.value = firstOrder.orderNumber
+        await fetchOrderDetail()
+      } else {
+        console.warn('⚠️ 没有找到任何订单')
+      }
+    }
+  } catch (error) {
+    console.error('❌ API 连接测试失败:', error)
+    error.value = 'API 连接失败: ' + (error.message || '未知错误')
+  }
+}
 
 // 交易数据
-const transactions = ref([
-  {
-    action: t('history.borrowingDetail.addCollat'),
-    date: '2025-01-15 14:32',
-    amount: '-500 VGAU',
-    amountClass: 'negative'
-  },
-  {
-    action: t('history.borrowingDetail.addCollat'),
-    date: '2025-01-15 14:32',
-    amount: '-500 VGAU',
-    amountClass: 'negative'
-  },
-  {
-    action: t('history.borrowingDetail.addCollat'),
-    date: '2025-01-15 14:32',
-    amount: '-200 VGAU',
-    amountClass: 'negative'
-  },
-  {
-    action: t('history.borrowingDetail.borrow'),
-    date: '2025-01-15 14:32',
-    amount: '+500 USDT',
-    amountClass: 'positive'
-  },
-  {
-    action: t('history.borrowingDetail.collateral'),
-    date: '2025-01-15 14:32',
-    amount: '-500 VGAU',
-    amountClass: 'negative'
+const transactions = ref([])
+
+// 生成交易历史数据
+const generateTransactionHistory = () => {
+  if (!orderDetail.value.orderNumber) {
+    transactions.value = []
+    return
   }
-])
+  
+  const history = []
+  
+  // 如果有创建时间，添加初始抵押记录
+  if (orderDetail.value.createTime) {
+    history.push({
+      action: t('history.borrowingDetail.collateral'),
+      date: formatDate(orderDetail.value.createTime),
+      amount: `-${formatAmount(orderDetail.value.collateralAmount)} VGAU`,
+      amountClass: 'negative'
+    })
+  }
+  
+  // 如果有放款时间，添加借款记录
+  if (orderDetail.value.loanTime) {
+    history.push({
+      action: t('history.borrowingDetail.borrow'),
+      date: formatDate(orderDetail.value.loanTime),
+      amount: `+${formatAmount(orderDetail.value.totalDebtUsdt)} USDT`,
+      amountClass: 'positive'
+    })
+  }
+  
+  // 如果订单已完成，添加完成记录
+  if (orderDetail.value.status === 'COMPLETED' || orderDetail.value.finalStatus) {
+    history.push({
+      action: t('history.borrowingDetail.completed'),
+      date: formatDate(new Date()),
+      amount: t('history.borrowingDetail.orderCompleted'),
+      amountClass: 'completed'
+    })
+  }
+  
+  transactions.value = history
+}
+
+// 格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  
+  try {
+    const date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}`
+  } catch (error) {
+    console.error('日期格式化错误:', error)
+    return dateString
+  }
+}
+
+// 格式化金额，保留小数点后四位，多的零清零
+const formatAmount = (amount) => {
+  if (amount === undefined || amount === null || amount === 0) return '0'
+  
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount
+  if (isNaN(num)) return '0'
+  
+  // 保留4位小数，然后去掉末尾的零
+  return num.toFixed(4).replace(/\.?0+$/, '')
+}
 
 // 返回上一页
 const goBack = () => {
@@ -197,7 +433,7 @@ const goBack = () => {
 .status-indicator {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 24rpx 32rpx;
   padding-top: 120rpx;
 }
@@ -215,6 +451,21 @@ const goBack = () => {
 
 .status-text.completed {
   color: #00CC66;
+}
+
+/* 订单号部分 */
+.order-number-section {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 16rpx 32rpx;
+  padding-bottom: 24rpx;
+}
+
+.order-text {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 400;
 }
 
 /* 主要内容区域 */
@@ -303,6 +554,55 @@ const goBack = () => {
 
 .transaction-amount.negative {
   color: #FF6B6B;
+}
+
+.transaction-amount.completed {
+  color: #00CC66;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+}
+
+.loading-text {
+  font-size: 32rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+/* 错误状态 */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 32rpx;
+  gap: 32rpx;
+}
+
+.error-text {
+  font-size: 32rpx;
+  color: #FF6B6B;
+  font-weight: 400;
+  text-align: center;
+}
+
+.retry-button {
+  background: #00CC66;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 16rpx;
+  padding: 24rpx 48rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.retry-button:active {
+  background: #00B359;
 }
 
 /* 底部提示 */

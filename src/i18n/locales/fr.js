@@ -283,7 +283,7 @@ export default {
     },
     borrowingDetail: {
       title: 'Détails de l\'Emprunt',
-      orderId: 'Commande L-202503-0133',
+      orderId: 'ID de Commande',
       borrowingStatus: 'Emprunt',
       completedStatus: 'Terminé',
       collatRate: 'Taux de Garantie',

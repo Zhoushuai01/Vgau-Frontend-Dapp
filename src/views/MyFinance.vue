@@ -151,22 +151,7 @@ const fetchStakeOrders = async () => {
       console.log('⚠️ 后端无数据，使用测试数据')
       // 测试数据 - 包含已到期和未到期的订单
       ordersData = [
-        {
-          id: 1,
-          firstStakeTime: '2025-01-15T10:30:00Z',
-          lastStakeTime: '2025-02-15T10:30:00Z',
-          totalStakeAmount: '100',
-          totalInterestEarned: '5.5',
-          status: 'staking'
-        },
-        {
-          id: 2,
-          firstStakeTime: '2025-01-20T14:20:00Z',
-          lastStakeTime: '2024-12-20T14:20:00Z', // 已过期的订单
-          totalStakeAmount: '200',
-          totalInterestEarned: '12.0',
-          status: 'staking'
-        }
+        // 示例数据已移除，将从 API 获取真实数据
       ]
     }
     

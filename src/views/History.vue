@@ -106,78 +106,62 @@
            <view class="card-header">
              <text class="debt-title">{{ t('history.loans.totalDebt') }}</text>
            </view>
-           <text class="debt-amount">{{ t('history.loans.totalDebtAmount') }}</text>
+           <text class="debt-amount">{{ formatUsdtAmount(loanData.totalDebtUsdt) }} USDT</text>
            <view class="debt-details">
              <view class="detail-row">
                <text class="detail-label">{{ t('history.loans.collateralAmt') }}</text>
-               <text class="detail-value">{{ t('history.loans.collateralAmtValue') }}</text>
+               <text class="detail-value">{{ formatUsdtAmount(loanData.collateralAmount) }} VGAU</text>
              </view>
              <view class="detail-row">
                <text class="detail-label">{{ t('history.loans.borrowedAmt') }}</text>
-               <text class="detail-value">{{ t('history.loans.borrowedAmtValue') }}</text>
+               <text class="detail-value">{{ formatUsdtAmount(loanData.borrowedAmount) }} USDT</text>
              </view>
            </view>
            <view class="risk-warning">
              <view class="warning-icon">⚠</view>
              <text class="warning-text">{{ t('history.loans.riskWarning') }}</text>
            </view>
-         </view>
+          </view>
 
-         <!-- 第一个借贷状态卡片 -->
-         <view class="loan-status-card">
-           <view class="borrowing-item">
-             <view class="borrowing-header">
-               <text class="borrowing-status">{{ t('history.loans.borrowing') }}</text>
-               <view class="status-badge" @click="goToBorrowingDetail('borrowing')">
-                 <text class="badge-text">{{ t('history.loans.details') }}</text>
+          <!-- 借贷订单列表 -->
+         <view class="loan-orders-list" v-if="loanOrders.length > 0">
+           <view class="list-title">
+             <text class="title-text">{{ t('history.loans.ordersList') }}</text>
+           </view>
+           <view class="orders-container">
+             <view class="loan-order-item" v-for="(order, index) in loanOrders" :key="index">
+               <view class="order-header">
+                 <view class="order-info">
+                   <text class="order-status" :class="getLoanStatusClass(order.status)">
+                     {{ getLoanStatusText(order.status) }}
+                   </text>
+                   <text class="order-number">{{ order.orderNumber || '--' }}</text>
+                 </view>
+                 <view class="details-btn" @click="goToBorrowingDetail(order)">
+                   <text class="details-text">{{ t('history.loans.details') }}</text>
+                 </view>
                </view>
-             </view>
-             <view class="borrowing-details">
-               <view class="detail-item">
-                 <text class="detail-label">{{ t('history.loans.stakingRate') }}</text>
-                 <text class="detail-amount">{{ t('history.loans.stakingRateValue') }}</text>
-               </view>
-               <view class="detail-item">
-                 <text class="detail-label">{{ t('history.loans.collateralVGAU') }}</text>
-                 <text class="detail-amount">{{ t('history.loans.collateralVGAUValue') }}</text>
-               </view>
-               <view class="detail-item">
-                 <text class="detail-label">{{ t('history.loans.borrowedUSDT') }}</text>
-                 <text class="detail-amount">{{ t('history.loans.borrowedUSDTValue') }}</text>
+               <view class="order-details">
+                 <view class="detail-row">
+                   <text class="detail-label">质押率</text>
+                   <text class="detail-value">{{ formatLtvRatio(order.currentLtvRatio) }}</text>
+                 </view>
+                 <view class="detail-row">
+                   <text class="detail-label">抵押品 (VGAU)</text>
+                   <text class="detail-value">{{ order.collateralAmount || '0' }}</text>
+                 </view>
+                 <view class="detail-row">
+                   <text class="detail-label">借入 (USDT)</text>
+                   <text class="detail-value">{{ formatUsdtAmount(order.loanAmount) }}</text>
+                 </view>
                </view>
              </view>
            </view>
          </view>
 
-                    <!-- 第二个借贷状态卡片 -->
-         <view class="loan-status-card">
-           <view class="borrowing-item">
-             <view class="borrowing-header">
-               <text class="borrowing-status complete-status">{{ t('history.loans.completed') }}</text>
-               <view class="status-badge" @click="goToBorrowingDetail('completed')">
-                 <text class="badge-text">{{ t('history.loans.details') }}</text>
-               </view>
-             </view>
-             <view class="borrowing-details">
-               <view class="detail-item">
-                 <text class="detail-label">{{ t('history.loans.stakingRate') }}</text>
-                 <text class="detail-amount">{{ t('history.loans.stakingRateValue') }}</text>
-               </view>
-               <view class="detail-item">
-                 <text class="detail-label">{{ t('history.loans.collateralVGAU') }}</text>
-                 <text class="detail-amount">{{ t('history.loans.collateralVGAUValue') }}</text>
-               </view>
-               <view class="detail-item">
-                 <text class="detail-label">{{ t('history.loans.borrowedUSDT') }}</text>
-                 <text class="detail-amount">{{ t('history.loans.borrowedUSDTValue') }}</text>
-               </view>
-             </view>
-           </view>
-         </view>
-
-         <!-- 底部提示 -->
-         <view class="bottom-hint">
-           <text class="hint-text">{{ t('history.loans.noMoreData') }}</text>
+         <!-- 无借贷订单状态 -->
+         <view class="empty-loan-orders" v-if="loanOrders.length === 0" style="text-align: center; padding: 40rpx; color: rgba(255,255,255,0.5);">
+           <text>暂无借贷订单</text>
          </view>
        </view>
 
@@ -256,7 +240,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { defiAPI } from '@/api/apiService'
+import { defiAPI, loanAPI, stakeAPI } from '@/api/apiService'
 
 const { t } = useI18n()
 
@@ -270,27 +254,21 @@ const loading = ref(false)
 // 充值订单数据
 const depositOrders = ref([])
 
+// 借贷数据
+const loanData = ref({
+  totalDebtUsdt: '0',
+  collateralAmount: '0',
+  borrowedAmount: '0'
+})
+
+// 借贷订单列表
+const loanOrders = ref([])
+
 // Earn 交易数据
-const earnTransactions = ref([
-  {
-    status: t('history.earn.status.staking'),
-    amount: '10 VGAU',
-    date: '2025-01-15 14:32',
-    statusClass: 'staking'
-  },
-  {
-    status: t('history.earn.status.toClaim'),
-    amount: '10 VGAU',
-    date: '2025-01-15 14:32',
-    statusClass: 'toClaim'
-  },
-  {
-    status: t('history.earn.status.completed'),
-    amount: '10 VGAU',
-    date: '2025-01-15 14:32',
-    statusClass: 'completed'
-  }
-])
+const earnTransactions = ref([])
+
+// 质押订单数据
+const stakeOrders = ref([])
 
 // 计算属性 - 处理充值订单数据
 const processedTransactions = computed(() => {
@@ -328,12 +306,29 @@ const filteredTransactions = computed(() => {
   })
 })
 
+// 计算属性 - 处理质押订单数据
+const processedStakeOrders = computed(() => {
+  return stakeOrders.value.map(order => {
+    const status = order.status || 'PENDING'
+    const statusClass = getStakeStatusClass(status)
+    
+    return {
+      id: order.orderId || order.id,
+      status: getStakeStatusText(status),
+      statusClass: statusClass,
+      amount: `${order.amount || '0'} VGAU`,
+      date: formatDate(order.createdAt || order.created_at),
+      rawData: order
+    }
+  })
+})
+
 // Earn 交易筛选
 const filteredEarnTransactions = computed(() => {
   if (earnActiveTab.value === 'all') {
-    return earnTransactions.value
+    return processedStakeOrders.value
   }
-  return earnTransactions.value.filter(tx => {
+  return processedStakeOrders.value.filter(tx => {
     if (earnActiveTab.value === 'staking') {
       return tx.statusClass === 'staking'
     } else if (earnActiveTab.value === 'toClaim') {
@@ -415,6 +410,87 @@ const getStatusClass = (status) => {
   return classMap[status] || 'pending'
 }
 
+// 获取借贷订单状态文本
+const getLoanStatusText = (status) => {
+  const statusMap = {
+    'ACTIVE': t('history.loans.status.active'),
+    'COMPLETED': t('history.loans.status.completed'),
+    'LIQUIDATED': t('history.loans.status.liquidated'),
+    'CANCELLED': t('history.loans.status.cancelled'),
+    'PENDING': t('history.loans.status.pending')
+  }
+  return statusMap[status] || status
+}
+
+// 获取借贷订单状态样式类
+const getLoanStatusClass = (status) => {
+  const classMap = {
+    'ACTIVE': 'active',
+    'COMPLETED': 'completed',
+    'LIQUIDATED': 'liquidated',
+    'CANCELLED': 'cancelled',
+    'PENDING': 'pending'
+  }
+  return classMap[status] || 'pending'
+}
+
+// 获取质押订单状态文本
+const getStakeStatusText = (status) => {
+  const statusMap = {
+    'PENDING': t('history.earn.status.pending'),
+    'ACTIVE': t('history.earn.status.staking'),
+    'COMPLETED': t('history.earn.status.completed'),
+    'CANCELLED': t('history.earn.status.cancelled'),
+    'REDEEMED': t('history.earn.status.redeemed'),
+    'TO_CLAIM': t('history.earn.status.toClaim')
+  }
+  return statusMap[status] || status
+}
+
+// 获取质押订单状态样式类
+const getStakeStatusClass = (status) => {
+  const classMap = {
+    'PENDING': 'pending',
+    'ACTIVE': 'staking',
+    'COMPLETED': 'completed',
+    'CANCELLED': 'cancelled',
+    'REDEEMED': 'completed',
+    'TO_CLAIM': 'toClaim'
+  }
+  return classMap[status] || 'pending'
+}
+
+// 格式化质押率显示
+const formatLtvRatio = (value) => {
+  if (!value || value === null || value === undefined) {
+    return '--'
+  }
+  
+  const num = parseFloat(value)
+  if (isNaN(num)) {
+    return '--'
+  }
+  
+  // 转换为百分比并格式化
+  const percentage = (num * 100).toFixed(2)
+  return parseFloat(percentage).toString() + '%'
+}
+
+// 格式化USDT金额显示，保留小数点后四位
+const formatUsdtAmount = (value) => {
+  if (!value || value === null || value === undefined) {
+    return '0'
+  }
+  
+  const num = parseFloat(value)
+  if (isNaN(num)) {
+    return '0'
+  }
+  
+  // 先格式化为4位小数，然后去除末尾的零
+  return parseFloat(num.toFixed(4)).toString()
+}
+
 // 获取充值订单列表
 const fetchDepositOrders = async () => {
   try {
@@ -441,6 +517,139 @@ const fetchDepositOrders = async () => {
     depositOrders.value = []
   } finally {
     loading.value = false
+  }
+}
+
+// 获取借贷数据
+const fetchLoanData = async () => {
+  try {
+    console.log('📡 开始获取借贷数据...')
+    
+    // 先获取订单列表
+    try {
+      const ordersResponse = await loanAPI.getOrders()
+      console.log('📡 借贷订单响应:', ordersResponse)
+      console.log('📡 借贷订单响应类型:', typeof ordersResponse)
+      console.log('📡 借贷订单响应数据结构:', JSON.stringify(ordersResponse, null, 2))
+      
+      // 处理订单列表数据
+      if (ordersResponse && ordersResponse.data) {
+        let orders = []
+        if (Array.isArray(ordersResponse.data)) {
+          orders = ordersResponse.data
+        } else if (ordersResponse.data.records && Array.isArray(ordersResponse.data.records)) {
+          orders = ordersResponse.data.records
+        } else if (ordersResponse.data.orders && Array.isArray(ordersResponse.data.orders)) {
+          orders = ordersResponse.data.orders
+        } else if (ordersResponse.data.list && Array.isArray(ordersResponse.data.list)) {
+          orders = ordersResponse.data.list
+        }
+        
+        // 保存订单列表数据
+        loanOrders.value = orders
+        console.log('✅ 借贷订单列表获取成功:', loanOrders.value.length, '条记录')
+        console.log('📋 订单详情:', loanOrders.value)
+      } else {
+        console.warn('⚠️ 借贷订单响应格式异常:', ordersResponse)
+        loanOrders.value = []
+      }
+    } catch (ordersError) {
+      console.error('❌ 获取借贷订单列表失败:', ordersError)
+      loanOrders.value = []
+    }
+    
+    // 单独获取统计数据，失败不影响订单列表
+    try {
+      const statisticsResponse = await loanAPI.getStatistics()
+      console.log('📡 借贷统计响应:', statisticsResponse)
+      
+      // 处理统计数据
+      if (statisticsResponse && statisticsResponse.data) {
+        const stats = statisticsResponse.data
+        loanData.value = {
+          totalDebtUsdt: stats.totalActiveDebt || '0',
+          collateralAmount: stats.totalCollateralAmount || '0',
+          borrowedAmount: stats.totalBorrowedUsdt || '0'
+        }
+        console.log('✅ 借贷统计数据获取成功:', loanData.value)
+      } else {
+        console.warn('⚠️ 借贷统计响应格式异常:', statisticsResponse)
+        loanData.value = {
+          totalDebtUsdt: '0',
+          collateralAmount: '0',
+          borrowedAmount: '0'
+        }
+      }
+    } catch (statisticsError) {
+      console.error('❌ 获取借贷统计数据失败:', statisticsError)
+      console.error('❌ 统计错误详情:', {
+        message: statisticsError.message,
+        stack: statisticsError.stack,
+        response: statisticsError.response
+      })
+      // 统计接口失败时使用默认值
+      loanData.value = {
+        totalDebtUsdt: '0',
+        collateralAmount: '0',
+        borrowedAmount: '0'
+      }
+    }
+  } catch (error) {
+    console.error('❌ 获取借贷数据失败:', error)
+    console.error('❌ 错误详情:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response
+    })
+    loanData.value = {
+      totalDebtUsdt: '0',
+      collateralAmount: '0',
+      borrowedAmount: '0'
+    }
+    loanOrders.value = []
+  }
+}
+
+// 获取质押订单数据
+const fetchStakeOrders = async () => {
+  try {
+    console.log('📡 开始获取质押订单数据...')
+    
+    const response = await stakeAPI.getOrders()
+    console.log('📡 质押订单响应:', response)
+    
+    if (response && response.data) {
+      let orders = []
+      if (Array.isArray(response.data)) {
+        orders = response.data
+      } else if (response.data.records && Array.isArray(response.data.records)) {
+        orders = response.data.records
+      } else if (response.data.orders && Array.isArray(response.data.orders)) {
+        orders = response.data.orders
+      } else if (response.data.list && Array.isArray(response.data.list)) {
+        orders = response.data.list
+      }
+      
+      stakeOrders.value = orders
+      console.log('✅ 质押订单列表获取成功:', stakeOrders.value.length, '条记录')
+      console.log('📋 质押订单详情:', stakeOrders.value)
+    } else {
+      console.warn('⚠️ 质押订单响应格式异常:', response)
+      stakeOrders.value = []
+    }
+  } catch (error) {
+    console.error('❌ 获取质押订单列表失败:', error)
+    console.error('❌ 错误详情:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response
+    })
+    uni.showToast({
+      title: t('common.error.networkError'),
+      icon: 'none',
+      duration: 2000
+    })
+    stakeOrders.value = []
   }
 }
 
@@ -477,26 +686,61 @@ const viewTransactionDetail = (transaction) => {
 
 // 查看Earn交易详情
 const viewEarnTransactionDetail = (transaction) => {
-  const params = {
-    days: '10',
-    apy: '5',
-    orderId: 'L-202503-013',
-    start: '2025-07-15',
-    end: '2025-07-25',
-    completed: transaction.statusClass === 'completed' ? 'true' : 'false'
+  if (transaction.rawData) {
+    // 如果有原始数据，传递订单信息
+    const orderData = {
+      orderId: transaction.rawData.orderId || transaction.rawData.id,
+      status: transaction.rawData.status,
+      amount: transaction.rawData.amount,
+      days: transaction.rawData.days || '',
+      apy: transaction.rawData.apy || '',
+      start: transaction.rawData.startDate || transaction.rawData.createdAt,
+      end: transaction.rawData.endDate || transaction.rawData.expiresAt,
+      completed: transaction.statusClass === 'completed' ? 'true' : 'false'
+    }
+    
+    const query = Object.entries(orderData).map(([k,v]) => `${k}=${encodeURIComponent(v || '')}`).join('&')
+    uni.navigateTo({
+      url: `/views/StakingDetail?${query}`
+    })
+  } else {
+    // 默认情况
+    const params = {
+      days: '',
+      apy: '',
+      orderId: '',
+      start: '',
+      end: '',
+      completed: transaction.statusClass === 'completed' ? 'true' : 'false'
+    }
+    const query = Object.entries(params).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&')
+    uni.navigateTo({
+      url: `/views/StakingDetail?${query}`
+    })
   }
-  const query = Object.entries(params).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&')
-  uni.navigateTo({
-    url: `/views/StakingDetail?${query}`
-  })
 }
 
 
 // 前往借贷详情
-const goToBorrowingDetail = (status = 'borrowing') => {
-  uni.navigateTo({
-    url: `/views/BorrowingDetail?status=${status}`
-  })
+const goToBorrowingDetail = (order) => {
+  if (order && order.orderNumber) {
+    // 如果有订单号，传递订单信息
+    const orderData = {
+      orderNumber: order.orderNumber,
+      status: order.status,
+      collateralAmount: order.collateralAmount,
+      loanAmount: order.loanAmount,
+      currentLtvRatio: order.currentLtvRatio
+    }
+    uni.navigateTo({
+      url: `/views/BorrowingDetail?order=${encodeURIComponent(JSON.stringify(orderData))}`
+    })
+  } else {
+    // 默认情况
+    uni.navigateTo({
+      url: `/views/BorrowingDetail?status=borrowing`
+    })
+  }
 }
 
 // 返回上一页
@@ -516,6 +760,8 @@ const loadMore = () => {
 onMounted(() => {
   // 初始化逻辑
   fetchDepositOrders()
+  fetchLoanData()
+  fetchStakeOrders()
 })
 </script>
 
@@ -1024,6 +1270,130 @@ onMounted(() => {
   font-size: 28rpx;
   color: rgba(255, 255, 255, 0.5);
   font-weight: 400;
+}
+
+/* 借贷订单列表样式 */
+.loan-orders-list {
+  margin-bottom: 32rpx;
+}
+
+.list-title {
+  margin-bottom: 24rpx;
+}
+
+.list-title .title-text {
+  font-size: 32rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.orders-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.loan-order-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  transition: all 0.3s ease;
+}
+
+.loan-order-item:active {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(0.98);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.order-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.order-status {
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.order-status.active {
+  color: #00CC66;
+}
+
+.order-status.completed {
+  color: #FFFFFF;
+}
+
+.order-status.liquidated {
+  color: #FF6B6B;
+}
+
+.order-status.cancelled {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.order-status.pending {
+  color: #FFA500;
+}
+
+.order-number {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.details-btn {
+  padding: 12rpx 24rpx;
+  background: #333333;
+  border: 1rpx solid #444444;
+  border-radius: 24rpx;
+  min-width: 100rpx;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.details-btn:active {
+  background: #444444;
+  transform: scale(0.95);
+}
+
+.details-text {
+  font-size: 24rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.order-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.order-details .detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-details .detail-label {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+.order-details .detail-value {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 500;
 }
 
 /* Earn 内容样式 */

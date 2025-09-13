@@ -283,7 +283,7 @@ export default {
     },
     borrowingDetail: {
       title: 'تفاصيل الاقتراض',
-      orderId: 'الطلب L-202503-0133',
+      orderId: 'رقم الطلب',
       borrowingStatus: 'جاري الاقتراض',
       completedStatus: 'مكتمل',
       collatRate: 'معدل الضمان',

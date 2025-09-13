@@ -14,7 +14,7 @@
     <view class="total-points-card">
       <view class="points-info">
         <text class="points-label">{{ t('components.pointsDetails.totalPoints') }}</text>
-        <text class="points-value">123.156</text>
+        <text class="points-value">{{ totalPoints }}</text>
       </view>
     </view>
 
@@ -44,7 +44,13 @@
 
     <!-- 积分明细列表 -->
     <view class="points-list">
-      <view class="points-item" v-for="(item, index) in filteredPointsList" :key="index">
+      <!-- 加载状态 -->
+      <view v-if="loading" class="loading-container">
+        <text class="loading-text">{{ t('common.loading') || '加载中...' }}</text>
+      </view>
+      
+      <!-- 积分明细项 -->
+      <view v-else class="points-item" v-for="(item, index) in filteredPointsList" :key="index">
         <view class="item-content">
           <view class="item-info">
             <text class="item-title">{{ item.title }}</text>
@@ -52,6 +58,11 @@
           </view>
           <text class="item-points">{{ item.points }}</text>
         </view>
+      </view>
+      
+      <!-- 空状态 -->
+      <view v-if="!loading && filteredPointsList.length === 0" class="empty-container">
+        <text class="empty-text">{{ t('common.noData') || '暂无数据' }}</text>
       </view>
     </view>
 
@@ -63,47 +74,32 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { pointsAPI } from '@/api/apiService.js'
 
 const { t } = useI18n()
 
 // 当前激活的标签
 const activeTab = ref('all')
 
+// 加载状态
+const loading = ref(false)
+
+// 总积分
+const totalPoints = ref('0.000')
+
 // 积分明细数据
-const pointsList = ref([
-  {
-    title: t('components.pointsDetails.stakingRewards'),
-    time: '2025-07-01 10:30',
-    points: '1.3',
-    type: 'staking'
-  },
-  {
-    title: t('components.pointsDetails.invitation'),
-    time: '2025-07-01 10:30',
-    points: '0.5',
-    type: 'invite'
-  },
-  {
-    title: t('components.pointsDetails.ecosystemParticipation'),
-    time: '2025-07-01 10:30',
-    points: '0.3',
-    type: 'ecosystem'
-  },
-  {
-    title: t('components.pointsDetails.lending'),
-    time: '2025-07-01 10:30',
-    points: '2',
-    type: 'lending'
-  },
-  {
-    title: t('components.pointsDetails.exchangeVGT'),
-    time: '2025-07-01 10:30',
-    points: '3.6',
-    type: 'exchange'
-  }
-])
+const pointsList = ref([])
+
+// 标签类型映射
+const tabTypeMapping = {
+  'staking': 'staking',    // 质押
+  'invite': 'invite',      // 邀请
+  'lending': 'lending',    // 借贷
+  'exchange': 'exchange',  // 兑换
+  'ecosystem': 'ecosystem' // 生态
+}
 
 // 计算属性：根据筛选条件过滤积分明细
 const filteredPointsList = computed(() => {
@@ -113,15 +109,159 @@ const filteredPointsList = computed(() => {
   return pointsList.value.filter(item => item.type === activeTab.value)
 })
 
+// 获取积分详情数据
+const fetchPointsDetails = async () => {
+  try {
+    loading.value = true
+    console.log('🔍 开始获取积分详情...')
+    
+    const response = await pointsAPI.getMy()
+    console.log('📊 积分详情响应:', response)
+    
+    if (response && response.data) {
+      // 更新总积分
+      totalPoints.value = response.data.currentPoints || '0.000'
+      
+      // 更新积分明细列表
+      if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
+        pointsList.value = response.data.pointsList.map(item => ({
+          title: item.title || item.description || '',
+          time: item.time || item.createdAt || '',
+          points: item.points || item.amount || '0',
+          type: item.type || 'other'
+        }))
+      }
+    }
+    
+    console.log('✅ 积分详情获取成功:', {
+      totalPoints: totalPoints.value,
+      pointsCount: pointsList.value.length
+    })
+    
+  } catch (error) {
+    console.error('❌ 获取积分详情失败:', error)
+    
+    // 显示错误提示
+    uni.showToast({
+      title: t('common.loadFailed') || '加载失败',
+      icon: 'none',
+      duration: 2000
+    })
+    
+    // 使用空数据作为降级处理
+    pointsList.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// 获取积分记录数据
+const fetchPointsRecords = async () => {
+  try {
+    loading.value = true
+    console.log('🔍 开始获取积分记录...')
+    
+    const response = await pointsAPI.getMyRecords()
+    console.log('📊 积分记录响应:', response)
+    
+    if (response && response.data) {
+      // 更新积分明细列表
+      if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
+        pointsList.value = response.data.pointsList.map(item => ({
+          title: item.title || item.description || '',
+          time: item.time || item.createdAt || '',
+          points: item.points || item.amount || '0',
+          type: item.type || 'other'
+        }))
+      }
+    }
+    
+    console.log('✅ 积分记录获取成功:', {
+      pointsCount: pointsList.value.length
+    })
+    
+  } catch (error) {
+    console.error('❌ 获取积分记录失败:', error)
+    
+    // 显示错误提示
+    uni.showToast({
+      title: t('common.loadFailed') || '加载失败',
+      icon: 'none',
+      duration: 2000
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+// 根据类型获取积分记录数据
+const fetchPointsRecordsByType = async (type) => {
+  try {
+    loading.value = true
+    console.log('🔍 开始获取积分记录，类型:', type)
+    
+    const response = await pointsAPI.getMyRecordsByType(type)
+    console.log('📊 积分记录响应:', response)
+    
+    if (response && response.data) {
+      // 更新积分明细列表
+      if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
+        pointsList.value = response.data.pointsList.map(item => ({
+          title: item.title || item.description || '',
+          time: item.time || item.createdAt || '',
+          points: item.points || item.amount || '0',
+          type: item.type || type
+        }))
+      }
+    }
+    
+    console.log('✅ 积分记录获取成功:', {
+      type: type,
+      pointsCount: pointsList.value.length
+    })
+    
+  } catch (error) {
+    console.error('❌ 获取积分记录失败:', error)
+    
+    // 显示错误提示
+    uni.showToast({
+      title: t('common.loadFailed') || '加载失败',
+      icon: 'none',
+      duration: 2000
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
 // 设置活动标签
 const setActiveTab = (tab) => {
+  // 如果点击的是当前已激活的标签，不需要重新加载
+  if (activeTab.value === tab) {
+    return
+  }
+  
   activeTab.value = tab
+  
+  // 根据标签类型调用不同的API
+  if (tab === 'all') {
+    // 全部标签：调用积分记录API
+    fetchPointsRecords()
+  } else if (tabTypeMapping[tab]) {
+    // 分类标签：调用按类型获取积分记录API
+    fetchPointsRecordsByType(tabTypeMapping[tab])
+  }
 }
 
 // 返回上一页
 const goBack = () => {
   uni.navigateBack()
 }
+
+// 页面加载时获取数据
+onMounted(() => {
+  fetchPointsDetails()
+})
 </script>
 
 <style scoped>
@@ -253,6 +393,36 @@ page {
   display: flex;
   flex-direction: column;
   gap: 16rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80rpx 0;
+}
+
+.loading-text {
+  color: #9CA3AF;
+  font-size: 28rpx;
+  font-weight: 400;
+  line-height: 1.43;
+}
+
+/* 空状态 */
+.empty-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80rpx 0;
+}
+
+.empty-text {
+  color: #9CA3AF;
+  font-size: 28rpx;
+  font-weight: 400;
+  line-height: 1.43;
 }
 
 .points-item {

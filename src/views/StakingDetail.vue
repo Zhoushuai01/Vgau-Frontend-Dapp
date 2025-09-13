@@ -59,11 +59,11 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-const daysLabel = ref('10')
-const apy = ref('5')
-const orderId = ref('L-202503-013')
-const startDate = ref('2025-07-15')
-const endDate = ref('2025-07-25')
+const daysLabel = ref('')
+const apy = ref('')
+const orderId = ref('')
+const startDate = ref('')
+const endDate = ref('')
 // 页面来源状态：staking | toClaim | completed
 const activeStatus = ref('staking')
 
@@ -75,13 +75,7 @@ const currentStatusLabel = computed(() => {
 })
 
 // 所有记录数据
-const allRecords = ref([
-  { type: 'redeem', action: t('stakingDetail.actions.redeem'), time: '2025-01-15 14:32', subId: '訂單 L-202503-0133', duration: '10天', amount: '+500 USDT', amountClass: 'positive', status: 'staking' },
-  { type: 'redeem', action: t('stakingDetail.actions.redeem'), time: '2025-01-15 14:32', subId: '訂單 L-202503-0133', duration: '10天', amount: '+500 VGAU', amountClass: 'positive', status: 'staking' },
-  { type: 'stake', action: t('stakingDetail.actions.stake'), time: '2025-01-15 14:32', subId: '訂單 L-202503-0133', duration: '10天', amount: '+500 VGAU', amountClass: 'negative', status: 'staking' },
-  { type: 'stake', action: t('stakingDetail.actions.stake'), time: '2025-01-16 10:15', subId: '訂單 L-202503-0134', duration: '15天', amount: '+300 VGAU', amountClass: 'negative', status: 'toClaim' },
-  { type: 'redeem', action: t('stakingDetail.actions.redeem'), time: '2025-01-17 16:20', subId: '訂單 L-202503-0135', duration: '20天', amount: '+800 USDT', amountClass: 'positive', status: 'toClaim' }
-])
+const allRecords = ref([])
 
 // 根据当前状态过滤记录（保持原有按状态过滤）
 const filteredRecords = computed(() => {

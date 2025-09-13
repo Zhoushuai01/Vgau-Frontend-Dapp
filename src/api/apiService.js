@@ -293,6 +293,8 @@ class ApiService {
     createOrder: (data) => this.post(this.endpoints.LOAN.ORDERS, data),
     // 获取借贷汇总信息
     getSummary: () => this.get(this.endpoints.LOAN.SUMMARY),
+    // 获取借贷统计数据
+    getStatistics: () => this.get(this.endpoints.LOAN.STATISTICS),
     // 增加抵押金额
     addCollateral: (data) => this.post(this.endpoints.LOAN.ADD_COLLATERAL, data),
     // 全额还款
@@ -302,7 +304,16 @@ class ApiService {
   // 积分管理相关API
   points = {
     // 获取我的积分统计
-    getMyStatistics: () => this.get(this.endpoints.POINTS.MY_STATISTICS)
+    getMyStatistics: () => this.get(this.endpoints.POINTS.MY_STATISTICS),
+    
+    // 获取我的积分详情
+    getMy: () => this.get(this.endpoints.POINTS.MY),
+    
+    // 获取我的积分记录
+    getMyRecords: (params = {}) => this.get(this.endpoints.POINTS.MY_RECORDS, params),
+    
+    // 根据类型获取我的积分记录
+    getMyRecordsByType: (type, params = {}) => this.get(this.endpoints.POINTS.MY_RECORDS_BY_TYPE, { type, ...params })
   }
   
   // VGAU储蓄管理相关API

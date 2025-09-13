@@ -79,7 +79,7 @@ const transactionData = ref({
   amount: '-5,000 VGAU',
   amountClass: 'negative',
   status: t('transactionDetail.defaultStatus'),
-  createdAt: '2025-01-15T14:30:25',
+  createdAt: '',
   orderId: 'ORD202401150001',
   fromAddress: '0x7eCfbF2D6DEa2371ea8f237c056B024dA4Bc87af',
   transactionHash: '--'

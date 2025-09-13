@@ -69,6 +69,7 @@ export const API_ENDPOINTS = {
     ORDERS: '/loan/orders',
     ORDER_DETAIL: '/loan/orders',
     SUMMARY: '/loan/summary',
+    STATISTICS: '/loan/orders/statistics',
     ADD_COLLATERAL: '/loan/orders/add-collateral',
     REPAY: '/loan/repay'
   },
@@ -119,7 +120,10 @@ export const API_ENDPOINTS = {
   
   // 积分管理
   POINTS: {
-    MY_STATISTICS: '/points/my/statistics'
+    MY_STATISTICS: '/points/my/statistics',
+    MY: '/points/my',
+    MY_RECORDS: '/points/my/records',
+    MY_RECORDS_BY_TYPE: '/points/my/records/by-type'
   },
   
   // VGAU储蓄管理
