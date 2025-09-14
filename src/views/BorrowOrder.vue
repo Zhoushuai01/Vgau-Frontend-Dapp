@@ -116,6 +116,9 @@ const error = ref(null)
 // 总负债数据
 const totalLiabilities = ref('0')
 
+// 当前VGAU价格
+const currentVgauPrice = ref(0)
+
 // 格式化总负债显示
 const formatTotalLiabilities = (value) => {
   if (!value || value === null || value === undefined) {
@@ -167,6 +170,48 @@ const formatLiquidationPrice = (value) => {
   }
 }
 
+// 获取需还USDT金额（使用totalRepayAmount）
+const getTotalDebtUsdt = (order) => {
+  try {
+    // 优先使用API返回的totalRepayAmount
+    if (order.totalRepayAmount !== undefined && order.totalRepayAmount !== null) {
+      return parseFloat(order.totalRepayAmount)
+    }
+    
+    // 其次使用totalDebtUsdt
+    if (order.totalDebtUsdt !== undefined && order.totalDebtUsdt !== null) {
+      return parseFloat(order.totalDebtUsdt)
+    }
+    
+    // 最后使用loanAmount作为降级处理
+    return parseFloat(order.loanAmount || 0)
+  } catch (error) {
+    console.error('获取需还USDT失败:', error)
+    return parseFloat(order.loanAmount || 0)
+  }
+}
+
+// 获取清算参考价格（使用currentVgauPrice）
+const getLiquidationReferencePrice = (order) => {
+  try {
+    // 优先使用API返回的liquidationReferencePrice
+    if (order.liquidationReferencePrice !== undefined && order.liquidationReferencePrice !== null) {
+      return parseFloat(order.liquidationReferencePrice)
+    }
+    
+    // 其次使用订单中的currentVgauPrice
+    if (order.currentVgauPrice !== undefined && order.currentVgauPrice !== null) {
+      return parseFloat(order.currentVgauPrice)
+    }
+    
+    // 最后使用从summary接口获取的全局currentVgauPrice
+    return currentVgauPrice.value || 0
+  } catch (error) {
+    console.error('获取清算参考价格失败:', error)
+    return currentVgauPrice.value || 0
+  }
+}
+
 
 // 获取总负债数据
 const fetchLoanSummary = async () => {
@@ -178,10 +223,13 @@ const fetchLoanSummary = async () => {
     
     if (response && response.success && response.data) {
       totalLiabilities.value = response.data.totalActiveDebt || '0'
+      currentVgauPrice.value = parseFloat(response.data.currentVgauPrice || 0)
       console.log('💰 总负债金额:', totalLiabilities.value)
+      console.log('💰 当前VGAU价格:', currentVgauPrice.value)
     } else {
       console.warn('⚠️ 总负债数据格式异常:', response)
       totalLiabilities.value = '0'
+      currentVgauPrice.value = 0
     }
   } catch (err) {
     console.error('❌ 获取总负债失败:', err)
@@ -230,19 +278,25 @@ const fetchLoanOrders = async () => {
           const status = item.status || item.orderStatus || item.state
           return status === 'active' || status === 'ACTIVE'
         })
-        .map((item, index) => ({
-          id: item.id || index + 1,
-          orderNumber: item.orderNumber, // 订单号
-          collateralAmount: item.collateralAmount, // 抵押品数量（VGAU）
-          ltvRatio: item.ltvRatioAsPercentage, // 质押比率 - 使用API返回的ltvRatioAsPercentage
-          borrowAmount: item.borrowAmount || 0, // 借款金额
-          interestRate: item.annualRateAsPercentage || 0, // 年化利率 - 使用API返回的annualRateAsPercentage
-          totalDebtUsdt: item.totalDebtUsdt || null, // 需还USDT - 使用API返回的totalDebtUsdt
-          liquidationReferencePrice: item.liquidationReferencePrice || null, // 清算参考价格 - 使用API返回的liquidationReferencePrice
-          status: item.status || 'active',
-          statusDescription: item.statusDescription || null, // 状态描述 - 使用API返回的statusDescription
-          finalStatus: item.finalStatus || false // 最终状态 - 使用API返回的finalStatus
-        }))
+        .map((item, index) => {
+          // 获取需还USDT和清算参考价格
+          const totalDebtUsdt = getTotalDebtUsdt(item)
+          const liquidationReferencePrice = getLiquidationReferencePrice(item)
+          
+          return {
+            id: item.id || index + 1,
+            orderNumber: item.orderNumber, // 订单号
+            collateralAmount: item.collateralAmount, // 抵押品数量（VGAU）
+            ltvRatio: item.ltvRatioAsPercentage, // 质押比率 - 使用API返回的ltvRatioAsPercentage
+            borrowAmount: item.borrowAmount || 0, // 借款金额
+            interestRate: item.annualRateAsPercentage || 0, // 年化利率 - 使用API返回的annualRateAsPercentage
+            totalDebtUsdt: totalDebtUsdt, // 需还USDT - 优先使用API返回，否则计算
+            liquidationReferencePrice: liquidationReferencePrice, // 清算参考价格 - 优先使用API返回，否则计算
+            status: item.status || 'active',
+            statusDescription: item.statusDescription || null, // 状态描述 - 使用API返回的statusDescription
+            finalStatus: item.finalStatus || false // 最终状态 - 使用API返回的finalStatus
+          }
+        })
       
       console.log('📊 订单数据加载完成，共', orders.value.length, '个订单')
     } else {

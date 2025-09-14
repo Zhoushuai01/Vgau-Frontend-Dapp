@@ -117,10 +117,11 @@
                <text class="detail-value">{{ formatUsdtAmount(loanData.borrowedAmount) }} USDT</text>
              </view>
            </view>
-           <view class="risk-warning">
+           <!-- 抵押过低红色警告 - 暂时隐藏 -->
+           <!-- <view class="risk-warning">
              <view class="warning-icon">⚠</view>
              <text class="warning-text">{{ t('history.loans.riskWarning') }}</text>
-           </view>
+           </view> -->
           </view>
 
           <!-- 借贷订单列表 -->

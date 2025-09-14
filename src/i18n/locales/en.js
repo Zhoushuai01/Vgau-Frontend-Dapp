@@ -598,6 +598,7 @@ export default {
     forcedLiquidationRemainingDebt: 'The platform supports multiple loan orders, with each order independently priced and risk-controlled without mutual interference.',
     forcedLiquidationMultipleLoans: 'The platform supports multiple loan orders, with each order independently priced and risk-controlled without mutual interference.',
     inviteDescription: 'Fill in the invite code to help your friends complete the invitation task',
+    inviteCodePlaceholder: 'Enter invite code',
     submit: 'Submit',
     lastUpdated: 'Last updated: August 31, 2025',
     serviceAgreementText: 'This agreement (hereinafter referred to as the "Agreement") is jointly established by you (the "User") and Verigold (the "Platform") to clarify the terms and conditions for users to use related services on the platform. By accessing or using any services provided by the platform, you agree to comply with all terms of this Agreement.',

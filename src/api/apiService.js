@@ -312,8 +312,8 @@ class ApiService {
     // 获取我的积分记录
     getMyRecords: (params = {}) => this.get(this.endpoints.POINTS.MY_RECORDS, params),
     
-    // 根据类型获取我的积分记录
-    getMyRecordsByType: (type, params = {}) => this.get(this.endpoints.POINTS.MY_RECORDS_BY_TYPE, { type, ...params })
+    // 根据类型获取我的积分记录（注意：后端只支持按操作类型EARN/CONSUME，这里改为获取所有记录后客户端过滤）
+    getMyRecordsByType: (type, params = {}) => this.get(this.endpoints.POINTS.MY_RECORDS, params)
   }
   
   // VGAU储蓄管理相关API

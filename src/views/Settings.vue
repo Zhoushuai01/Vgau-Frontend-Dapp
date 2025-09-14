@@ -98,7 +98,7 @@
           <input 
             class="invite-input"
             v-model="inviteCode"
-            placeholder="Enter invite code"
+            :placeholder="t('settings.inviteCodePlaceholder')"
             placeholder-class="invite-placeholder"
             type="text"
           />
@@ -156,6 +156,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { inviteAPI } from '@/api/apiService.js'
 
 const { t } = useI18n()
 
@@ -194,7 +195,7 @@ const goToInviter = () => {
 }
 
 // 绑定邀请码
-const bindInviteCode = () => {
+const bindInviteCode = async () => {
   if (!inviteCode.value.trim()) {
     uni.showToast({
       title: t('common.pleaseEnterValidAmount'),
@@ -204,14 +205,41 @@ const bindInviteCode = () => {
     return
   }
   
-  uni.showToast({
-    title: t('components.invitation.bindSuccess'),
-    icon: 'success',
-    duration: 2000
-  })
-  
-  // 清空输入
-  inviteCode.value = ''
+  try {
+    console.log('🔗 开始绑定邀请码:', inviteCode.value)
+    
+    // 调用邀请绑定API
+    const response = await inviteAPI.bind(inviteCode.value.trim())
+    console.log('📊 邀请绑定响应:', response)
+    
+    if (response && response.success) {
+      uni.showToast({
+        title: t('components.invitation.bindSuccess'),
+        icon: 'success',
+        duration: 2000
+      })
+      
+      // 清空输入
+      inviteCode.value = ''
+      
+      // 延迟返回上一页
+      setTimeout(() => {
+        goBack()
+      }, 1500)
+    } else {
+      throw new Error(response?.message || '绑定失败')
+    }
+    
+  } catch (error) {
+    console.error('❌ 绑定邀请码失败:', error)
+    
+    // 显示错误提示
+    uni.showToast({
+      title: error.message || t('common.operationFailed') || '操作失败',
+      icon: 'none',
+      duration: 2000
+    })
+  }
 }
 </script>
 

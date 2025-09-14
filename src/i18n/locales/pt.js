@@ -590,6 +590,7 @@ export default {
     forcedLiquidationRemainingDebt: 'A plataforma suporta múltiplos pedidos de empréstimo, cada pedido tem precificação independente e controle de risco, não interferindo uns com os outros.',
     forcedLiquidationMultipleLoans: 'A plataforma suporta múltiplos pedidos de empréstimo, cada pedido tem precificação independente e controle de risco, não interferindo uns com os outros.',
     inviteDescription: 'Preencha o código de convite para ajudar seus amigos a completar a tarefa de convite',
+    inviteCodePlaceholder: 'Digite o código de convite',
     submit: 'Enviar',
     lastUpdated: 'Última Atualização: 31 de Agosto de 2025',
     serviceAgreementText: 'Este acordo (doravante referido como "Acordo") é estabelecido por você ("Usuário") e Verigold ("Plataforma") para esclarecer os termos e condições para o usuário usar os serviços relacionados na plataforma. Ao acessar ou usar qualquer serviço fornecido pela plataforma, você concorda em cumprir todos os termos deste acordo.',

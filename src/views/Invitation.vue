@@ -117,9 +117,9 @@ const showRuleModal = ref(false)
 const loading = ref(false)
 
 // 统计数据
-const totalPoints = ref(1580)
-const invitedUsers = ref(12)
-const directPushUsers = ref(6)
+const totalPoints = ref(0)
+const invitedUsers = ref(0)
+const directPushUsers = ref(0)
 
 // 邀请列表数据
 const invitationList = ref([])

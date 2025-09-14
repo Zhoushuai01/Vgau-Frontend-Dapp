@@ -590,6 +590,7 @@ export default {
     forcedLiquidationRemainingDebt: 'La plateforme supporte plusieurs commandes de prêt, chaque commande a un prix indépendant et un contrôle des risques, ne s\'interférant pas les unes avec les autres.',
     forcedLiquidationMultipleLoans: 'La plateforme supporte plusieurs commandes de prêt, chaque commande a un prix indépendant et un contrôle des risques, ne s\'interférant pas les unes avec les autres.',
     inviteDescription: 'Remplissez le code d\'invitation pour aider vos amis à compléter la tâche d\'invitation',
+    inviteCodePlaceholder: 'Entrez le code d\'invitation',
     submit: 'Soumettre',
     lastUpdated: 'Dernière Mise à Jour : 31 Août 2025',
     serviceAgreementText: 'Cet accord (ci-après dénommé "Accord") est établi par vous ("Utilisateur") et Verigold ("Plateforme") pour clarifier les termes et conditions pour l\'utilisateur d\'utiliser les services liés sur la plateforme. En accédant ou en utilisant tout service fourni par la plateforme, vous acceptez de respecter tous les termes de cet accord.',

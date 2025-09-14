@@ -108,8 +108,8 @@
         <text class="points-value">{{ points }}</text>
       </view>
 
-      <!-- 通知中心 -->
-      <view class="notification-card">
+      <!-- 通知中心 - 暂时隐藏 -->
+      <!-- <view class="notification-card">
         <view class="notification-header">
           <view class="notification-icon">
             <image src="/static/Person/Notice.png" class="icon-img" />
@@ -126,7 +126,7 @@
         <view class="notification-action">
           <button class="action-button">{{ $t('person.topUpNow') }}</button>
         </view>
-      </view>
+      </view> -->
 
       <!-- 更多设置 -->
       <view class="more-settings" >
@@ -155,8 +155,8 @@ const walletAddress = ref('')
 const walletConnected = ref(false)
 
 const userInfo = reactive({
-  username: 'User123',
-  userId: '4561235154511515241'
+  username: '',
+  userId: ''
 })
 
 const assets = reactive({
@@ -330,15 +330,29 @@ const getConnectedWalletAddress = async () => {
   }
 }
 
-// 获取用户信息 - 以后可以对接接口
+// 获取用户信息 - 调用 /api/auth/me 接口
 const getUserInfo = async () => {
   try {
-    // 这里可以调用API获取用户信息
-    // const response = await $api.getUserInfo()
-    // Object.assign(userInfo, response.data)
-    console.log('获取用户信息')
+    console.log('🔍 开始获取用户信息...')
+    const response = await authAPI.getMe()
+    
+    if (response && response.success && response.data) {
+      console.log('✅ 获取到用户信息:', response.data)
+      // 根据接口返回的字段名更新用户信息
+      userInfo.username = response.data.username || ''
+      userInfo.userId = response.data.id ? response.data.id.toString() : ''
+      console.log('✅ 用户信息已更新:', userInfo)
+    } else {
+      console.log('❌ 获取用户信息失败或用户未登录')
+      // 保持默认空值
+      userInfo.username = ''
+      userInfo.userId = ''
+    }
   } catch (error) {
-    console.error('获取用户信息失败:', error)
+    console.error('❌ 获取用户信息失败:', error)
+    // 保持默认空值
+    userInfo.username = ''
+    userInfo.userId = ''
   }
 }
 
@@ -347,11 +361,11 @@ const getAssetsInfo = async () => {
   try {
     console.log('📊 开始获取资产信息...')
     
-    // 并行调用质押统计、借贷汇总和积分统计接口
+    // 并行调用质押统计、借贷汇总和积分详情接口
     const [stakeResponse, loanResponse, pointsResponse] = await Promise.allSettled([
       stakeAPI.getStatistics(),
       loanAPI.getSummary(),
-      pointsAPI.getMyStatistics()
+      pointsAPI.getMy()
     ])
     
     // 处理质押统计数据
@@ -447,8 +461,8 @@ const formatNumber = (value) => {
     })
   }
   
-  // 保留2位小数
-  return num.toFixed(2)
+  // 保留2位小数，然后抹除后面的0
+  return parseFloat(num.toFixed(2)).toString()
 }
 
 // 图片加载错误处理

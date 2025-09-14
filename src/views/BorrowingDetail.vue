@@ -19,7 +19,8 @@
     
     <!-- 订单号 -->
     <view class="order-number-section">
-      <text class="order-text">{{ t('history.borrowingDetail.orderId') }}: {{ orderDetail.orderNumber || orderNumber }}</text>
+      <text class="order-label">{{ t('history.borrowingDetail.orderId') }}:</text>
+      <text class="order-number">{{ orderDetail.orderNumber || orderNumber }}</text>
     </view>
 
     <!-- 主要内容区域 -->
@@ -41,6 +42,10 @@
       <view class="detail-item">
         <text class="detail-label">{{ t('history.borrowingDetail.collatRate') }}</text>
         <text class="detail-value">{{ orderDetail.currentLtvRatio ? orderDetail.currentLtvRatio.toFixed(2) + '%' : '--' }}</text>
+      </view>
+      <view class="detail-item" v-if="orderDetail.ltvRatioAfterAddingCollateral">
+        <text class="detail-label">{{ t('history.borrowingDetail.ltvRatioAfterAddingCollateral') }}</text>
+        <text class="detail-value">{{ orderDetail.ltvRatioAfterAddingCollateral ? orderDetail.ltvRatioAfterAddingCollateral.toFixed(2) + '%' : '--' }}</text>
       </view>
       <view class="detail-item">
         <text class="detail-label">{{ t('history.borrowingDetail.collateralVGAU') }}</text>
@@ -97,6 +102,7 @@ const orderDetail = ref({
   orderNumber: '',
   status: '',
   currentLtvRatio: 0,
+  ltvRatioAfterAddingCollateral: null, // 增加抵押金额后的质押率
   collateralAmount: 0,
   liquidationReferencePrice: 0,
   totalDebtUsdt: 0,
@@ -208,14 +214,19 @@ const fetchOrderDetail = async () => {
         orderNumber: data.orderNumber || '',
         status: data.status || '',
         currentLtvRatio: data.currentLtvRatioAsPercentage || data.currentLtvRatio || 0,
+        ltvRatioAfterAddingCollateral: data.ltvRatioAfterAddingCollateral ? 
+          (typeof data.ltvRatioAfterAddingCollateral === 'string' ? 
+            parseFloat(data.ltvRatioAfterAddingCollateral) * 100 : 
+            data.ltvRatioAfterAddingCollateral) : null, // 增加抵押金额后的质押率（字符串转百分数）
         collateralAmount: data.collateralAmount || 
                          data.collateralAmountStandard || 
                          data.collateralAmountInStandardUnit || 
                          (data.collateralAmount && typeof data.collateralAmount === 'number' && data.collateralAmount > 0 ? data.collateralAmount / 1e18 : 0) ||
                          (data.totalCollateralAmount ? data.totalCollateralAmount : 0),
-        liquidationReferencePrice: data.liquidationReferencePrice !== undefined && data.liquidationReferencePrice !== null ? 
-          (typeof data.liquidationReferencePrice === 'string' ? parseFloat(data.liquidationReferencePrice) : data.liquidationReferencePrice) : 0,
+        liquidationReferencePrice: data.currentVgauPrice !== undefined && data.currentVgauPrice !== null ? 
+          (typeof data.currentVgauPrice === 'string' ? parseFloat(data.currentVgauPrice) : data.currentVgauPrice) : 0,
         totalDebtUsdt: data.totalDebtUsdt || 0,
+        loanAmount: data.loanAmount || 0, // 添加借入USDT字段
         annualRateAsPercentage: data.annualRateAtCreation ? 
           (typeof data.annualRateAtCreation === 'string' ? parseFloat(data.annualRateAtCreation) * 100 : data.annualRateAtCreation * 100) : 
           (data.annualRateAsPercentage || 0),
@@ -321,7 +332,7 @@ const generateTransactionHistory = () => {
     history.push({
       action: t('history.borrowingDetail.borrow'),
       date: formatDate(orderDetail.value.loanTime),
-      amount: `+${formatAmount(orderDetail.value.totalDebtUsdt)} USDT`,
+      amount: `+${formatAmount(orderDetail.value.loanAmount)} USDT`,
       amountClass: 'positive'
     })
   }
@@ -459,15 +470,28 @@ const goBack = () => {
 .order-number-section {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   padding: 16rpx 32rpx;
   padding-bottom: 24rpx;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.order-text {
+.order-label {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  flex: 0 0 auto;
+}
+
+.order-number {
   font-size: 28rpx;
   color: #FFFFFF;
-  font-weight: 400;
+  font-weight: 500;
+  flex: 0 0 auto;
+  margin-left: auto;
+  text-align: right;
+  min-width: 0;
 }
 
 /* 主要内容区域 */

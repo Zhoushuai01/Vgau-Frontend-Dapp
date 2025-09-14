@@ -101,11 +101,47 @@ const tabTypeMapping = {
   'ecosystem': 'ecosystem' // 生态
 }
 
+// 根据业务类型获取前端分类
+const getTypeFromBusinessType = (businessType) => {
+  const typeMapping = {
+    'STAKE_CREATE': 'staking',        // 质押
+    'USER_INVITE_BIND': 'invite',     // 邀请
+    'LOAN_REPAY': 'lending',          // 借贷
+    'EXCHANGE': 'exchange',           // 兑换
+    'ECOSYSTEM': 'ecosystem'          // 生态
+  }
+  return typeMapping[businessType] || 'other'
+}
+
+// 格式化时间，精确到秒
+const formatTime = (timeString) => {
+  if (!timeString) return ''
+  
+  try {
+    const date = new Date(timeString)
+    if (isNaN(date.getTime())) return timeString
+    
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    const seconds = String(date.getSeconds()).padStart(2, '0')
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  } catch (error) {
+    console.error('时间格式化错误:', error)
+    return timeString
+  }
+}
+
 // 计算属性：根据筛选条件过滤积分明细
 const filteredPointsList = computed(() => {
+  // 如果当前是"全部"标签，返回所有数据
   if (activeTab.value === 'all') {
     return pointsList.value
   }
+  // 对于分类标签，使用客户端过滤
   return pointsList.value.filter(item => item.type === activeTab.value)
 })
 
@@ -122,11 +158,20 @@ const fetchPointsDetails = async () => {
       // 更新总积分
       totalPoints.value = response.data.currentPoints || '0.000'
       
-      // 更新积分明细列表
-      if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
+      // 更新积分明细列表 - 根据API文档，数据在 data.records 中
+      if (response.data.records && Array.isArray(response.data.records)) {
+        pointsList.value = response.data.records.map(item => ({
+          title: item.reason || item.operationDescription || '积分操作',
+          time: formatTime(item.createdAt || item.time || ''),
+          points: (item.signedPointsChange > 0 ? '+' : '') + item.pointsAmount,
+          type: getTypeFromBusinessType(item.businessType) || 'other'
+        }))
+        console.log('📊 处理后的积分记录:', pointsList.value)
+      } else if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
+        // 兼容旧的数据结构
         pointsList.value = response.data.pointsList.map(item => ({
-          title: item.title || item.description || '',
-          time: item.time || item.createdAt || '',
+          title: item.title || item.description || '积分操作',
+          time: formatTime(item.time || item.createdAt || ''),
           points: item.points || item.amount || '0',
           type: item.type || 'other'
         }))
@@ -165,11 +210,20 @@ const fetchPointsRecords = async () => {
     console.log('📊 积分记录响应:', response)
     
     if (response && response.data) {
-      // 更新积分明细列表
-      if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
+      // 更新积分明细列表 - 根据API文档，数据在 data.records 中
+      if (response.data.records && Array.isArray(response.data.records)) {
+        pointsList.value = response.data.records.map(item => ({
+          title: item.reason || item.operationDescription || '积分操作',
+          time: formatTime(item.createdAt || item.time || ''),
+          points: (item.signedPointsChange > 0 ? '+' : '') + item.pointsAmount,
+          type: getTypeFromBusinessType(item.businessType) || 'other'
+        }))
+        console.log('📊 处理后的积分记录:', pointsList.value)
+      } else if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
+        // 兼容旧的数据结构
         pointsList.value = response.data.pointsList.map(item => ({
-          title: item.title || item.description || '',
-          time: item.time || item.createdAt || '',
+          title: item.title || item.description || '积分操作',
+          time: formatTime(item.time || item.createdAt || ''),
           points: item.points || item.amount || '0',
           type: item.type || 'other'
         }))
@@ -180,6 +234,11 @@ const fetchPointsRecords = async () => {
       pointsCount: pointsList.value.length
     })
     
+    // 如果没有数据，记录日志
+    if (pointsList.value.length === 0) {
+      console.log('📝 没有积分记录数据')
+    }
+    
   } catch (error) {
     console.error('❌ 获取积分记录失败:', error)
     
@@ -189,68 +248,35 @@ const fetchPointsRecords = async () => {
       icon: 'none',
       duration: 2000
     })
+    
+    // 添加测试数据作为降级处理
+    pointsList.value = [
+      {
+        title: '测试数据',
+        time: new Date().toISOString(),
+        points: '+1.000',
+        type: 'other'
+      }
+    ]
   } finally {
     loading.value = false
   }
 }
 
-// 根据类型获取积分记录数据
-const fetchPointsRecordsByType = async (type) => {
-  try {
-    loading.value = true
-    console.log('🔍 开始获取积分记录，类型:', type)
-    
-    const response = await pointsAPI.getMyRecordsByType(type)
-    console.log('📊 积分记录响应:', response)
-    
-    if (response && response.data) {
-      // 更新积分明细列表
-      if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
-        pointsList.value = response.data.pointsList.map(item => ({
-          title: item.title || item.description || '',
-          time: item.time || item.createdAt || '',
-          points: item.points || item.amount || '0',
-          type: item.type || type
-        }))
-      }
-    }
-    
-    console.log('✅ 积分记录获取成功:', {
-      type: type,
-      pointsCount: pointsList.value.length
-    })
-    
-  } catch (error) {
-    console.error('❌ 获取积分记录失败:', error)
-    
-    // 显示错误提示
-    uni.showToast({
-      title: t('common.loadFailed') || '加载失败',
-      icon: 'none',
-      duration: 2000
-    })
-  } finally {
-    loading.value = false
-  }
-}
 
 // 设置活动标签
 const setActiveTab = (tab) => {
   // 如果点击的是当前已激活的标签，不需要重新加载
   if (activeTab.value === tab) {
+    console.log('🔄 点击了当前已激活的标签，跳过重新加载')
     return
   }
   
+  console.log('🔄 切换标签:', activeTab.value, '->', tab)
   activeTab.value = tab
   
-  // 根据标签类型调用不同的API
-  if (tab === 'all') {
-    // 全部标签：调用积分记录API
-    fetchPointsRecords()
-  } else if (tabTypeMapping[tab]) {
-    // 分类标签：调用按类型获取积分记录API
-    fetchPointsRecordsByType(tabTypeMapping[tab])
-  }
+  // 标签切换时不需要重新加载数据，使用客户端过滤
+  console.log('📋 使用客户端过滤，当前数据量:', pointsList.value.length)
 }
 
 // 返回上一页
@@ -259,8 +285,11 @@ const goBack = () => {
 }
 
 // 页面加载时获取数据
-onMounted(() => {
-  fetchPointsDetails()
+onMounted(async () => {
+  // 先获取积分详情（包含总积分）
+  await fetchPointsDetails()
+  // 然后获取积分记录（包含全部数据）
+  await fetchPointsRecords()
 })
 </script>
 

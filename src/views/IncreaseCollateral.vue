@@ -259,7 +259,7 @@ const loadOrderData = async () => {
         insuranceFee: order.insuranceFeeAmount || '--', // 强平保险费
         currentStakingRatio: order.currentLtvRatio || '--', // 当前质押率
         increaseAmount: '--', // 后端暂无数据
-        newLtvRatioAfterAdditional: order.newLtvRatioAfterAdditional || '--' // 增加抵押金额后的质押率
+        newLtvRatioAfterAdditional: order.ltvRatioAfterAddingCollateral || order.newLtvRatioAfterAdditional || '--' // 增加抵押金额后的质押率
       }
       console.log('✅ 订单数据加载完成:', orderData.value)
       console.log('📋 当前订单号:', currentOrderNumber.value)
