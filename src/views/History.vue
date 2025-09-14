@@ -204,7 +204,7 @@
          <!-- Earn 交易记录列表 -->
          <view class="earn-transaction-list">
            <!-- 交易记录项 -->
-           <view class="earn-transaction-item" v-for="(transaction, index) in filteredEarnTransactions" :key="index" @click="viewEarnTransactionDetail(transaction)">
+           <view class="earn-transaction-item" v-for="(transaction, index) in filteredEarnTransactions" :key="index">
              <view class="earn-transaction-left">
                <text class="earn-transaction-status" :class="transaction.statusClass">
                  {{ transaction.status }}
@@ -214,8 +214,8 @@
                </text>
              </view>
              <view class="earn-transaction-right">
-               <text class="earn-transaction-date">{{ transaction.date }}</text>
-               <view class="earn-view-details-btn">
+               <text class="earn-transaction-time">{{ formatTime(transaction.rawData?.createTime || transaction.rawData?.createdAt) }}</text>
+               <view class="earn-view-details-btn" @click="viewEarnTransactionDetail(transaction)">
                  <text class="earn-view-details-text">{{ t('history.earn.viewDetails') }}</text>
                </view>
              </view>
@@ -342,7 +342,7 @@ const processedStakeOrders = computed(() => {
       id: order.orderId || order.id,
       status: getStakeStatusText(status),
       statusClass: statusClass,
-      amount: `${order.amount || '0'} VGAU`,
+      amount: `${order.stakeAmount || order.amount || '0'} VGAU`,
       date: formatDate(order.createdAt || order.created_at),
       rawData: order
     }
@@ -659,6 +659,17 @@ const fetchStakeOrders = async () => {
       stakeOrders.value = orders
       console.log('✅ 质押订单列表获取成功:', stakeOrders.value.length, '条记录')
       console.log('📋 质押订单详情:', stakeOrders.value)
+      
+      // 调试质押订单字段
+      if (stakeOrders.value.length > 0) {
+        console.log('🔍 第一个质押订单字段详情:', {
+          orderId: stakeOrders.value[0].orderId || stakeOrders.value[0].id,
+          status: stakeOrders.value[0].status,
+          stakeAmount: stakeOrders.value[0].stakeAmount,
+          amount: stakeOrders.value[0].amount,
+          createdAt: stakeOrders.value[0].createdAt || stakeOrders.value[0].created_at
+        })
+      }
     } else {
       console.warn('⚠️ 质押订单响应格式异常:', response)
       stakeOrders.value = []
@@ -712,18 +723,22 @@ const viewTransactionDetail = (transaction) => {
 
 // 查看Earn交易详情
 const viewEarnTransactionDetail = (transaction) => {
+  console.log('🔍 点击质押详情，原始数据:', transaction.rawData)
+  
   if (transaction.rawData) {
-    // 如果有原始数据，传递订单信息
+    // 如果有原始数据，传递订单信息 - 使用正确的字段名
     const orderData = {
       orderId: transaction.rawData.orderId || transaction.rawData.id,
       status: transaction.rawData.status,
       amount: transaction.rawData.amount,
-      days: transaction.rawData.days || '',
-      apy: transaction.rawData.apy || '',
-      start: transaction.rawData.startDate || transaction.rawData.createdAt,
-      end: transaction.rawData.endDate || transaction.rawData.expiresAt,
+      lockDays: transaction.rawData.lockDays || transaction.rawData.days || '',
+      annualRate: transaction.rawData.annualRate || transaction.rawData.apy || '',
+      createTime: transaction.rawData.createTime || transaction.rawData.createdAt || transaction.rawData.startDate,
+      endTime: transaction.rawData.endTime || transaction.rawData.expiresAt || transaction.rawData.endDate,
       completed: transaction.statusClass === 'completed' ? 'true' : 'false'
     }
+    
+    console.log('🔍 传递到质押详情的参数:', orderData)
     
     const query = Object.entries(orderData).map(([k,v]) => `${k}=${encodeURIComponent(v || '')}`).join('&')
     uni.navigateTo({
@@ -732,13 +747,14 @@ const viewEarnTransactionDetail = (transaction) => {
   } else {
     // 默认情况
     const params = {
-      days: '',
-      apy: '',
+      lockDays: '',
+      annualRate: '',
       orderId: '',
-      start: '',
-      end: '',
+      createTime: '',
+      endTime: '',
       completed: transaction.statusClass === 'completed' ? 'true' : 'false'
     }
+    console.log('🔍 默认参数:', params)
     const query = Object.entries(params).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&')
     uni.navigateTo({
       url: `/views/StakingDetail?${query}`
@@ -1455,8 +1471,9 @@ onMounted(() => {
 .earn-transaction-right {
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: 12rpx;
   align-items: flex-end;
+  justify-content: center;
 }
 
 .earn-transaction-status {
@@ -1483,6 +1500,12 @@ onMounted(() => {
 }
 
 .earn-transaction-date {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.earn-transaction-time {
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.5);
   font-weight: 400;

@@ -56,6 +56,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import i18n from '@/i18n/i18n.js'
 
 const { t } = useI18n()
 
@@ -69,9 +70,41 @@ const activeStatus = ref('staking')
 
 // 本地化的当前状态标签
 const currentStatusLabel = computed(() => {
-  if (activeStatus.value === 'staking') return t('stakingDetail.staking')
-  if (activeStatus.value === 'toClaim') return t('stakingDetail.toClaim')
-  return t('stakingDetail.completed')
+  const statusMap = {
+    'staking': t('stakingDetail.staking'),
+    'toClaim': t('stakingDetail.toClaim'),
+    'completed': t('stakingDetail.completed'),
+    'active': t('stakingDetail.active'),
+    'pending': t('stakingDetail.pending'),
+    'cancelled': t('stakingDetail.cancelled'),
+    'redeemed': t('stakingDetail.redeemed'),
+    'ongoing': t('stakingDetail.ongoing'),
+    // 添加大写状态支持
+    'STAKING': t('stakingDetail.staking'),
+    'TO_CLAIM': t('stakingDetail.toClaim'),
+    'COMPLETED': t('stakingDetail.completed'),
+    'ACTIVE': t('stakingDetail.active'),
+    'PENDING': t('stakingDetail.pending'),
+    'CANCELLED': t('stakingDetail.cancelled'),
+    'REDEEMED': t('stakingDetail.redeemed'),
+    'ONGOING': t('stakingDetail.ongoing')
+  }
+  
+  const translatedStatus = statusMap[activeStatus.value]
+  if (translatedStatus) {
+    return translatedStatus
+  }
+  
+  // 如果状态不在映射表中，尝试转换为小写再查找
+  const lowerStatus = activeStatus.value?.toLowerCase()
+  const lowerTranslatedStatus = statusMap[lowerStatus]
+  if (lowerTranslatedStatus) {
+    return lowerTranslatedStatus
+  }
+  
+  // 最后回退到显示原始状态
+  console.warn('未找到状态翻译:', activeStatus.value)
+  return activeStatus.value
 })
 
 // 所有记录数据
@@ -87,13 +120,115 @@ onMounted(() => {
   const currentPage = pages[pages.length - 1]
   const options = currentPage?.options || {}
 
-  if (options.days) daysLabel.value = options.days
-  if (options.apy) apy.value = options.apy
-  if (options.orderId) orderId.value = options.orderId
-  if (options.start) startDate.value = options.start
-  if (options.end) endDate.value = options.end
-  if (options.status) activeStatus.value = options.status
+  console.log('🔍 质押详情页面参数:', options)
+
+  // 处理天数 - 优先使用lockDays
+  if (options.lockDays) {
+    daysLabel.value = options.lockDays
+    console.log('✅ 使用lockDays:', options.lockDays)
+  } else if (options.days) {
+    daysLabel.value = options.days
+    console.log('✅ 使用days:', options.days)
+  } else {
+    console.warn('⚠️ 没有找到天数字段')
+  }
+
+  // 处理APY - 优先使用annualRate，后端返回的annualRate已经是百分数形式
+  if (options.annualRate) {
+    const annualRateValue = parseFloat(options.annualRate)
+    // annualRate后端返回的是百分数形式（如100.00），直接使用
+    apy.value = isNaN(annualRateValue) ? '0' : annualRateValue.toFixed(2)
+    console.log('✅ 使用annualRate:', options.annualRate, '转换后:', apy.value + '%')
+  } else if (options.apy) {
+    const apyValue = parseFloat(options.apy)
+    // apy可能已经是百分数形式，需要判断
+    if (apyValue > 1) {
+      // 如果大于1，说明已经是百分数形式，直接使用
+      apy.value = isNaN(apyValue) ? '0' : apyValue.toFixed(2)
+    } else {
+      // 如果小于等于1，说明是小数形式，需要转换为百分数
+      apy.value = isNaN(apyValue) ? '0' : (apyValue * 100).toFixed(2)
+    }
+    console.log('✅ 使用apy:', options.apy, '转换后:', apy.value + '%')
+  } else {
+    console.warn('⚠️ 没有找到APY字段')
+  }
+
+  // 处理订单ID
+  if (options.orderId) {
+    orderId.value = options.orderId
+    console.log('✅ 订单ID:', options.orderId)
+  } else {
+    console.warn('⚠️ 没有找到订单ID')
+  }
+
+  // 处理开始时间 - 优先使用createTime，精确到秒
+  if (options.createTime) {
+    startDate.value = formatTimeToSecond(options.createTime)
+    console.log('✅ 使用createTime:', options.createTime, '转换后:', startDate.value)
+  } else if (options.start) {
+    startDate.value = formatTimeToSecond(options.start)
+    console.log('✅ 使用start:', options.start, '转换后:', startDate.value)
+  } else {
+    console.warn('⚠️ 没有找到开始时间字段')
+  }
+
+  // 处理结束时间 - 优先使用endTime，精确到秒
+  if (options.endTime) {
+    endDate.value = formatTimeToSecond(options.endTime)
+    console.log('✅ 使用endTime:', options.endTime, '转换后:', endDate.value)
+  } else if (options.end) {
+    endDate.value = formatTimeToSecond(options.end)
+    console.log('✅ 使用end:', options.end, '转换后:', endDate.value)
+  } else {
+    console.warn('⚠️ 没有找到结束时间字段')
+  }
+
+  // 处理状态
+  if (options.status) {
+    activeStatus.value = options.status
+    console.log('✅ 状态:', options.status, '翻译后:', currentStatusLabel.value)
+  } else if (options.completed === 'true') {
+    activeStatus.value = 'completed'
+    console.log('✅ 完成状态:', options.completed, '翻译后:', currentStatusLabel.value)
+  } else {
+    console.warn('⚠️ 没有找到状态字段')
+  }
+
+  console.log('✅ 质押详情数据初始化完成:', {
+    days: daysLabel.value,
+    apy: apy.value,
+    orderId: orderId.value,
+    startDate: startDate.value,
+    endDate: endDate.value,
+    status: activeStatus.value,
+    translatedStatus: currentStatusLabel.value,
+    currentLocale: i18n.global.locale.value
+  })
 })
+
+// 格式化时间到秒
+const formatTimeToSecond = (timeString) => {
+  if (!timeString) return ''
+  
+  try {
+    const date = new Date(timeString)
+    if (isNaN(date.getTime())) return timeString
+    
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
+  } catch (error) {
+    console.error('时间格式化错误:', error)
+    return timeString
+  }
+}
 
 const goBack = () => {
   uni.navigateBack()
