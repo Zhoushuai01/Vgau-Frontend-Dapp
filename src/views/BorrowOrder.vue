@@ -223,20 +223,26 @@ const fetchLoanOrders = async () => {
         }
       }
       
-      // 映射API返回的字段到前端使用的字段
-      orders.value = dataArray.map((item, index) => ({
-        id: item.id || index + 1,
-        orderNumber: item.orderNumber, // 订单号
-        collateralAmount: item.collateralAmount, // 抵押品数量（VGAU）
-        ltvRatio: item.ltvRatioAsPercentage, // 质押比率 - 使用API返回的ltvRatioAsPercentage
-        borrowAmount: item.borrowAmount || 0, // 借款金额
-        interestRate: item.annualRateAsPercentage || 0, // 年化利率 - 使用API返回的annualRateAsPercentage
-        totalDebtUsdt: item.totalDebtUsdt || null, // 需还USDT - 使用API返回的totalDebtUsdt
-        liquidationReferencePrice: item.liquidationReferencePrice || null, // 清算参考价格 - 使用API返回的liquidationReferencePrice
-        status: item.status || 'active',
-        statusDescription: item.statusDescription || null, // 状态描述 - 使用API返回的statusDescription
-        finalStatus: item.finalStatus || false // 最终状态 - 使用API返回的finalStatus
-      }))
+      // 只显示状态为active的订单，过滤掉已完成的订单
+      orders.value = dataArray
+        .filter(item => {
+          // 只显示状态为active的订单，过滤掉completed、cancelled、liquidated等状态
+          const status = item.status || item.orderStatus || item.state
+          return status === 'active' || status === 'ACTIVE'
+        })
+        .map((item, index) => ({
+          id: item.id || index + 1,
+          orderNumber: item.orderNumber, // 订单号
+          collateralAmount: item.collateralAmount, // 抵押品数量（VGAU）
+          ltvRatio: item.ltvRatioAsPercentage, // 质押比率 - 使用API返回的ltvRatioAsPercentage
+          borrowAmount: item.borrowAmount || 0, // 借款金额
+          interestRate: item.annualRateAsPercentage || 0, // 年化利率 - 使用API返回的annualRateAsPercentage
+          totalDebtUsdt: item.totalDebtUsdt || null, // 需还USDT - 使用API返回的totalDebtUsdt
+          liquidationReferencePrice: item.liquidationReferencePrice || null, // 清算参考价格 - 使用API返回的liquidationReferencePrice
+          status: item.status || 'active',
+          statusDescription: item.statusDescription || null, // 状态描述 - 使用API返回的statusDescription
+          finalStatus: item.finalStatus || false // 最终状态 - 使用API返回的finalStatus
+        }))
       
       console.log('📊 订单数据加载完成，共', orders.value.length, '个订单')
     } else {
@@ -275,18 +281,25 @@ console.log('BorrowOrder translations:', {
   collateralAmount: t('components.borrowOrder.collateralAmount')
 })
 
-// 显示记录
+// 显示记录 - 跳转到历史记录页面
 const showRecords = () => {
-  uni.showToast({
-    title: t('components.borrowOrder.recordsFeature'),
-    icon: 'none',
-    duration: 2000
+  console.log('🔍 点击历史记录按钮，准备跳转到历史记录页面')
+  uni.navigateTo({
+    url: '/views/History'
   })
 }
 
 // 增加抵押金额
 const increaseCollateral = (order) => {
+  console.log('🔍 点击增加抵押金额，订单信息:', {
+    order: order,
+    orderNumber: order?.orderNumber,
+    status: order?.status,
+    statusType: typeof order?.status
+  })
+  
   if (!order || !order.orderNumber) {
+    console.error('❌ 订单信息不完整')
     uni.showToast({
       title: '订单信息不完整',
       icon: 'none',
@@ -294,6 +307,20 @@ const increaseCollateral = (order) => {
     })
     return
   }
+  
+  // 检查订单状态是否为active（支持大小写）
+  const status = order.status || order.orderStatus || order.state
+  if (status !== 'active' && status !== 'ACTIVE') {
+    console.warn('⚠️ 订单状态不是active:', status)
+    uni.showToast({
+      title: '只有进行中的订单才能增加抵押品',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
+  console.log('✅ 订单状态检查通过，准备跳转到增加抵押品页面')
   
   uni.navigateTo({
     url: `/views/IncreaseCollateral?orderNumber=${order.orderNumber}`
@@ -320,6 +347,17 @@ const repay = async (order) => {
     return
   }
   
+  // 检查订单状态是否为active（支持大小写）
+  const status = order.status || order.orderStatus || order.state
+  if (status !== 'active' && status !== 'ACTIVE') {
+    uni.showToast({
+      title: '只有进行中的订单才能还款',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
   try {
     console.log('📡 开始全额还款...')
     
@@ -340,8 +378,11 @@ const repay = async (order) => {
         duration: 2000
       })
       
-      // 刷新订单列表
-      await fetchLoanOrders()
+      // 刷新订单列表和总负债数据
+      await Promise.all([
+        fetchLoanOrders(),
+        fetchLoanSummary()
+      ])
     } else {
       throw new Error(response?.message || '还款失败')
     }
@@ -432,6 +473,7 @@ const goBack = () => {
   justify-content: center;
   width: 48rpx;
   height: 48rpx;
+  cursor: pointer;
 }
 
 .header-icon {

@@ -124,12 +124,12 @@
           </view>
 
           <!-- 借贷订单列表 -->
-         <view class="loan-orders-list" v-if="loanOrders.length > 0">
+         <view class="loan-orders-list" v-if="sortedLoanOrders.length > 0">
            <view class="list-title">
              <text class="title-text">{{ t('history.loans.ordersList') }}</text>
            </view>
            <view class="orders-container">
-             <view class="loan-order-item" v-for="(order, index) in loanOrders" :key="index">
+             <view class="loan-order-item" v-for="(order, index) in sortedLoanOrders" :key="index">
                <view class="order-header">
                  <view class="order-info">
                    <text class="order-status" :class="getLoanStatusClass(order.status)">
@@ -160,7 +160,7 @@
          </view>
 
          <!-- 无借贷订单状态 -->
-         <view class="empty-loan-orders" v-if="loanOrders.length === 0" style="text-align: center; padding: 40rpx; color: rgba(255,255,255,0.5);">
+         <view class="empty-loan-orders" v-if="sortedLoanOrders.length === 0" style="text-align: center; padding: 40rpx; color: rgba(255,255,255,0.5);">
            <text>暂无借贷订单</text>
          </view>
        </view>
@@ -263,6 +263,32 @@ const loanData = ref({
 
 // 借贷订单列表
 const loanOrders = ref([])
+
+// 计算属性 - 排序后的借贷订单（已完成的订单放在下面）
+const sortedLoanOrders = computed(() => {
+  return [...loanOrders.value].sort((a, b) => {
+    // 状态优先级：active > pending > completed > cancelled > liquidated
+    const statusPriority = {
+      'ACTIVE': 1,
+      'PENDING': 2,
+      'COMPLETED': 3,
+      'CANCELLED': 4,
+      'LIQUIDATED': 5
+    }
+    
+    const aPriority = statusPriority[a.status] || 6
+    const bPriority = statusPriority[b.status] || 6
+    
+    // 如果状态相同，按创建时间排序（新的在前）
+    if (aPriority === bPriority) {
+      const aTime = new Date(a.createdAt || a.createTime || 0).getTime()
+      const bTime = new Date(b.createdAt || b.createTime || 0).getTime()
+      return bTime - aTime
+    }
+    
+    return aPriority - bPriority
+  })
+})
 
 // Earn 交易数据
 const earnTransactions = ref([])
@@ -434,7 +460,7 @@ const getLoanStatusClass = (status) => {
   return classMap[status] || 'pending'
 }
 
-// 获取质押订单状态文本
+           // 获取质押订单状态文本
 const getStakeStatusText = (status) => {
   const statusMap = {
     'PENDING': t('history.earn.status.pending'),
@@ -560,34 +586,34 @@ const fetchLoanData = async () => {
     
     // 单独获取统计数据，失败不影响订单列表
     try {
-      const statisticsResponse = await loanAPI.getStatistics()
-      console.log('📡 借贷统计响应:', statisticsResponse)
+      const summaryResponse = await loanAPI.getSummary()
+      console.log('📡 借贷汇总响应:', summaryResponse)
       
       // 处理统计数据
-      if (statisticsResponse && statisticsResponse.data) {
-        const stats = statisticsResponse.data
+      if (summaryResponse && summaryResponse.data) {
+        const stats = summaryResponse.data
         loanData.value = {
           totalDebtUsdt: stats.totalActiveDebt || '0',
-          collateralAmount: stats.totalCollateralAmount || '0',
-          borrowedAmount: stats.totalBorrowedUsdt || '0'
+          collateralAmount: stats.totalActiveCollateral || '0',
+          borrowedAmount: stats.totalActiveLoanAmount || '0'
         }
-        console.log('✅ 借贷统计数据获取成功:', loanData.value)
+        console.log('✅ 借贷汇总数据获取成功:', loanData.value)
       } else {
-        console.warn('⚠️ 借贷统计响应格式异常:', statisticsResponse)
+        console.warn('⚠️ 借贷汇总响应格式异常:', summaryResponse)
         loanData.value = {
           totalDebtUsdt: '0',
           collateralAmount: '0',
           borrowedAmount: '0'
         }
       }
-    } catch (statisticsError) {
-      console.error('❌ 获取借贷统计数据失败:', statisticsError)
-      console.error('❌ 统计错误详情:', {
-        message: statisticsError.message,
-        stack: statisticsError.stack,
-        response: statisticsError.response
+    } catch (summaryError) {
+      console.error('❌ 获取借贷汇总数据失败:', summaryError)
+      console.error('❌ 汇总错误详情:', {
+        message: summaryError.message,
+        stack: summaryError.stack,
+        response: summaryError.response
       })
-      // 统计接口失败时使用默认值
+      // 汇总接口失败时使用默认值
       loanData.value = {
         totalDebtUsdt: '0',
         collateralAmount: '0',

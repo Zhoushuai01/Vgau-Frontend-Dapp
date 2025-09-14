@@ -196,7 +196,7 @@ const fetchStakeOrders = async () => {
   }
 }
 
-// 格式化时间
+// 格式化时间，精确到秒
 const formatTime = (timeStr) => {
   if (!timeStr) {
     return '暂无'
@@ -206,7 +206,15 @@ const formatTime = (timeStr) => {
     if (isNaN(date.getTime())) {
       return timeStr
     }
-    return date.toLocaleDateString('zh-CN')
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
   } catch (error) {
     console.error('时间格式化错误:', error)
     return timeStr || '暂无'

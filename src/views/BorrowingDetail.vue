@@ -48,7 +48,7 @@
       </view>
       <view class="detail-item">
         <text class="detail-label">{{ t('history.borrowingDetail.netAPR') }}</text>
-        <text class="detail-value">{{ orderDetail.annualRateAsPercentage ? orderDetail.annualRateAsPercentage.toFixed(4) : '--' }}</text>
+        <text class="detail-value">{{ orderDetail.annualRateAsPercentage ? parseFloat(orderDetail.annualRateAsPercentage.toFixed(4)).toString() + '%' : '--' }}</text>
       </view>
       <view class="detail-item">
         <text class="detail-label">{{ t('history.borrowingDetail.liqPrice') }}</text>
@@ -194,6 +194,14 @@ const fetchOrderDetail = async () => {
         collateralAmountInStandardUnit: data.collateralAmountInStandardUnit
       })
       console.log('✅ 清算价格:', data.liquidationReferencePrice)
+      console.log('✅ 年化收益率数据:', {
+        annualRateAtCreation: data.annualRateAtCreation,
+        annualRateAtCreationType: typeof data.annualRateAtCreation,
+        annualRateAsPercentage: data.annualRateAsPercentage,
+        convertedRate: data.annualRateAtCreation ? 
+          (typeof data.annualRateAtCreation === 'string' ? parseFloat(data.annualRateAtCreation) * 100 : data.annualRateAtCreation * 100) : 
+          (data.annualRateAsPercentage || 0)
+      })
       
       // 更新订单详情数据
       orderDetail.value = {
@@ -208,7 +216,9 @@ const fetchOrderDetail = async () => {
         liquidationReferencePrice: data.liquidationReferencePrice !== undefined && data.liquidationReferencePrice !== null ? 
           (typeof data.liquidationReferencePrice === 'string' ? parseFloat(data.liquidationReferencePrice) : data.liquidationReferencePrice) : 0,
         totalDebtUsdt: data.totalDebtUsdt || 0,
-        annualRateAsPercentage: data.annualRateAsPercentage || 0,
+        annualRateAsPercentage: data.annualRateAtCreation ? 
+          (typeof data.annualRateAtCreation === 'string' ? parseFloat(data.annualRateAtCreation) * 100 : data.annualRateAtCreation * 100) : 
+          (data.annualRateAsPercentage || 0),
         currentVgauPrice: data.currentVgauPrice || 0,
         riskLevel: data.riskLevel || '',
         riskMessage: data.riskMessage || '',
@@ -316,15 +326,7 @@ const generateTransactionHistory = () => {
     })
   }
   
-  // 如果订单已完成，添加完成记录
-  if (orderDetail.value.status === 'COMPLETED' || orderDetail.value.finalStatus) {
-    history.push({
-      action: t('history.borrowingDetail.completed'),
-      date: formatDate(new Date()),
-      amount: t('history.borrowingDetail.orderCompleted'),
-      amountClass: 'completed'
-    })
-  }
+  // 移除订单完成记录 - 不再显示完成的记录
   
   transactions.value = history
 }
