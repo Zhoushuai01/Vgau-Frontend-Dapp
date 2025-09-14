@@ -39,7 +39,7 @@
       <!-- 错误状态 -->
       <view v-else-if="error" class="error-section">
         <text class="error-text">{{ error }}</text>
-        <view class="retry-button" @click="fetchLoanOrders">
+        <view class="retry-button" @click="fetchLoanSummary">
           <text class="retry-text">{{ $t('common.retry') || '重试' }}</text>
         </view>
       </view>
@@ -212,28 +212,91 @@ const getLiquidationReferencePrice = (order) => {
   }
 }
 
+// 处理订单数据的通用函数
+const processOrdersData = (dataArray) => {
+  // 只显示状态为active的订单，过滤掉已完成的订单
+  orders.value = dataArray
+    .filter(item => {
+      // 只显示状态为active的订单，过滤掉completed、cancelled、liquidated等状态
+      const status = item.status || item.orderStatus || item.state
+      return status === 'active' || status === 'ACTIVE'
+    })
+    .map((item, index) => {
+      // 获取需还USDT和清算参考价格
+      const totalDebtUsdt = getTotalDebtUsdt(item)
+      const liquidationReferencePrice = getLiquidationReferencePrice(item)
+      
+      return {
+        id: item.id || index + 1,
+        orderNumber: item.orderNumber, // 订单号
+        collateralAmount: item.collateralAmount, // 抵押品数量（VGAU）
+        ltvRatio: item.currentLtvRatioAsPercentage || item.ltvRatioAsPercentage, // 当前质押比率
+        borrowAmount: item.loanAmount || 0, // 借款金额
+        interestRate: item.annualRateAsPercentage || 0, // 年化利率
+        totalDebtUsdt: totalDebtUsdt, // 需还USDT
+        liquidationReferencePrice: liquidationReferencePrice, // 清算参考价格
+        status: item.status || 'active',
+        statusDescription: item.statusDescription || null, // 状态描述
+        finalStatus: item.finalStatus || false, // 最终状态
+        // 新增字段
+        ltvRatioAfterAddingCollateral: item.ltvRatioAfterAddingCollateralAsPercentage || null, // 增加抵押金额后的质押率
+        insuranceFeeAmount: item.insuranceFeeAmount || 0, // 强平保险费
+        actualReceiveAmount: item.actualReceiveAmount || 0 // 实际到账金额
+      }
+    })
+  
+  console.log('📊 订单数据加载完成，共', orders.value.length, '个订单')
+  console.log('📊 订单详情:', orders.value)
+}
 
-// 获取总负债数据
+
+// 获取总负债数据和订单数据
 const fetchLoanSummary = async () => {
   try {
-    console.log('📡 开始获取总负债数据...')
+    loading.value = true
+    error.value = null
+    
+    console.log('📡 开始获取总负债和订单数据...')
     const response = await loanAPI.getSummary()
     
     console.log('✅ 总负债数据获取成功:', response)
     
     if (response && response.success && response.data) {
+      // 处理总负债数据
       totalLiabilities.value = response.data.totalActiveDebt || '0'
       currentVgauPrice.value = parseFloat(response.data.currentVgauPrice || 0)
       console.log('💰 总负债金额:', totalLiabilities.value)
       console.log('💰 当前VGAU价格:', currentVgauPrice.value)
+      
+      // 处理订单数据
+      if (response.data.recentOrders && Array.isArray(response.data.recentOrders)) {
+        console.log('📋 从summary接口获取到订单数据:', response.data.recentOrders)
+        processOrdersData(response.data.recentOrders)
+      } else {
+        console.log('📋 summary接口没有返回订单数据')
+        orders.value = []
+      }
     } else {
       console.warn('⚠️ 总负债数据格式异常:', response)
       totalLiabilities.value = '0'
       currentVgauPrice.value = 0
+      orders.value = []
+      error.value = '获取数据失败'
     }
   } catch (err) {
     console.error('❌ 获取总负债失败:', err)
     totalLiabilities.value = '0'
+    orders.value = []
+    error.value = err.message || '获取数据失败'
+    
+    // 显示错误提示
+    uni.showToast({
+      title: error.value,
+      icon: 'none',
+      duration: 3000
+    })
+  } finally {
+    loading.value = false
   }
 }
 
@@ -271,34 +334,8 @@ const fetchLoanOrders = async () => {
         }
       }
       
-      // 只显示状态为active的订单，过滤掉已完成的订单
-      orders.value = dataArray
-        .filter(item => {
-          // 只显示状态为active的订单，过滤掉completed、cancelled、liquidated等状态
-          const status = item.status || item.orderStatus || item.state
-          return status === 'active' || status === 'ACTIVE'
-        })
-        .map((item, index) => {
-          // 获取需还USDT和清算参考价格
-          const totalDebtUsdt = getTotalDebtUsdt(item)
-          const liquidationReferencePrice = getLiquidationReferencePrice(item)
-          
-          return {
-            id: item.id || index + 1,
-            orderNumber: item.orderNumber, // 订单号
-            collateralAmount: item.collateralAmount, // 抵押品数量（VGAU）
-            ltvRatio: item.ltvRatioAsPercentage, // 质押比率 - 使用API返回的ltvRatioAsPercentage
-            borrowAmount: item.borrowAmount || 0, // 借款金额
-            interestRate: item.annualRateAsPercentage || 0, // 年化利率 - 使用API返回的annualRateAsPercentage
-            totalDebtUsdt: totalDebtUsdt, // 需还USDT - 优先使用API返回，否则计算
-            liquidationReferencePrice: liquidationReferencePrice, // 清算参考价格 - 优先使用API返回，否则计算
-            status: item.status || 'active',
-            statusDescription: item.statusDescription || null, // 状态描述 - 使用API返回的statusDescription
-            finalStatus: item.finalStatus || false // 最终状态 - 使用API返回的finalStatus
-          }
-        })
-      
-      console.log('📊 订单数据加载完成，共', orders.value.length, '个订单')
+      // 使用通用函数处理订单数据
+      processOrdersData(dataArray)
     } else {
       console.warn('⚠️ API返回数据格式异常:', response)
       orders.value = []
@@ -321,10 +358,8 @@ const fetchLoanOrders = async () => {
 
 // 页面加载时获取数据
 onMounted(async () => {
-  await Promise.all([
-    fetchLoanSummary(),
-    fetchLoanOrders()
-  ])
+  // 只调用 summary 接口获取数据
+  await fetchLoanSummary()
 })
 
 // 调试国际化 - 验证翻译是否正常工作
@@ -433,10 +468,7 @@ const repay = async (order) => {
       })
       
       // 刷新订单列表和总负债数据
-      await Promise.all([
-        fetchLoanOrders(),
-        fetchLoanSummary()
-      ])
+      await fetchLoanSummary()
     } else {
       throw new Error(response?.message || '还款失败')
     }

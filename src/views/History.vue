@@ -552,69 +552,32 @@ const fetchLoanData = async () => {
   try {
     console.log('📡 开始获取借贷数据...')
     
-    // 先获取订单列表
-    try {
-      const ordersResponse = await loanAPI.getOrders()
-      console.log('📡 借贷订单响应:', ordersResponse)
-      console.log('📡 借贷订单响应类型:', typeof ordersResponse)
-      console.log('📡 借贷订单响应数据结构:', JSON.stringify(ordersResponse, null, 2))
+    // 只调用 summary 接口获取所有数据
+    const summaryResponse = await loanAPI.getSummary()
+    console.log('📡 借贷汇总响应:', summaryResponse)
+    
+    if (summaryResponse && summaryResponse.success && summaryResponse.data) {
+      const data = summaryResponse.data
       
-      // 处理订单列表数据
-      if (ordersResponse && ordersResponse.data) {
-        let orders = []
-        if (Array.isArray(ordersResponse.data)) {
-          orders = ordersResponse.data
-        } else if (ordersResponse.data.records && Array.isArray(ordersResponse.data.records)) {
-          orders = ordersResponse.data.records
-        } else if (ordersResponse.data.orders && Array.isArray(ordersResponse.data.orders)) {
-          orders = ordersResponse.data.orders
-        } else if (ordersResponse.data.list && Array.isArray(ordersResponse.data.list)) {
-          orders = ordersResponse.data.list
-        }
-        
-        // 保存订单列表数据
-        loanOrders.value = orders
+      // 处理统计数据
+      loanData.value = {
+        totalDebtUsdt: data.totalActiveDebt || '0',
+        collateralAmount: data.totalActiveCollateral || '0',
+        borrowedAmount: data.totalActiveLoanAmount || '0'
+      }
+      console.log('✅ 借贷汇总数据获取成功:', loanData.value)
+      
+      // 处理订单数据
+      if (data.recentOrders && Array.isArray(data.recentOrders)) {
+        loanOrders.value = data.recentOrders
         console.log('✅ 借贷订单列表获取成功:', loanOrders.value.length, '条记录')
         console.log('📋 订单详情:', loanOrders.value)
       } else {
-        console.warn('⚠️ 借贷订单响应格式异常:', ordersResponse)
+        console.log('📋 summary接口没有返回订单数据')
         loanOrders.value = []
       }
-    } catch (ordersError) {
-      console.error('❌ 获取借贷订单列表失败:', ordersError)
-      loanOrders.value = []
-    }
-    
-    // 单独获取统计数据，失败不影响订单列表
-    try {
-      const summaryResponse = await loanAPI.getSummary()
-      console.log('📡 借贷汇总响应:', summaryResponse)
-      
-      // 处理统计数据
-      if (summaryResponse && summaryResponse.data) {
-        const stats = summaryResponse.data
-        loanData.value = {
-          totalDebtUsdt: stats.totalActiveDebt || '0',
-          collateralAmount: stats.totalActiveCollateral || '0',
-          borrowedAmount: stats.totalActiveLoanAmount || '0'
-        }
-        console.log('✅ 借贷汇总数据获取成功:', loanData.value)
-      } else {
-        console.warn('⚠️ 借贷汇总响应格式异常:', summaryResponse)
-        loanData.value = {
-          totalDebtUsdt: '0',
-          collateralAmount: '0',
-          borrowedAmount: '0'
-        }
-      }
-    } catch (summaryError) {
-      console.error('❌ 获取借贷汇总数据失败:', summaryError)
-      console.error('❌ 汇总错误详情:', {
-        message: summaryError.message,
-        stack: summaryError.stack,
-        response: summaryError.response
-      })
-      // 汇总接口失败时使用默认值
+    } else {
+      console.warn('⚠️ 借贷汇总响应格式异常:', summaryResponse)
       loanData.value = {
         totalDebtUsdt: '0',
         collateralAmount: '0',
