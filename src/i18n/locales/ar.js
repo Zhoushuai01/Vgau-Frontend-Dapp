@@ -928,8 +928,8 @@ export default {
       allContentLoaded: 'تم تحميل كل المحتوى',
       ruleDetails: 'تفاصيل القواعد',
       successfullyReferUserThroughKYC: 'نجح في إحالة المستخدم من خلال KYC والحصول على النقاط:',
-      directReferral: 'إحالة مباشرة',
-      indirectReferral: 'إحالة غير مباشرة',
+      directReferral: 'مكافأة الإحالة المباشرة',
+      indirectReferral: 'مكافأة الدعوة غير المباشرة',
       rewardsPerUser: '2 نقطة/مستخدم',
       indirectRewardsPerUser: '0.2 نقطة/مستخدم',
       pointsUnit: 'نقطة/مستخدم',
@@ -952,7 +952,7 @@ export default {
       lending: 'إقراض',
       exchange: 'تبديل',
       ecosystem: 'بيئة',
-      stakingRewards: 'مكافآت الرهان',
+      stakingRewards: 'رهان',
       invitation: 'دعوة',
       ecosystemParticipation: 'مشاركة البيئة',
       lending: 'إقراض',
@@ -961,7 +961,13 @@ export default {
       earnedPoints: 'النقاط المكتسبة',
       spentPoints: 'النقاط المنفقة',
       pointsHistory: 'تاريخ النقاط',
-      noHistory: 'لا يوجد تاريخ نقاط'
+      noHistory: 'لا يوجد تاريخ نقاط',
+      // أوصاف أنواع عمليات النقاط
+      createStakingOrder: 'رهان',
+      inviteRelationship: 'دعوة',
+      directReferral: 'مكافأة الإحالة المباشرة',
+      indirectReferral: 'مكافأة الدعوة غير المباشرة',
+      lendingRepayment: 'سداد القرض'
     },
 
     // Exchange

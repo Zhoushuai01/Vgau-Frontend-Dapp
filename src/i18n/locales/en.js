@@ -959,8 +959,8 @@ export default {
       allContentLoaded: 'All content loaded',
       ruleDetails: 'Rule Details',
       successfullyReferUserThroughKYC: 'Successfully refer a user through KYC to earn points:',
-      directReferral: 'Direct Referral',
-      indirectReferral: 'Indirect Referral',
+      directReferral: 'Direct Referral Reward',
+      indirectReferral: 'Indirect Invitation Reward',
       rewardsPerUser: '2 Points/User',
       indirectRewardsPerUser: '0.2 Points/User',
       pointsUnit: 'Points/User',
@@ -983,7 +983,7 @@ export default {
       lending: 'Lending',
       exchange: 'Exchange',
       ecosystem: 'Ecosystem',
-      stakingRewards: 'Staking Rewards',
+      stakingRewards: 'Staking',
       invitation: 'Invitation',
       ecosystemParticipation: 'Ecosystem Participation',
       lending: 'Lending',
@@ -992,7 +992,13 @@ export default {
       earnedPoints: 'Earned Points',
       spentPoints: 'Spent Points',
       pointsHistory: 'Points History',
-      noHistory: 'No Points History'
+      noHistory: 'No Points History',
+      // Points operation type descriptions
+      createStakingOrder: 'Staking',
+      inviteRelationship: 'Invite',
+      directReferral: 'Direct Referral Reward',
+      indirectReferral: 'Indirect Invitation Reward',
+      lendingRepayment: 'Lending Repayment'
     },
 
     // Exchange

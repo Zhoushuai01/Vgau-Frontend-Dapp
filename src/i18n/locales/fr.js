@@ -928,8 +928,8 @@ export default {
       allContentLoaded: 'Tout le contenu chargé',
       ruleDetails: 'Détails des Règles',
       successfullyReferUserThroughKYC: 'Référence avec succès utilisateur via KYC et obtention de points :',
-      directReferral: 'Référence Directe',
-      indirectReferral: 'Référence Indirecte',
+      directReferral: 'Récompense de Parrainage Direct',
+      indirectReferral: 'Récompense d\'Invitation Indirecte',
       rewardsPerUser: '2 points/utilisateur',
       indirectRewardsPerUser: '0.2 points/utilisateur',
       pointsUnit: 'points/utilisateur',
@@ -952,7 +952,7 @@ export default {
       lending: 'Prêt',
       exchange: 'Échange',
       ecosystem: 'Écosystème',
-      stakingRewards: 'Récompenses de Stake',
+      stakingRewards: 'Stake',
       invitation: 'Invitation',
       ecosystemParticipation: 'Participation à l\'Écosystème',
       lending: 'Prêt',
@@ -961,7 +961,13 @@ export default {
       earnedPoints: 'Points Gagnés',
       spentPoints: 'Points Dépensés',
       pointsHistory: 'Historique des Points',
-      noHistory: 'Aucun historique de points'
+      noHistory: 'Aucun historique de points',
+      // Descriptions des types d'opérations de points
+      createStakingOrder: 'Stake',
+      inviteRelationship: 'Invitation',
+      directReferral: 'Récompense de Parrainage Direct',
+      indirectReferral: 'Récompense d\'Invitation Indirecte',
+      lendingRepayment: 'Remboursement de Prêt'
     },
 
     // Exchange

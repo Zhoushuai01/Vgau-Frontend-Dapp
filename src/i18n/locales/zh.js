@@ -983,8 +983,8 @@ export default {
       allContentLoaded: '全部內容已載入',
       ruleDetails: '規則詳情',
       successfullyReferUserThroughKYC: '成功通過KYC推薦用戶獲得積分：',
-      directReferral: '直推',
-      indirectReferral: '間推',
+      directReferral: '直推獎勵',
+      indirectReferral: '間接邀請獎勵',
       rewardsPerUser: '2 積分/用戶',
       indirectRewardsPerUser: '0.2 積分/用戶',
       pointsUnit: '積分/用戶',
@@ -1007,7 +1007,7 @@ export default {
       lending: '借貸',
       exchange: '兌換',
       ecosystem: '生態',
-      stakingRewards: '質押獎勵',
+      stakingRewards: '質押',
       invitation: '邀請',
       ecosystemParticipation: '生態參與',
       lending: '借貸',
@@ -1016,7 +1016,13 @@ export default {
       earnedPoints: '獲得積分',
       spentPoints: '消費積分',
       pointsHistory: '積分歷史',
-      noHistory: '暫無積分歷史'
+      noHistory: '暫無積分歷史',
+      // 积分操作类型描述
+      createStakingOrder: '質押',
+      inviteRelationship: '邀請',
+      directReferral: '直推獎勵',
+      indirectReferral: '間接邀請獎勵',
+      lendingRepayment: '借貸還款'
     },
 
     // Exchange

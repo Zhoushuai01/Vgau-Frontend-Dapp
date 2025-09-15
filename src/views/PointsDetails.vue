@@ -113,6 +113,29 @@ const getTypeFromBusinessType = (businessType) => {
   return typeMapping[businessType] || 'other'
 }
 
+// 根据业务类型获取简化的积分操作描述
+const getPointsOperationDescription = (businessType, reason) => {
+  const descriptionMapping = {
+    'STAKE_CREATE': t('components.pointsDetails.createStakingOrder'),        // 质押
+    'USER_INVITE_BIND': t('components.pointsDetails.inviteRelationship'),    // 邀请
+    'LOAN_REPAY': t('components.pointsDetails.lendingRepayment'),            // 借贷还款
+    'EXCHANGE': t('components.pointsDetails.exchange'),                      // 兑换
+    'ECOSYSTEM': t('components.pointsDetails.ecosystem')                     // 生态
+  }
+  
+  // 如果是邀请相关的，根据原因进一步细分
+  if (businessType === 'USER_INVITE_BIND') {
+    if (reason && reason.includes('直推')) {
+      return t('components.pointsDetails.directReferral')
+    } else if (reason && reason.includes('间接')) {
+      return t('components.pointsDetails.indirectReferral')
+    }
+    return t('components.pointsDetails.inviteRelationship')
+  }
+  
+  return descriptionMapping[businessType] || reason || t('common.points')
+}
+
 // 格式化时间，精确到秒
 const formatTime = (timeString) => {
   if (!timeString) return ''
@@ -161,7 +184,7 @@ const fetchPointsDetails = async () => {
       // 更新积分明细列表 - 根据API文档，数据在 data.records 中
       if (response.data.records && Array.isArray(response.data.records)) {
         pointsList.value = response.data.records.map(item => ({
-          title: item.reason || item.operationDescription || '积分操作',
+          title: getPointsOperationDescription(item.businessType, item.reason) || '积分操作',
           time: formatTime(item.createdAt || item.time || ''),
           points: (item.signedPointsChange > 0 ? '+' : '') + item.pointsAmount,
           type: getTypeFromBusinessType(item.businessType) || 'other'
@@ -170,7 +193,7 @@ const fetchPointsDetails = async () => {
       } else if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
         // 兼容旧的数据结构
         pointsList.value = response.data.pointsList.map(item => ({
-          title: item.title || item.description || '积分操作',
+          title: getPointsOperationDescription(item.businessType, item.reason) || item.title || item.description || '积分操作',
           time: formatTime(item.time || item.createdAt || ''),
           points: item.points || item.amount || '0',
           type: item.type || 'other'
@@ -213,7 +236,7 @@ const fetchPointsRecords = async () => {
       // 更新积分明细列表 - 根据API文档，数据在 data.records 中
       if (response.data.records && Array.isArray(response.data.records)) {
         pointsList.value = response.data.records.map(item => ({
-          title: item.reason || item.operationDescription || '积分操作',
+          title: getPointsOperationDescription(item.businessType, item.reason) || '积分操作',
           time: formatTime(item.createdAt || item.time || ''),
           points: (item.signedPointsChange > 0 ? '+' : '') + item.pointsAmount,
           type: getTypeFromBusinessType(item.businessType) || 'other'
@@ -222,7 +245,7 @@ const fetchPointsRecords = async () => {
       } else if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
         // 兼容旧的数据结构
         pointsList.value = response.data.pointsList.map(item => ({
-          title: item.title || item.description || '积分操作',
+          title: getPointsOperationDescription(item.businessType, item.reason) || item.title || item.description || '积分操作',
           time: formatTime(item.time || item.createdAt || ''),
           points: item.points || item.amount || '0',
           type: item.type || 'other'
