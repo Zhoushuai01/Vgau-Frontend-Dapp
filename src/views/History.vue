@@ -70,9 +70,8 @@
               </text>
             </view>
             <view class="transaction-right">
-              <text class="transaction-date">{{ transaction.date }}</text>
               <view class="status-container">
-                <text class="transaction-time">{{ formatTime(transaction.rawData?.createdAt) }}</text>
+                <text class="transaction-time">{{ formatTime(transaction.rawData?.createdAt || transaction.rawData?.createTime) }}</text>
                 <text class="transaction-status" :class="transaction.statusClass">
                   {{ getStatusText(transaction.status) }}
                 </text>
@@ -241,7 +240,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { defiAPI, loanAPI, stakeAPI } from '@/api/apiService'
+import { defiAPI, loanAPI, stakeAPI, userFundsAPI } from '@/api/apiService'
 
 const { t } = useI18n()
 
@@ -254,6 +253,9 @@ const loading = ref(false)
 
 // 充值订单数据
 const depositOrders = ref([])
+
+// 提现订单数据
+const withdrawOrders = ref([])
 
 // 借贷数据
 const loanData = ref({
@@ -298,7 +300,7 @@ const earnTransactions = ref([])
 const stakeOrders = ref([])
 
 // 计算属性 - 处理充值订单数据
-const processedTransactions = computed(() => {
+const processedDepositTransactions = computed(() => {
   return depositOrders.value.map(order => {
     const isVGAU = order.currency === 'VGAU'
     const amount = isVGAU ? order.amountRaw : order.amountRaw
@@ -316,6 +318,32 @@ const processedTransactions = computed(() => {
       rawData: order // 保存原始数据用于详情页
     }
   })
+})
+
+// 计算属性 - 处理提现订单数据
+const processedWithdrawTransactions = computed(() => {
+  return withdrawOrders.value.map(order => {
+    const isVGAU = order.currency === 'VGAU'
+    const amount = order.amount || '0'
+    const currency = order.currency
+    
+    return {
+      id: order.id || order.businessRef,
+      type: t('history.transaction.withdraw'),
+      amount: `-${amount} ${currency}`, // 提现显示为负数并包含货币类型
+      amountClass: 'negative',
+      date: formatDate(order.createTime),
+      status: order.simpleStatus || order.status, // 使用simpleStatus或status
+      statusClass: getStatusClass(order.simpleStatus || order.status),
+      currency: currency,
+      rawData: order // 保存原始数据用于详情页
+    }
+  })
+})
+
+// 计算属性 - 合并所有交易记录
+const processedTransactions = computed(() => {
+  return [...processedDepositTransactions.value, ...processedWithdrawTransactions.value]
 })
 
 // 计算属性 - 筛选交易记录
@@ -547,6 +575,33 @@ const fetchDepositOrders = async () => {
   }
 }
 
+// 获取提现订单列表
+const fetchWithdrawOrders = async () => {
+  try {
+    console.log('📡 开始获取提现订单列表...')
+    
+    const response = await userFundsAPI.getOperations({ opTypes: 'WITHDRAW' })
+    console.log('📡 提现订单列表响应:', response)
+    
+    if (response && response.success && response.data && response.data.records) {
+      withdrawOrders.value = response.data.records
+      console.log('✅ 提现订单列表获取成功:', withdrawOrders.value.length, '条记录')
+      console.log('📋 提现订单详情:', withdrawOrders.value)
+    } else {
+      console.warn('⚠️ 提现订单列表响应格式异常:', response)
+      withdrawOrders.value = []
+    }
+  } catch (error) {
+    console.error('❌ 获取提现订单列表失败:', error)
+    console.error('❌ 错误详情:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response
+    })
+    withdrawOrders.value = []
+  }
+}
+
 // 获取借贷数据
 const fetchLoanData = async () => {
   try {
@@ -660,7 +715,7 @@ const fetchStakeOrders = async () => {
 
 // 查看交易详情
 const viewTransactionDetail = (transaction) => {
-  // 如果是充值记录，传递原始数据
+  // 如果有原始数据，传递原始数据
   if (transaction.rawData) {
     const detailData = {
       type: transaction.type,
@@ -668,10 +723,11 @@ const viewTransactionDetail = (transaction) => {
       amountClass: transaction.amountClass,
       currency: transaction.rawData.currency, // 传递币种信息
       status: transaction.rawData.status, // 使用原始状态值
-      createdAt: transaction.rawData.createdAt,
-      orderId: transaction.rawData.orderId,
-      fromAddress: transaction.rawData.fromAddress,
-      transactionHash: transaction.rawData.txHash
+      createdAt: transaction.rawData.createdAt || transaction.rawData.createTime, // 支持充值记录的createdAt和提现记录的createTime
+      orderId: transaction.rawData.orderId || transaction.rawData.id, // 支持不同的ID字段
+      fromAddress: transaction.rawData.fromAddress || transaction.rawData.targetWalletAddress, // 支持充值记录的fromAddress和提现记录的targetWalletAddress
+      transactionHash: transaction.rawData.txHash || transaction.rawData.onchainTxHash, // 支持不同的交易哈希字段
+      rawData: transaction.rawData // 传递完整的原始数据
     }
     
     uni.navigateTo({
@@ -766,6 +822,7 @@ const loadMore = () => {
 onMounted(() => {
   // 初始化逻辑
   fetchDepositOrders()
+  fetchWithdrawOrders()
   fetchLoanData()
   fetchStakeOrders()
 })

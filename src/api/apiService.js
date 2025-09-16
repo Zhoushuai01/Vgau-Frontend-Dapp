@@ -278,7 +278,9 @@ class ApiService {
     // 获取用户资金余额
     getBalances: () => this.get(this.endpoints.USER_FUNDS.BALANCES),
     // 提现申请
-    withdraw: (data) => this.post(this.endpoints.USER_FUNDS.WITHDRAW, data)
+    withdraw: (data) => this.post(this.endpoints.USER_FUNDS.WITHDRAW, data),
+    // 获取用户资金操作记录
+    getOperations: (params = {}) => this.get(this.endpoints.USER_FUNDS.OPERATIONS, params)
   }
   
   // 借贷配置相关API

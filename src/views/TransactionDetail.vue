@@ -32,7 +32,7 @@
          <view class="detail-list">
                        <view class="detail-item">
               <text class="detail-label">{{ t('transactionDetail.transactionTime') }}</text>
-              <text class="detail-value">{{ formatDateTime(transactionData.createdAt) }}</text>
+              <text class="detail-value">{{ formatDateTime(transactionData.createdAt || transactionData.rawData?.createTime || transactionData.rawData?.updateTime) }}</text>
             </view>
             <view class="detail-item">
               <text class="detail-label">{{ t('transactionDetail.orderId') }}</text>
@@ -46,7 +46,7 @@
                            <view class="info-item">
             <text class="info-label">{{ t('transactionDetail.walletAddress') }}</text>
             <view class="info-value-container">
-              <text class="info-value">{{ formatShortAddress(transactionData.fromAddress) }}</text>
+              <text class="info-value">{{ formatShortAddress(transactionData.fromAddress || transactionData.rawData?.targetWalletAddress) }}</text>
               <view class="copy-icon" @click="copyAddress">
                 <image src="/static/fuzhi.png" mode="aspectFit" class="copy-image" />
               </view>
@@ -168,16 +168,19 @@ const goBack = () => {
 
 // 复制钱包地址
 const copyAddress = () => {
-  uni.setClipboardData({
-    data: transactionData.value.fromAddress,
-    success: () => {
-      uni.showToast({
-        title: t('transactionDetail.addressCopied'),
-        icon: 'success',
-        duration: 2000
-      })
-    }
-  })
+  const address = transactionData.value.fromAddress || transactionData.value.rawData?.targetWalletAddress
+  if (address) {
+    uni.setClipboardData({
+      data: address,
+      success: () => {
+        uni.showToast({
+          title: t('transactionDetail.addressCopied'),
+          icon: 'success',
+          duration: 2000
+        })
+      }
+    })
+  }
 }
 
 // 复制交易哈希
