@@ -110,7 +110,7 @@ export default {
       custodian: 'Service de Garde',
       details: 'Détails'
     },
-    officialSite: 'Site Officiel VeriGold'
+    officialSite: 'Site Officiel'
   },
 
   // DeFi页面

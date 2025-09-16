@@ -110,7 +110,7 @@ export default {
       custodian: 'Custody Service',
       details: 'Details'
     },
-    officialSite: 'VeriGold Official'
+    officialSite: 'Official'
   },
 
   // DeFi Page

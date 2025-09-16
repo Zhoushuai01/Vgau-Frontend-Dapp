@@ -60,7 +60,7 @@ export const API_ENDPOINTS = {
   // 用户资金余额
   USER_FUNDS: {
     BALANCES: '/user-funds/balances',
-    WITHDRAW: '/user-funds/withdraw',
+    WITHDRAW: '/user-funds/withdraw/request',
     OPERATIONS: '/user-funds/operations'
   },
   

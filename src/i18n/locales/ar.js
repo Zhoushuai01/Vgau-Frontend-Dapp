@@ -110,7 +110,7 @@ export default {
       custodian: 'خدمة الحفظ',
       details: 'التفاصيل'
     },
-    officialSite: 'موقع VeriGold الرسمي'
+    officialSite: 'الموقع الرسمي'
   },
 
   // DeFi页面

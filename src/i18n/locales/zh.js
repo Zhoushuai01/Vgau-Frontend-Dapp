@@ -113,7 +113,7 @@ export default {
       details: '詳細信息'
     }
     ,
-    officialSite: 'VeriGold官網'
+    officialSite: '官網'
   },
 
   // DeFi页面

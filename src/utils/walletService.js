@@ -32,6 +32,42 @@ export const checkUserLoginStatus = async () => {
   }
 }
 
+// 获取用户绑定的钱包地址
+export const getBoundWalletAddress = async () => {
+  try {
+    console.log('🔍 获取用户绑定的钱包地址...')
+    
+    // 首先检查当前连接的钱包地址
+    const currentWalletAddress = await checkWalletConnection()
+    if (!currentWalletAddress) {
+      console.log('❌ 未检测到连接的钱包')
+      return null
+    }
+    
+    // 获取当前链ID
+    const chainId = await getCurrentChainId()
+    if (!chainId) {
+      console.log('❌ 无法获取链ID')
+      return null
+    }
+    
+    // 调用 /api/wallet/login/challenge 接口获取钱包地址
+    const response = await walletAuthAPI.createLoginChallenge(currentWalletAddress, chainId)
+    
+    if (response && response.data && response.data.walletAddress) {
+      const walletAddress = response.data.walletAddress
+      console.log('✅ 从 /api/wallet/login/challenge 获取到钱包地址:', walletAddress)
+      return walletAddress
+    } else {
+      console.log('⚠️ /api/wallet/login/challenge 响应中未找到 walletAddress')
+      return null
+    }
+  } catch (error) {
+    console.error('❌ 获取用户绑定钱包地址失败:', error)
+    return null
+  }
+}
+
 // 检查钱包是否已连接
 export const checkWalletConnection = async () => {
   try {

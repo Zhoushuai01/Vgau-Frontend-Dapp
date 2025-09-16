@@ -189,6 +189,7 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { userFundsAPI, authAPI } from '@/api/apiService.js'
+import { getBoundWalletAddress } from '@/utils/walletService.js'
 
 const { t } = useI18n()
 
@@ -254,9 +255,18 @@ const handleConfirm = async () => {
   try {
     submitting.value = true
     uni.showLoading({ title: t('processing') })
+    
+    // 获取用户绑定的钱包地址
+    const targetWalletAddress = await getBoundWalletAddress()
+    if (!targetWalletAddress) {
+      uni.showToast({ title: '未找到绑定的钱包地址', icon: 'none', duration: 2000 })
+      return
+    }
+    
     const body = {
       currency: 'VGAU',
       amount: Number(inputAmount.value),
+      targetWalletAddress: targetWalletAddress,
       idempotencyKey: generateUUID()
     }
     const resp = await userFundsAPI.withdraw(body)
@@ -825,6 +835,7 @@ const getCodePlaceholder = () => {
   border-color: #FFC107;
   background: rgba(255, 193, 7, 0.1);
 }
+
 
 .method-icon {
   width: 48rpx;

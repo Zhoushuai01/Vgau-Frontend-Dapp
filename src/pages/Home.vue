@@ -16,7 +16,7 @@
         <!-- 右侧钱包连接和语言选择 -->
         <view class="right-controls">
           <!-- 官网按钮（白色） -->
-          <view class="official-link-btn" @click="openOfficialSite">
+          <view class="official-link-btn" :class="{ 'french-adjustment': locale === 'fr' }" @click="openOfficialSite">
             <text class="official-link-text">{{ $t('home.officialSite') }}</text>
           </view>
           <view class="connect-wallet-btn" @click="walletConnected ? showWalletModal = true : connectWallet()" :class="{ connected: walletConnected }">
@@ -1188,11 +1188,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6rpx 16rpx; /* 更小内边距，缩小宽度 */
+  padding: 6rpx 12rpx; /* 进一步减小内边距 */
   background-color: #FFFFFF;
   border-radius: 16rpx;
   height: 40rpx; /* 与链接钱包一致 */
-  min-width: 90rpx; /* 更小最小宽度 */
+  min-width: 70rpx; /* 进一步减小最小宽度 */
 }
 
 .official-link-text {
@@ -1201,6 +1201,11 @@
   font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
+}
+
+/* 法语状态下的官网按钮调整 */
+.official-link-btn.french-adjustment {
+  margin-left: 16rpx; /* 向右移动 */
 }
 
 .project-desc {
