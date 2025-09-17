@@ -19,7 +19,7 @@
       <view class="user-card">
         <view class="user-info">
           <view class="user-details">
-            <text class="username">{{ userInfo.username }}</text>
+            <text class="username">{{ userInfo.nickname }}</text>
             <text class="user-id">{{ userInfo.userId }}</text>
           </view>
         </view>
@@ -155,7 +155,7 @@ const walletAddress = ref('')
 const walletConnected = ref(false)
 
 const userInfo = reactive({
-  username: '',
+  nickname: '',
   userId: ''
 })
 
@@ -339,19 +339,19 @@ const getUserInfo = async () => {
     if (response && response.success && response.data) {
       console.log('✅ 获取到用户信息:', response.data)
       // 根据接口返回的字段名更新用户信息
-      userInfo.username = response.data.username || ''
+      userInfo.nickname = response.data.nickname || ''
       userInfo.userId = response.data.id ? response.data.id.toString() : ''
       console.log('✅ 用户信息已更新:', userInfo)
     } else {
       console.log('❌ 获取用户信息失败或用户未登录')
       // 保持默认空值
-      userInfo.username = ''
+      userInfo.nickname = ''
       userInfo.userId = ''
     }
   } catch (error) {
     console.error('❌ 获取用户信息失败:', error)
     // 保持默认空值
-    userInfo.username = ''
+    userInfo.nickname = ''
     userInfo.userId = ''
   }
 }

@@ -67,11 +67,7 @@ export default {
     users: 'Utilisateurs'
   },
 
-  // 兑换
-  exchange: {
-    exchangeSuccess: 'Échange Réussi',
-    exchangeFailed: 'Échange Échoué'
-  },
+
 
   // 导航
   navigation: {
@@ -129,6 +125,14 @@ export default {
     productPurchase: 'Achat de Produit',
     borrowOrder: 'Commande d\'Emprunt',
     newLending: 'Nouveau Prêt',
+    // Titres des modales
+    modalTitles: {
+      deposit: 'Dépôt',
+      withdraw: 'Retrait',
+      finance: 'Finance',
+      lending: 'Prêt',
+      action: 'Action'
+    },
     tabs: {
       account: 'Compte',
       loans: 'Prêts',
@@ -647,16 +651,33 @@ export default {
       title: 'Échange',
       brandTitle: 'VGAU',
       brandSubtitle: 'Or Numérique',
-      brandDescription: 'Service d\'échange d\'or numérique sécurisé, transparent et fiable',
-      rateText: '1 VGAU = Prix actuel de l\'or',
+      brandDescription: 'Token d\'or numérique basé sur la blockchain',
       currency1: 'USDT',
       currency2: 'VGAU',
-      exchangeAmountPlaceholder: 'Entrez la quantité d\'échange',
+      exchangeAmountPlaceholder: 'Entrez le montant d\'échange',
       requiredUSDT: 'USDT Requis',
       exchanging: 'Échange en cours...',
-      exchangeSuccess: 'Échange réussi',
-      exchangeFailed: 'Échange échoué',
-      confirmExchange: 'Confirmer l\'Échange'
+      exchangeSuccess: 'Échange Réussi',
+      exchangeSuccessDesc: 'Échange réussi de {amount} VGAU, consommé {usdt} USDT',
+      exchangeFailed: 'Échange Échoué',
+      confirmExchange: 'Confirmer l\'Échange',
+      confirm: 'Confirmer'
+    },
+
+    // Redeem
+    redeem: {
+      title: 'Rachat',
+      brandTitle: 'VGAU',
+      brandSubtitle: 'Or Numérique',
+      brandDescription: 'Token d\'or numérique basé sur la blockchain',
+      currency1: 'VGAU',
+      currency2: 'USDT',
+      redeemAmountPlaceholder: 'Entrez le montant de rachat',
+      requiredUSDT: 'Obtenir USDT',
+      confirmRedeem: 'Confirmer le Rachat',
+      redeemSuccess: 'Rachat Réussi',
+      redeemSuccessDesc: 'Rachat réussi de {amount} VGAU, obtenu {usdt} USDT',
+      confirm: 'Confirmer'
     },
 
     // IncreaseCollateral
@@ -704,31 +725,6 @@ export default {
     },
 
     // Redeem
-    redeem: {
-      title: 'Rachat',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g or = 1 token',
-      brandDescription: 'Solution de numérisation d\'or physique basée sur la blockchain',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% Rendement Annuel',
-      currency1: 'VGAU',
-      currency2: 'USDT',
-      redeemAmountPlaceholder: 'Entrez la quantité à racheter',
-      requiredUSDT: 'USDT Requis',
-      usdtTitle: 'USDT à échanger',
-      usdtAmountPlaceholder: 'Montant',
-      confirmRedeem: 'Confirmer le Rachat',
-      successText: 'Échange réussi',
-      completeText: 'Terminé',
-      redeemAmount: 'Montant du Rachat',
-      redeemTo: 'Racheter vers',
-      boundWallet: 'Adresse de la Carteira Liée',
-      dailyLimit: 'Limite maximale quotidienne de rachat',
-      confirmRedeem: 'Confirmer le Rachat',
-      redeeming: 'Rachat en cours...',
-      redeemSuccess: 'Rachat réussi',
-      redeemFailed: 'Rachat échoué'
-    },
 
     // MyFinance
     myFinance: {
@@ -886,28 +882,6 @@ export default {
       withdrawFailed: 'Retrait échoué'
     },
 
-    // Exchange
-    exchange: {
-      title: 'Échange',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g or = 1 token',
-      brandDescription: 'Solution de numérisation d\'or physique basée sur la blockchain',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% Rendement Annuel',
-      currency1: 'USDT',
-      currency2: 'VGAU',
-      exchangeAmountPlaceholder: 'Entrez la quantité à échanger',
-      requiredUSDT: 'USDT Requis',
-      confirmExchange: 'Confirmer l\'Échange',
-      exchangeFeature: 'Fonctionnalité d\'échange bientôt disponible',
-      from: 'De',
-      to: 'Vers',
-      exchangeRate: 'Taux de Change',
-      slippage: 'Glissement',
-      exchanging: 'Échange en cours...',
-      exchangeSuccess: 'Échange réussi',
-      exchangeFailed: 'Échange échoué'
-    },
 
     // Invitation
     invitation: {
@@ -970,21 +944,6 @@ export default {
       lendingRepayment: 'Remboursement de Prêt'
     },
 
-    // Exchange
-    exchange: {
-      title: 'Échange',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g or = 1 token',
-      brandDescription: 'Solution de numérisation d\'or physique basée sur la blockchain',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% Rendement Annuel',
-      currency1: 'USDT',
-      currency2: 'VGAU',
-      exchangeAmountPlaceholder: 'Entrez la quantité à échanger',
-      requiredUSDT: 'USDT Requis',
-      confirmExchange: 'Confirmer l\'Échange',
-      exchangeFeature: 'Fonctionnalité d\'échange bientôt disponible'
-    }
   },
 
   // Financial Products

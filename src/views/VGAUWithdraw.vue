@@ -722,7 +722,10 @@ const getCodePlaceholder = () => {
 
 /* 确认按钮区域 */
 .confirm-section {
-  margin-bottom: 24rpx;
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-bottom: 80rpx;
 }
 
 .confirm-button {

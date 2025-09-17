@@ -67,11 +67,7 @@ export default {
     users: 'مستخدم'
   },
 
-  // 兑换
-  exchange: {
-    exchangeSuccess: 'تم التبادل بنجاح',
-    exchangeFailed: 'فشل التبادل'
-  },
+
 
   // 导航
   navigation: {
@@ -129,6 +125,14 @@ export default {
     productPurchase: 'شراء المنتج',
     borrowOrder: 'طلب الاقتراض',
     newLending: 'إقراض جديد',
+    // عناوين النوافذ المنبثقة
+    modalTitles: {
+      deposit: 'إيداع',
+      withdraw: 'سحب',
+      finance: 'التمويل',
+      lending: 'الإقراض',
+      action: 'عمل'
+    },
     tabs: {
       account: 'الحساب',
       loans: 'القروض',
@@ -644,19 +648,36 @@ export default {
   components: {
     // Exchange
     exchange: {
-      title: 'تبديل',
+      title: 'التبادل',
       brandTitle: 'VGAU',
       brandSubtitle: 'الذهب الرقمي',
-      brandDescription: 'خدمة تبديل ذهب رقمي آمنة وشفافة وموثوقة',
-      rateText: '1 VGAU = سعر الذهب الحالي',
+      brandDescription: 'رمز ذهب رقمي قائم على تقنية البلوك تشين',
       currency1: 'USDT',
       currency2: 'VGAU',
-      exchangeAmountPlaceholder: 'أدخل كمية التبديل',
+      exchangeAmountPlaceholder: 'أدخل مبلغ التبادل',
       requiredUSDT: 'USDT المطلوب',
-      exchanging: 'جاري التبديل...',
-      exchangeSuccess: 'تم التبديل بنجاح',
-      exchangeFailed: 'فشل التبديل',
-      confirmExchange: 'تأكيد التبديل'
+      exchanging: 'جاري التبادل...',
+      exchangeSuccess: 'تم التبادل بنجاح',
+      exchangeSuccessDesc: 'تم تبادل {amount} VGAU بنجاح، استهلاك {usdt} USDT',
+      exchangeFailed: 'فشل التبادل',
+      confirmExchange: 'تأكيد التبادل',
+      confirm: 'تأكيد'
+    },
+
+    // Redeem
+    redeem: {
+      title: 'الاسترداد',
+      brandTitle: 'VGAU',
+      brandSubtitle: 'الذهب الرقمي',
+      brandDescription: 'رمز ذهب رقمي قائم على تقنية البلوك تشين',
+      currency1: 'VGAU',
+      currency2: 'USDT',
+      redeemAmountPlaceholder: 'أدخل مبلغ الاسترداد',
+      requiredUSDT: 'احصل على USDT',
+      confirmRedeem: 'تأكيد الاسترداد',
+      redeemSuccess: 'تم الاسترداد بنجاح',
+      redeemSuccessDesc: 'تم استرداد {amount} VGAU بنجاح، حصلت على {usdt} USDT',
+      confirm: 'تأكيد'
     },
 
     // IncreaseCollateral
@@ -704,31 +725,6 @@ export default {
     },
 
     // Redeem
-    redeem: {
-      title: 'استرداد',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g ذهب = 1 رمز',
-      brandDescription: 'حل رقمي للذهب المادي قائم على البلوك تشين',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% عائد سنوي',
-      currency1: 'VGAU',
-      currency2: 'USDT',
-      redeemAmountPlaceholder: 'أدخل الكمية المراد استردادها',
-      requiredUSDT: 'USDT المطلوب',
-      usdtTitle: 'USDT المراد تبديله',
-      usdtAmountPlaceholder: 'المبلغ',
-      confirmRedeem: 'تأكيد الاسترداد',
-      successText: 'تم التبديل بنجاح',
-      completeText: 'مكتمل',
-      redeemAmount: 'مبلغ الاسترداد',
-      redeemTo: 'استرداد إلى',
-      boundWallet: 'عنوان المحفظة المرتبط',
-      dailyLimit: 'الحد الأقصى اليومي للاسترداد',
-      confirmRedeem: 'تأكيد الاسترداد',
-      redeeming: 'جاري الاسترداد...',
-      redeemSuccess: 'تم الاسترداد بنجاح',
-      redeemFailed: 'فشل الاسترداد'
-    },
 
     // MyFinance
     myFinance: {
@@ -886,28 +882,6 @@ export default {
       withdrawFailed: 'فشل السحب'
     },
 
-    // Exchange
-    exchange: {
-      title: 'تبديل',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g ذهب = 1 رمز',
-      brandDescription: 'حل رقمي للذهب المادي قائم على البلوك تشين',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% عائد سنوي',
-      currency1: 'USDT',
-      currency2: 'VGAU',
-      exchangeAmountPlaceholder: 'أدخل الكمية المراد تبديلها',
-      requiredUSDT: 'USDT المطلوب',
-      confirmExchange: 'تأكيد التبديل',
-      exchangeFeature: 'ميزة التبديل قادمة قريباً',
-      from: 'من',
-      to: 'إلى',
-      exchangeRate: 'سعر التبديل',
-      slippage: 'الانزلاق',
-      exchanging: 'جاري التبديل...',
-      exchangeSuccess: 'تم التبديل بنجاح',
-      exchangeFailed: 'فشل التبديل'
-    },
 
     // Invitation
     invitation: {
@@ -970,21 +944,6 @@ export default {
       lendingRepayment: 'سداد القرض'
     },
 
-    // Exchange
-    exchange: {
-      title: 'تبديل',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g ذهب = 1 رمز',
-      brandDescription: 'حل رقمي للذهب المادي قائم على البلوك تشين',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% عائد سنوي',
-      currency1: 'USDT',
-      currency2: 'VGAU',
-      exchangeAmountPlaceholder: 'أدخل الكمية المراد تبديلها',
-      requiredUSDT: 'USDT المطلوب',
-      confirmExchange: 'تأكيد التبديل',
-      exchangeFeature: 'ميزة التبديل قادمة قريباً'
-    }
   },
 
   // Financial Products

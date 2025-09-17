@@ -2,51 +2,59 @@
   <view class="content">
     <!-- 顶部导航栏 -->
     <view class="header">
-      <view class="header-content">
-        <view class="back-btn" @click="goBack">
-          <image class="back-icon" src="/static/back.png" mode="aspectFit"></image>
-        </view>
-        <view class="title-container">
-          <view class="vgau-icon">
-            <image class="vgau-logo" src="/static/VGAU.png" mode="aspectFit"></image>
-          </view>
-          <view class="title">{{ $t('rechargePage.vgauRecharge') }}</view>
-        </view>
+      <view class="back-button" @click="goBack">
+        <image class="back-icon" src="/static/back.png" mode="aspectFit" />
+      </view>
+      <view class="page-title">
+        <image class="title-icon" src="/static/VGAU.png" mode="aspectFit" />
+        <text class="title-text">{{ $t('rechargePage.vgauRecharge') }}</text>
       </view>
     </view>
 
     <!-- 主要内容区域 -->
     <view class="main-content">
-      <!-- 内容区域 -->
-      <view class="content-area">
-        <!-- 数量输入区域 -->
-        <view class="amount-section">
-          <view class="section-title">{{ $t('rechargePage.amount') }}</view>
-          <view class="input-container">
-            <view class="input-field">
-              <input 
-                class="amount-input" 
-                type="number" 
-                :placeholder="$t('rechargePage.minimumAmount')" 
-                v-model="amount"
-                @input="handleAmountInput"
-              />
-              <view class="currency-label">VGAU |{{ $t('rechargePage.max') }}</view>
+      <!-- 数量输入区域 -->
+      <view class="input-section">
+        <view class="input-label">
+          <text class="label-text">{{ $t('rechargePage.amount') }}</text>
+        </view>
+        
+        <view class="input-container">
+          <view class="input-field">
+            <view class="input-border">
+              <view class="input-left">
+                <input 
+                  class="input-field-text" 
+                  type="number" 
+                  :placeholder="$t('rechargePage.minimumAmount')" 
+                  placeholder-style="color: rgba(255, 255, 255, 0.2); font-size: 32rpx;"
+                  v-model="amount"
+                  @input="handleAmountInput"
+                />
+              </view>
+              <view class="input-currency">
+                <text class="currency-text">VGAU |{{ $t('rechargePage.max') }}</text>
+              </view>
             </view>
-            <view class="divider"></view>
-            <view class="redeemable-info">
-              <text class="redeemable-label">{{ $t('rechargePage.availableBalance') }}</text>
-              <text class="redeemable-amount">{{ vgauBalance }} vgau</text>
-            </view>
-
           </view>
+          
+          <view class="balance-info">
+            <view class="balance-label">
+              <text class="balance-text">{{ $t('rechargePage.availableBalance') }}</text>
+            </view>
+            <view class="balance-amount">
+              <text class="amount-text">{{ vgauBalance }} VGAU</text>
+            </view>
+          </view>
+          
+          <view class="divider"></view>
         </view>
       </view>
 
       <!-- 确认按钮 -->
       <view class="confirm-section">
-        <view class="confirm-btn" :class="{ disabled: isLoading }" @click="confirmRecharge">
-          <text class="confirm-text">{{ isLoading ? $t('rechargePage.processing') : $t('rechargePage.confirmOperation') }}</text>
+        <view class="confirm-button" :class="{ disabled: isLoading }" @click="confirmRecharge">
+          <text class="confirm-text">{{ isLoading ? $t('rechargePage.processing') : $t('rechargePage.confirm') }}</text>
         </view>
       </view>
 
@@ -896,37 +904,37 @@
 </script>
 
 <style lang="scss" scoped>
-/* 全局样式 */
+/* 全局背景色 */
+:deep(body), :deep(html) {
+  background-color: #0A0A0A !important;
+}
+
 .content {
   min-height: 100vh;
   background-color: #0A0A0A;
+  width: 100%;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
 
 /* 顶部导航栏 */
 .header {
-  background: #0A0A0A;
-  padding-top: calc(var(--status-bar-height, 0px) + 20rpx);
-}
-
-.header-content {
   display: flex;
   align-items: center;
   height: 88rpx;
   padding: 0 32rpx;
-  position: relative;
+  background-color: #0A0A0A;
+  border-bottom: 1rpx solid #1A1A1A;
 }
 
-.back-btn {
-  position: absolute;
-  left: 32rpx;
-  width: 48rpx;
-  height: 48rpx;
+.back-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  width: 48rpx;
+  height: 48rpx;
+  margin-right: 24rpx;
 }
 
 .back-icon {
@@ -934,26 +942,20 @@
   height: 48rpx;
 }
 
-.title-container {
-  flex: 1;
+.page-title {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1;
   gap: 16rpx;
 }
 
-.vgau-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vgau-logo {
+.title-icon {
   width: 48rpx;
   height: 48rpx;
 }
 
-.title {
+.title-text {
   font-size: 36rpx;
   color: #FFFFFF;
   font-weight: 400;
@@ -961,29 +963,30 @@
 
 /* 主要内容区域 */
 .main-content {
+  display: flex;
+  flex-direction: column;
+  padding: 32rpx;
   flex: 1;
+}
+
+/* 输入区域 */
+.input-section {
   display: flex;
   flex-direction: column;
-  padding: 24rpx;
-  min-height: calc(100vh - 88rpx - var(--status-bar-height, 0px));
+  margin-bottom: 48rpx;
 }
 
-/* 内容区域 */
-.content-area {
+.input-label {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  height: 40rpx;
+  margin-bottom: 16rpx;
 }
 
-/* 数量输入区域 */
-.amount-section {
-  margin-bottom: 32rpx;
-}
-
-.section-title {
+.label-text {
   font-size: 32rpx;
   color: #FFFFFF;
   font-weight: 400;
-  margin-bottom: 40rpx;
 }
 
 .input-container {
@@ -993,30 +996,48 @@
 }
 
 .input-field {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.input-border {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   height: 112rpx;
-  background: #1A1A1A;
+  background-color: #1A1A1A;
   border: 2rpx solid rgba(255, 255, 255, 0.2);
   border-radius: 16rpx;
-  display: flex;
-  align-items: center;
   padding: 0 32rpx;
 }
 
-.amount-input {
+.input-left {
+  display: flex;
+  align-items: center;
   flex: 1;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 32rpx;
-  height: 100%;
 }
 
-.currency-label {
+.input-field-text {
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 32rpx;
+  color: #FFFFFF;
+  font-weight: 400;
+}
+
+.input-currency {
+  display: flex;
+  align-items: center;
+}
+
+.currency-text {
   font-size: 32rpx;
   color: #FFA500;
   font-weight: 400;
-  margin-left: 32rpx;
 }
 
 .divider {
@@ -1025,26 +1046,33 @@
   background: #1A1A1A;
 }
 
-.redeemable-info {
+.balance-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 32rpx;
+  height: 40rpx;
 }
 
+.balance-label {
+  display: flex;
+  align-items: center;
+}
 
-
-.redeemable-label {
+.balance-text {
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.5);
   font-weight: 400;
 }
 
-.redeemable-amount {
+.balance-amount {
+  display: flex;
+  align-items: center;
+}
+
+.amount-text {
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.5);
   font-weight: 400;
-  text-align: right;
 }
 
 /* 赎回至区域 */
@@ -1074,10 +1102,13 @@
 
 /* 确认按钮区域 */
 .confirm-section {
-  margin-bottom: 24rpx;
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-bottom: 80rpx;
 }
 
-.confirm-btn {
+.confirm-button {
   width: 100%;
   height: 96rpx;
   background: linear-gradient(90deg, rgba(254, 218, 120, 1) 0%, rgba(176, 121, 32, 1) 100%);
@@ -1089,16 +1120,16 @@
   transition: all 0.3s ease;
 }
 
-.confirm-btn:active {
+.confirm-button:active {
   transform: scale(0.98);
 }
 
-.confirm-btn.disabled {
+.confirm-button.disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.confirm-btn.disabled:active {
+.confirm-button.disabled:active {
   transform: none;
 }
 

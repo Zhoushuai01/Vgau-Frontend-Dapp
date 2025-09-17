@@ -69,6 +69,19 @@
     </view>
     
     
+    <!-- 兑换成功弹窗 -->
+    <view class="success-modal" v-if="showSuccessModal" @click="closeSuccessModal">
+      <view class="success-modal-content" @click.stop>
+        <view class="success-modal-text">
+          <text class="success-title">{{ t('components.exchange.exchangeSuccess') }}</text>
+          <text class="success-description">{{ t('components.exchange.exchangeSuccessDesc', { amount: exchangeAmount, usdt: requiredUSDT }) }}</text>
+        </view>
+        <view class="success-modal-btn" @click="closeSuccessModal">
+          <text class="success-modal-btn-text">{{ t('components.exchange.confirm') }}</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 自定义错误弹窗 -->
     <view class="custom-error-modal" v-if="showErrorModal" @click="closeErrorModal">
       <view class="error-modal-content" @click.stop>
@@ -185,6 +198,9 @@ const exchangeRate = ref('123.4561')
 // 汇率更新定时器
 let exchangeRateTimer = null
 
+// 成功弹窗相关状态
+const showSuccessModal = ref(false)
+
 // 自定义错误弹窗相关状态
 const showErrorModal = ref(false)
 const errorModalData = ref({
@@ -210,8 +226,8 @@ const calculateRequiredUSDT = async () => {
     const result = await contractExchange.getRequiredUSDT(amount)
     
     console.log('📊 计算结果:', result)
-    // 直接使用数字值，保留两位小数
-    requiredUSDT.value = result.formatted.toFixed(2)
+    // 直接使用数字值，保留四位小数
+    requiredUSDT.value = result.formatted.toFixed(4)
   } catch (error) {
     console.error('计算所需USDT失败:', error)
     requiredUSDT.value = '0'
@@ -299,20 +315,8 @@ const confirmExchange = async () => {
 
     console.log('✅ 兑换成功:', result)
 
-    // 显示成功提示
-    uni.showToast({
-      title: getSuccessMessage(),
-      icon: 'success',
-      duration: 3000
-    })
-
-    // 清空输入框
-    exchangeAmount.value = ''
-
-    // 可以在这里添加跳转到成功页面或其他逻辑
-    setTimeout(() => {
-      uni.navigateBack()
-    }, 2000)
+    // 显示成功弹窗
+    showSuccessModal.value = true
 
   } catch (error) {
     console.error('❌ 兑换失败:', error)
@@ -334,6 +338,15 @@ const confirmExchange = async () => {
 
 // 返回上一页
 const goBack = () => {
+  uni.navigateBack()
+}
+
+// 关闭成功弹窗
+const closeSuccessModal = () => {
+  showSuccessModal.value = false
+  // 清空输入框
+  exchangeAmount.value = ''
+  // 返回上一页
   uni.navigateBack()
 }
 
@@ -643,6 +656,69 @@ onUnmounted(() => {
   .rate-text {
     font-size: 32rpx;
   }
+}
+
+/* 兑换成功弹窗样式 */
+.success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.success-modal-content {
+  background: #1A1A1A;
+  border-radius: 24rpx;
+  padding: 80rpx 32rpx;
+  margin: 0 48rpx;
+  max-width: 600rpx;
+  width: 100%;
+}
+
+.success-modal-text {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  margin-bottom: 48rpx;
+  justify-content: center;
+  align-items: center;
+}
+
+.success-title {
+  font-size: 32rpx;
+  color: #FFFFFF;
+  font-weight: bold;
+  text-align: center;
+}
+
+.success-description {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.success-modal-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(90deg, #E78B1B 0%, #FFC069 100%);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.success-modal-btn-text {
+  font-size: 32rpx;
+  color: #000000;
+  font-weight: 600;
 }
 
 /* 自定义错误弹窗样式 */

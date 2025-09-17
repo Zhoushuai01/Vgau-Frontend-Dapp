@@ -85,15 +85,15 @@
       </view>
     </view>
 
-    <!-- 成功弹窗 -->
-    <view v-show="showSuccessModal" class="modal-overlay" @click="closeModal">
-      <view class="success-modal" @click.stop>
-        <view class="success-content">
-          <text class="success-text">{{ t('components.redeem.successText') }}</text>
-          <text class="success-value">{{ redeemAmount }} {{ t('components.redeem.currency1') }}</text>
+    <!-- 赎回成功弹窗 -->
+    <view class="success-modal" v-if="showSuccessModal" @click="closeSuccessModal">
+      <view class="success-modal-content" @click.stop>
+        <view class="success-modal-text">
+          <text class="success-title">{{ t('components.redeem.redeemSuccess') }}</text>
+          <text class="success-description">{{ t('components.redeem.redeemSuccessDesc', { amount: redeemAmount, usdt: requiredUSDT }) }}</text>
         </view>
-        <view class="complete-btn" @click="closeModal">
-          <text class="complete-text">{{ t('components.redeem.completeText') }}</text>
+        <view class="success-modal-btn" @click="closeSuccessModal">
+          <text class="success-modal-btn-text">{{ t('components.redeem.confirm') }}</text>
         </view>
       </view>
     </view>
@@ -145,8 +145,8 @@ const calculateRequiredUSDT = async () => {
     const result = await contractExchange.getRequiredUSDT(amount)
     
     console.log('📊 计算结果:', result)
-    // 直接使用数字值，保留两位小数
-    requiredUSDT.value = result.formatted.toFixed(2)
+    // 直接使用数字值，保留四位小数
+    requiredUSDT.value = result.formatted.toFixed(4)
   } catch (error) {
     console.error('计算所需USDT失败:', error)
     requiredUSDT.value = '0'
@@ -327,11 +327,13 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-// 关闭弹窗
-const closeModal = () => {
+// 关闭成功弹窗
+const closeSuccessModal = () => {
   showSuccessModal.value = false
-  // 清空输入
+  // 清空输入框
   redeemAmount.value = ''
+  // 返回上一页
+  uni.navigateBack()
 }
 
 // 关闭错误弹窗
@@ -626,71 +628,67 @@ onUnmounted(() => {
   line-height: 1.5;
 }
 
-/* 成功弹窗样式 */
-.modal-overlay {
+/* 赎回成功弹窗样式 */
+.success-modal {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
 }
 
-.success-modal {
-  background-color: #181818;
-  border-radius: 16rpx;
-  padding: 48rpx 32rpx;
-  margin: 0 32rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 32rpx;
-  min-width: 400rpx;
+.success-modal-content {
+  background: #1A1A1A;
+  border-radius: 24rpx;
+  padding: 80rpx 32rpx;
+  margin: 0 48rpx;
+  max-width: 600rpx;
+  width: 100%;
 }
 
-.success-content {
+.success-modal-text {
   display: flex;
   flex-direction: column;
+  gap: 24rpx;
+  margin-bottom: 48rpx;
+  justify-content: center;
   align-items: center;
-  gap: 8rpx;
 }
 
-.success-text {
-  color: #FFFFFF;
+.success-title {
   font-size: 32rpx;
-  font-weight: 400;
-  line-height: 1.5;
+  color: #FFFFFF;
+  font-weight: bold;
   text-align: center;
 }
 
-.success-value {
-  color: #E78B1B;
-  font-size: 36rpx;
-  font-weight: 400;
-  line-height: 1.5;
+.success-description {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
   text-align: center;
+  line-height: 1.5;
 }
 
-.complete-btn {
-  background: linear-gradient(90deg, rgba(255, 215, 0, 1) 0%, rgba(255, 165, 0, 1) 100%);
+.success-modal-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(90deg, #E78B1B 0%, #FFC069 100%);
   border-radius: 16rpx;
-  padding: 24rpx 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 200rpx;
+  cursor: pointer;
 }
 
-.complete-text {
-  color: #000000;
+.success-modal-btn-text {
   font-size: 32rpx;
-  font-weight: 400;
-  line-height: 1.5;
-  text-align: center;
+  color: #000000;
+  font-weight: 600;
 }
 
 /* 响应式设计 */

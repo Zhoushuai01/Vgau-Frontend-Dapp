@@ -112,12 +112,7 @@
         <!-- 弹窗头部 -->
         <view class="modal-header">
           <view class="modal-handle"></view>
-          <text class="modal-title">{{ 
-            currentAction === 'deposit' ? 'Deposit' : 
-            currentAction === 'withdraw' ? 'Withdraw' : 
-            currentAction === 'finance' ? 'Finance' : 
-            currentAction === 'lending' ? 'Lending' : 'Action'
-          }}</text>
+          <text class="modal-title">{{ $t(`defi.modalTitles.${currentAction}`) }}</text>
         </view>
         
         <!-- 货币选择区域 -->

@@ -69,11 +69,7 @@ export default {
     users: '用戶'
   },
 
-  // 兑换
-  exchange: {
-    exchangeSuccess: '兌換成功',
-    exchangeFailed: '兌換失敗'
-  },
+
 
   // 导航
   navigation: {
@@ -132,6 +128,14 @@ export default {
     productPurchase: '產品申購',
     borrowOrder: '借幣訂單',
     newLending: '新的借貸',
+    // 弹窗标题
+    modalTitles: {
+      deposit: '充值',
+      withdraw: '提現',
+      finance: '理財',
+      lending: '借貸',
+      action: '操作'
+    },
     disconnect: '斷開連接',
     disconnectConfirm: {
       title: '確認斷開連接',
@@ -679,16 +683,33 @@ export default {
       title: '兌換',
       brandTitle: 'VGAU',
       brandSubtitle: '數字黃金',
-      brandDescription: '安全、透明、可信的數字黃金兌換服務',
-      rateText: '1 VGAU = 當前黃金價格',
+      brandDescription: '基於區塊鏈技術的數字黃金代幣',
       currency1: 'USDT',
       currency2: 'VGAU',
-      exchangeAmountPlaceholder: '請輸入兌換數量',
-      requiredUSDT: '所需 USDT',
+      exchangeAmountPlaceholder: '輸入兌換數量',
+      requiredUSDT: '所需USDT',
       exchanging: '正在兌換...',
       exchangeSuccess: '兌換成功',
+      exchangeSuccessDesc: '成功兌換 {amount} VGAU，消耗 {usdt} USDT',
       exchangeFailed: '兌換失敗',
-      confirmExchange: '確認兌換'
+      confirmExchange: '確認兌換',
+      confirm: '確認'
+    },
+
+    // Redeem
+    redeem: {
+      title: '贖回',
+      brandTitle: 'VGAU',
+      brandSubtitle: '數字黃金',
+      brandDescription: '基於區塊鏈技術的數字黃金代幣',
+      currency1: 'VGAU',
+      currency2: 'USDT',
+      redeemAmountPlaceholder: '輸入贖回數量',
+      requiredUSDT: '獲得USDT',
+      confirmRedeem: '確認贖回',
+      redeemSuccess: '贖回成功',
+      redeemSuccessDesc: '成功贖回 {amount} VGAU，獲得 {usdt} USDT',
+      confirm: '確認'
     },
 
     // IncreaseCollateral
@@ -736,31 +757,6 @@ export default {
     },
 
     // Redeem
-    redeem: {
-      title: '贖回',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g 黃金 = 1 代幣',
-      brandDescription: '基於區塊鏈的實物黃金數字化解決方案',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% 年化收益率',
-      currency1: 'VGAU',
-      currency2: 'USDT',
-      redeemAmountPlaceholder: '輸入要贖回的數量',
-      requiredUSDT: '所需USDT',
-      usdtTitle: '要兌換的USDT',
-      usdtAmountPlaceholder: '金額',
-      confirmRedeem: '確認贖回',
-      successText: '兌換成功',
-      completeText: '完成',
-      redeemAmount: '贖回金額',
-      redeemTo: '贖回至',
-      boundWallet: '綁定錢包地址',
-      dailyLimit: '每日最大贖回限額',
-      confirmRedeem: '確認贖回',
-      redeeming: '贖回中...',
-      redeemSuccess: '贖回成功',
-      redeemFailed: '贖回失敗'
-    },
 
     // MyFinance
     myFinance: {
@@ -941,28 +937,6 @@ export default {
       withdrawFailed: '提現失敗'
     },
 
-    // Exchange
-    exchange: {
-      title: '兌換',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g 黃金 = 1 代幣',
-      brandDescription: '基於區塊鏈的實物黃金數字化解決方案',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% 年化收益率',
-      currency1: 'USDT',
-      currency2: 'VGAU',
-      exchangeAmountPlaceholder: '輸入要兌換的數量',
-      requiredUSDT: '所需USDT',
-      confirmExchange: '確認兌換',
-      exchangeFeature: '兌換功能即將推出',
-      from: '從',
-      to: '到',
-      exchangeRate: '兌換匯率',
-      slippage: '滑點',
-      exchanging: '兌換中...',
-      exchangeSuccess: '兌換成功',
-      exchangeFailed: '兌換失敗'
-    },
 
     // Invitation
     invitation: {
@@ -1026,20 +1000,6 @@ export default {
     },
 
     // Exchange
-    exchange: {
-      title: '兌換',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g 黃金 = 1 代幣',
-      brandDescription: '基於區塊鏈的實物黃金數字化解決方案',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% 年化收益率',
-      currency1: 'USDT',
-      currency2: 'VGAU',
-      exchangeAmountPlaceholder: '輸入要兌換的數量',
-      requiredUSDT: '所需USDT',
-      confirmExchange: '確認兌換',
-      exchangeFeature: '兌換功能即將推出'
-    }
   },
 
   // Financial Products

@@ -67,11 +67,7 @@ export default {
     users: 'Users'
   },
 
-  // Exchange
-  exchange: {
-    exchangeSuccess: 'Exchange Successful',
-    exchangeFailed: 'Exchange Failed'
-  },
+
 
   // Navigation
   navigation: {
@@ -129,6 +125,14 @@ export default {
     productPurchase: 'Product Purchase',
     borrowOrder: 'Borrow Order',
     newLending: 'New Lending',
+    // Modal titles
+    modalTitles: {
+      deposit: 'Deposit',
+      withdraw: 'Withdraw',
+      finance: 'Finance',
+      lending: 'Lending',
+      action: 'Action'
+    },
     disconnect: 'Disconnect',
     disconnectConfirm: {
       title: 'Confirm Disconnect',
@@ -655,16 +659,33 @@ export default {
       title: 'Exchange',
       brandTitle: 'VGAU',
       brandSubtitle: 'Digital Gold',
-      brandDescription: 'Secure, transparent, trusted digital gold exchange service',
-      rateText: '1 VGAU = Current Gold Price',
+      brandDescription: 'Blockchain-based digital gold token',
       currency1: 'USDT',
       currency2: 'VGAU',
       exchangeAmountPlaceholder: 'Enter exchange amount',
       requiredUSDT: 'Required USDT',
       exchanging: 'Exchanging...',
       exchangeSuccess: 'Exchange Successful',
+      exchangeSuccessDesc: 'Successfully exchanged {amount} VGAU, consumed {usdt} USDT',
       exchangeFailed: 'Exchange Failed',
-      confirmExchange: 'Confirm Exchange'
+      confirmExchange: 'Confirm Exchange',
+      confirm: 'Confirm'
+    },
+
+    // Redeem
+    redeem: {
+      title: 'Redeem',
+      brandTitle: 'VGAU',
+      brandSubtitle: 'Digital Gold',
+      brandDescription: 'Blockchain-based digital gold token',
+      currency1: 'VGAU',
+      currency2: 'USDT',
+      redeemAmountPlaceholder: 'Enter redeem amount',
+      requiredUSDT: 'Get USDT',
+      confirmRedeem: 'Confirm Redeem',
+      redeemSuccess: 'Redeem Successful',
+      redeemSuccessDesc: 'Successfully redeemed {amount} VGAU, got {usdt} USDT',
+      confirm: 'Confirm'
     },
 
     // IncreaseCollateral
@@ -712,31 +733,6 @@ export default {
     },
 
     // Redeem
-    redeem: {
-      title: 'Redeem',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g Gold = 1 Token',
-      brandDescription: 'Blockchain-based physical gold digitalization solution',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% APR',
-      currency1: 'VGAU',
-      currency2: 'USDT',
-      redeemAmountPlaceholder: 'Enter the quantity to be redeemed',
-      requiredUSDT: 'Required USDT',
-      usdtTitle: 'The USDT to be exchanged',
-      usdtAmountPlaceholder: 'Amount',
-      confirmRedeem: 'Confirm Redeem',
-      successText: 'Successfully Exchanged',
-      completeText: 'Complete',
-      redeemAmount: 'Redeem Amount',
-      redeemTo: 'Redeem To',
-      boundWallet: 'Bound Wallet Address',
-      dailyLimit: 'Daily Maximum Redemption Limit',
-      confirmRedeem: 'Confirm Redeem',
-      redeeming: 'Redeeming...',
-      redeemSuccess: 'Redeem Successful',
-      redeemFailed: 'Redeem Failed'
-    },
 
     // MyFinance
     myFinance: {
@@ -917,28 +913,6 @@ export default {
       withdrawFailed: 'Withdraw Failed'
     },
 
-    // Exchange
-    exchange: {
-      title: 'Exchange',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g Gold = 1 Token',
-      brandDescription: 'Blockchain-based physical gold digitalization solution',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% APR',
-      currency1: 'USDT',
-      currency2: 'VGAU',
-      exchangeAmountPlaceholder: 'Enter the quantity to be redeemed',
-      requiredUSDT: 'Required USDT',
-      confirmExchange: 'Confirm Exchange',
-      exchangeFeature: 'Exchange feature coming soon',
-      from: 'From',
-      to: 'To',
-      exchangeRate: 'Exchange Rate',
-      slippage: 'Slippage',
-      exchanging: 'Exchanging...',
-      exchangeSuccess: 'Exchange Successful',
-      exchangeFailed: 'Exchange Failed'
-    },
 
     // Invitation
     invitation: {
@@ -1002,20 +976,6 @@ export default {
     },
 
     // Exchange
-    exchange: {
-      title: 'Exchange',
-      brandTitle: 'Verifood',
-      brandSubtitle: '1g Gold = 1 Token',
-      brandDescription: 'Blockchain-based physical gold digitalization solution',
-      rateText: '1 VGAU = 120 USDT',
-      aprText: '15% APR',
-      currency1: 'USDT',
-      currency2: 'VGAU',
-      exchangeAmountPlaceholder: 'Enter the quantity to be redeemed',
-      requiredUSDT: 'Required USDT',
-      confirmExchange: 'Confirm Exchange',
-      exchangeFeature: 'Exchange feature coming soon'
-    }
   },
   // Financial Products
   financialProducts: 'Financial Products',

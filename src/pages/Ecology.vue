@@ -4,37 +4,45 @@
     <view class="main-content">
       <!-- 顶部热门外链区域 -->
       <view class="hero-section" v-if="!loading && popularLinks.length > 0">
-        <view class="popular-links-container">
-          <view 
-            class="popular-link-item" 
+        <swiper 
+          class="popular-swiper" 
+          :indicator-dots="false" 
+          :autoplay="true" 
+          :interval="3000" 
+          :duration="500"
+          :circular="true"
+          @change="onSwiperChange"
+        >
+          <swiper-item 
             v-for="(link, index) in popularLinks" 
             :key="link.id"
             @click="handleLinkClick(link)"
-            :class="{ 'active': index === 0 }"
           >
-            <view class="popular-link-image">
-              <image 
-                v-if="link.imageUrl" 
-                :src="link.imageUrl" 
-                class="popular-image"
-                mode="aspectFill"
-              />
-              <view v-else class="popular-image-placeholder">
-                <text class="placeholder-text">{{ link.name }}</text>
-              </view>
-              <view class="popular-overlay">
-                <text class="popular-title">{{ link.name }}</text>
-                <text class="popular-description">{{ link.description || '点击访问' }}</text>
+            <view class="popular-link-item">
+              <view class="popular-link-image">
+                <image 
+                  v-if="link.imageUrl" 
+                  :src="link.imageUrl" 
+                  class="popular-image"
+                  mode="aspectFill"
+                />
+                <view v-else class="popular-image-placeholder">
+                  <text class="placeholder-text">{{ link.name }}</text>
+                </view>
+                <view class="popular-overlay">
+                  <text class="popular-title">{{ link.name }}</text>
+                  <text class="popular-description">{{ link.description || '点击访问' }}</text>
+                </view>
               </view>
             </view>
-          </view>
-        </view>
+          </swiper-item>
+        </swiper>
         <view class="popular-dots">
           <view 
             class="dot" 
             v-for="(link, index) in popularLinks" 
             :key="index"
-            :class="{ 'active': index === 0 }"
+            :class="{ 'active': currentSwiperIndex === index }"
           ></view>
         </view>
       </view>
@@ -128,6 +136,7 @@ const links = ref([])
 const popularLinks = ref([])
 const loading = ref(false)
 const error = ref('')
+const currentSwiperIndex = ref(0)
 
 // 获取外链数据
 const fetchLinks = async () => {
@@ -165,6 +174,12 @@ const fetchLinks = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 轮播图切换事件
+const onSwiperChange = (e) => {
+  currentSwiperIndex.value = e.detail.current
+  console.log('🔄 轮播图切换到索引:', currentSwiperIndex.value)
 }
 
 // 处理外链点击
@@ -246,18 +261,17 @@ onMounted(() => {
   margin-bottom: 40rpx;
 }
 
-.popular-links-container {
-  display: flex;
-  gap: 16rpx;
+.popular-swiper {
+  width: 100%;
+  height: 352rpx;
   margin-bottom: 24rpx;
-  overflow-x: auto;
-  padding: 0 0 16rpx 0;
+  border-radius: 16rpx;
+  overflow: hidden;
 }
 
 .popular-link-item {
-  flex-shrink: 0;
   width: 100%;
-  max-width: 600rpx;
+  height: 100%;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -269,7 +283,7 @@ onMounted(() => {
 .popular-link-image {
   position: relative;
   width: 100%;
-  height: 352rpx;
+  height: 100%;
   border-radius: 16rpx;
   overflow: hidden;
 }
