@@ -97,6 +97,27 @@
         <text class="footer-text">{{ $t('components.borrowOrder.allLoaded') }}</text>
       </view>
     </view>
+
+    <!-- 还款确认弹窗 -->
+    <view v-if="showRepayModal" class="modal-overlay" @click="closeRepayModal">
+      <view class="modal-container" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">{{ $t('components.borrowOrder.repayModal.title') }}</text>
+        </view>
+        <view class="modal-content">
+          <text class="modal-text">{{ repayModalContent }}</text>
+        </view>
+        <view class="modal-actions">
+          <view class="modal-btn cancel-btn" @click="closeRepayModal">
+            <text class="btn-text">{{ $t('components.borrowOrder.repayModal.cancel') }}</text>
+          </view>
+          <view class="modal-btn confirm-btn" @click="confirmRepay" :class="{ 'loading': repayLoading }">
+            <text v-if="!repayLoading" class="btn-text">{{ $t('components.borrowOrder.repayModal.confirm') }}</text>
+            <text v-else class="btn-text">{{ $t('components.borrowOrder.repayModal.loading') }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -113,11 +134,38 @@ const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+// 还款确认弹窗相关数据
+const showRepayModal = ref(false)
+const repayLoading = ref(false)
+const currentRepayOrder = ref(null)
+
 // 总负债数据
 const totalLiabilities = ref('0')
 
 // 当前VGAU价格
 const currentVgauPrice = ref(0)
+
+// 还款确认弹窗内容
+const repayModalContent = computed(() => {
+  if (!currentRepayOrder.value) return ''
+  
+  const order = currentRepayOrder.value
+  const orderNumber = order.orderNumber || ''
+  const amount = formatDebtUsdt(order.totalDebtUsdt)
+  
+  // 如果有具体金额，显示带金额的文本
+  if (amount && amount !== '--') {
+    return t('components.borrowOrder.repayModal.contentWithAmount', {
+      orderNumber: orderNumber,
+      amount: amount
+    })
+  } else {
+    // 否则显示简单文本
+    return t('components.borrowOrder.repayModal.content', {
+      orderNumber: orderNumber
+    })
+  }
+})
 
 // 格式化总负债显示
 const formatTotalLiabilities = (value) => {
@@ -425,8 +473,8 @@ const adjustPledgeRatio = () => {
   })
 }
 
-// 全额还款
-const repay = async (order) => {
+// 全额还款 - 显示确认弹窗
+const repay = (order) => {
   if (!order || !order.orderNumber) {
     uni.showToast({
       title: '订单信息不完整',
@@ -447,11 +495,21 @@ const repay = async (order) => {
     return
   }
   
+  // 设置当前还款订单并显示确认弹窗
+  currentRepayOrder.value = order
+  showRepayModal.value = true
+}
+
+// 确认还款
+const confirmRepay = async () => {
+  if (!currentRepayOrder.value) return
+  
   try {
+    repayLoading.value = true
     console.log('📡 开始全额还款...')
     
     const requestData = {
-      orderNumber: order.orderNumber,
+      orderNumber: currentRepayOrder.value.orderNumber,
       confirmRepayment: true
     }
     
@@ -462,24 +520,36 @@ const repay = async (order) => {
     
     if (response && response.success) {
       uni.showToast({
-        title: '还款成功',
+        title: t('components.borrowOrder.repayModal.success'),
         icon: 'success',
         duration: 2000
       })
       
+      // 关闭弹窗
+      closeRepayModal()
+      
       // 刷新订单列表和总负债数据
       await fetchLoanSummary()
     } else {
-      throw new Error(response?.message || '还款失败')
+      throw new Error(response?.message || t('components.borrowOrder.repayModal.failed'))
     }
   } catch (error) {
     console.error('❌ 全额还款失败:', error)
     uni.showToast({
-      title: error.message || '还款失败',
+      title: error.message || t('components.borrowOrder.repayModal.failed'),
       icon: 'none',
       duration: 3000
     })
+  } finally {
+    repayLoading.value = false
   }
+}
+
+// 关闭还款确认弹窗
+const closeRepayModal = () => {
+  showRepayModal.value = false
+  currentRepayOrder.value = null
+  repayLoading.value = false
 }
 
 // 返回上一页
@@ -840,5 +910,113 @@ const goBack = () => {
   color: #FFFFFF !important;
   background: transparent !important;
   font-size: 24rpx;
+}
+
+/* 还款确认弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(10rpx);
+}
+
+.modal-container {
+  width: 600rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 24rpx;
+  overflow: hidden;
+  backdrop-filter: blur(20rpx);
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  padding: 40rpx 40rpx 24rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+  font-size: 36rpx;
+  color: #FFFFFF;
+  font-weight: 600;
+  text-align: center;
+}
+
+.modal-content {
+  padding: 32rpx 40rpx;
+}
+
+.modal-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  text-align: center;
+  white-space: pre-line;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 24rpx;
+  padding: 24rpx 40rpx 40rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  background: transparent;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.cancel-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.98);
+}
+
+.confirm-btn {
+  background: linear-gradient(135deg, #FFA500, #FF8C00);
+  border: 1rpx solid #FFA500;
+}
+
+.confirm-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.confirm-btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.confirm-btn.loading:active {
+  transform: none;
+}
+
+.modal-btn .btn-text {
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.cancel-btn .btn-text {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.confirm-btn .btn-text {
+  color: #FFFFFF;
 }
 </style> 

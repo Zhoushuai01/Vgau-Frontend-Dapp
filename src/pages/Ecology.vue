@@ -115,7 +115,6 @@
             <text class="game-title">{{ link.name }}</text>
             <text class="game-description">{{ link.description || '点击访问' }}</text>
           </view>
-          <view class="game-arrow">▶</view>
         </view>
       </view>
       
@@ -504,18 +503,6 @@ onMounted(() => {
   font-family: Inter, sans-serif;
 }
 
-.game-arrow {
-  width: 32rpx;
-  height: 32rpx;
-  background-color: #1A1A1A;
-  border-radius: 4rpx;
-  margin-left: 16rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 20rpx;
-}
 
 /* 加载状态样式 */
 .loading-container {

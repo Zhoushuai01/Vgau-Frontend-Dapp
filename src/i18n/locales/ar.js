@@ -867,7 +867,18 @@ export default {
       dueDate: 'تاريخ الاستحقاق',
       actions: 'الإجراءات',
       repay: 'سداد',
-      extend: 'تمديد'
+      extend: 'تمديد',
+      // نافذة تأكيد السداد
+      repayModal: {
+        title: 'تأكيد السداد الكامل',
+        content: 'هل أنت متأكد من أنك تريد سداد الطلب {orderNumber} بالكامل؟',
+        contentWithAmount: 'هل أنت متأكد من أنك تريد سداد الطلب {orderNumber} بالكامل؟\nمبلغ السداد: {amount} USDT',
+        confirm: 'تأكيد السداد',
+        cancel: 'إلغاء',
+        loading: 'جاري السداد...',
+        success: 'تم السداد بنجاح',
+        failed: 'فشل في السداد'
+      }
     },
 
     // USDTWithdraw & VGAUWithdraw

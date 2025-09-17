@@ -922,7 +922,18 @@ export default {
       dueDate: '到期日期',
       actions: '操作',
       repay: '還款',
-      extend: '延期'
+      extend: '延期',
+      // 还款确认弹窗
+      repayModal: {
+        title: '確認全額還款',
+        content: '是否確認全額還款訂單 {orderNumber}？',
+        contentWithAmount: '是否確認全額還款訂單 {orderNumber}？\n還款金額：{amount} USDT',
+        confirm: '確認還款',
+        cancel: '取消',
+        loading: '還款中...',
+        success: '還款成功',
+        failed: '還款失敗'
+      }
     },
 
     // USDTWithdraw & VGAUWithdraw

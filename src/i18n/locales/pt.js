@@ -867,7 +867,18 @@ export default {
       dueDate: 'Data de Vencimento',
       actions: 'Ações',
       repay: 'Pagar',
-      extend: 'Estender'
+      extend: 'Estender',
+      // Modal de confirmação de pagamento
+      repayModal: {
+        title: 'Confirmar Pagamento Total',
+        content: 'Tem certeza de que deseja pagar totalmente o pedido {orderNumber}?',
+        contentWithAmount: 'Tem certeza de que deseja pagar totalmente o pedido {orderNumber}?\nValor do pagamento: {amount} USDT',
+        confirm: 'Confirmar Pagamento',
+        cancel: 'Cancelar',
+        loading: 'Pagando...',
+        success: 'Pagamento Bem-sucedido',
+        failed: 'Falha no Pagamento'
+      }
     },
 
     // USDTWithdraw & VGAUWithdraw

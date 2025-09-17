@@ -42,7 +42,7 @@
             </view>
             <view class="info-row">
               <text class="info-label">{{ t('components.myFinance.startTime') }}</text>
-              <text class="info-value">{{ formatTime(order.firstStakeTime) }}</text>
+              <text class="info-value">{{ formatTime(order.createTime) }}</text>
             </view>
             <view class="info-row">
               <text class="info-label">{{ t('components.myFinance.endTime') }}</text>
@@ -168,7 +168,7 @@ const fetchStakeOrders = async () => {
       const mappedOrder = {
         ...order,
         // 确保字段映射正确
-        firstStakeTime: order.firstStakeTime || order.startTime || '',
+        createTime: order.createTime || order.firstStakeTime || order.startTime || '',
         lastStakeTime: order.lastStakeTime || order.endTime || '',
         totalStakeAmount: order.totalStakeAmount || order.stakeAmount || '0',
         totalInterestEarned: order.totalInterestEarned || order.interestEarned || '0'

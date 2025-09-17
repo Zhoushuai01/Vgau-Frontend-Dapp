@@ -898,7 +898,18 @@ export default {
       dueDate: 'Due Date',
       actions: 'Actions',
       repay: 'Repay',
-      extend: 'Extend'
+      extend: 'Extend',
+      // Repayment confirmation modal
+      repayModal: {
+        title: 'Confirm Full Repayment',
+        content: 'Are you sure you want to fully repay order {orderNumber}?',
+        contentWithAmount: 'Are you sure you want to fully repay order {orderNumber}?\nRepayment amount: {amount} USDT',
+        confirm: 'Confirm Repayment',
+        cancel: 'Cancel',
+        loading: 'Repaying...',
+        success: 'Repayment Successful',
+        failed: 'Repayment Failed'
+      }
     },
 
     // USDTWithdraw & VGAUWithdraw

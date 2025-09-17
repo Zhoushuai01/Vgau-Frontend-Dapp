@@ -867,7 +867,18 @@ export default {
       dueDate: 'Date d\'Échéance',
       actions: 'Actions',
       repay: 'Rembourser',
-      extend: 'Prolonger'
+      extend: 'Prolonger',
+      // Modal de confirmation de remboursement
+      repayModal: {
+        title: 'Confirmer le Remboursement Intégral',
+        content: 'Êtes-vous sûr de vouloir rembourser intégralement la commande {orderNumber} ?',
+        contentWithAmount: 'Êtes-vous sûr de vouloir rembourser intégralement la commande {orderNumber} ?\nMontant du remboursement : {amount} USDT',
+        confirm: 'Confirmer le Remboursement',
+        cancel: 'Annuler',
+        loading: 'Remboursement en cours...',
+        success: 'Remboursement Réussi',
+        failed: 'Échec du Remboursement'
+      }
     },
 
     // USDTWithdraw & VGAUWithdraw
