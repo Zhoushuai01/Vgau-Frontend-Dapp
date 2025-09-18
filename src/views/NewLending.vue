@@ -8,8 +8,8 @@
       <view class="page-title">
         <text class="title-text">{{ t('components.newLending.lending') }}</text>
       </view>
-      <view class="history-button">
-        <image class="history-icon" src="/static/history.png" mode="aspectFit" />
+      <view class="history-button" @click="goToInfoPage">
+        <image class="history-icon" src="/static/DiFi/xiangqing.png" mode="aspectFit" />
       </view>
     </view>
 
@@ -18,7 +18,7 @@
              <!-- 提示信息 -->
        <view class="notice-section">
          <view class="notice-content">
-           <view class="info-button" @click="goToInfoPage">
+           <view class="info-button">
              <text class="info-icon">!</text>
            </view>
            <text class="notice-text">{{ t('components.newLending.pledgedVGAUAssets') }}</text>
@@ -617,13 +617,12 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: all 0.3s ease;
   flex-shrink: 0;
 }
 
 .info-button:active {
-  transform: scale(0.95);
+  /* 移除点击时的缩放效果 */
 }
 
 .info-icon {

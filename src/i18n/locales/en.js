@@ -1089,6 +1089,9 @@ export default {
     pt: 'português'
   },
 
+  // Root level translations
+  lending: 'Lending',
+
   // LanguageSwitcher
   switchedToChinese: 'Switched to Chinese',
   switchedToEnglish: 'Switched to English'

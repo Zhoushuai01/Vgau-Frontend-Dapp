@@ -1058,6 +1058,9 @@ export default {
     pt: 'português'
   },
 
+  // Root level translations
+  lending: 'الإقراض',
+
   // LanguageSwitcher
   switchedToArabic: 'تم التبديل إلى العربية',
   switchedToEnglish: 'تم التبديل إلى الإنجليزية'

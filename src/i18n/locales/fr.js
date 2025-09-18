@@ -1058,6 +1058,9 @@ export default {
     pt: 'português'
   },
 
+  // Root level translations
+  lending: 'Prêt',
+
   // LanguageSwitcher
   switchedToFrench: 'Changé vers le Français',
   switchedToEnglish: 'Changé vers l\'Anglais'

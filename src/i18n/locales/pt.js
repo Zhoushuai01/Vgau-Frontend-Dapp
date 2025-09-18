@@ -1058,6 +1058,9 @@ export default {
     pt: 'português'
   },
 
+  // Root level translations
+  lending: 'Empréstimo',
+
   // LanguageSwitcher
   switchedToPortuguese: 'Mudou para Português',
   switchedToEnglish: 'Mudou para Inglês'

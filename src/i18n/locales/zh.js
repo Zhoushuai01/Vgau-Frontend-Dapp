@@ -1105,6 +1105,9 @@ export default {
   vgauMax: 'VGAU |最大',
   dailyMaximumRedemptionLimitVGAU: '每日最大贖回限額：5000000000 VGAU',
 
+  // 根级别翻译
+  lending: '借貸',
+
   // Language Names
   languageNames: {
     ar: 'اللغة العربية',

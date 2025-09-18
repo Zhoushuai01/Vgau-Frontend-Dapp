@@ -6,7 +6,7 @@
         <image class="back-icon" src="/static/back.png" mode="aspectFit" />
       </view>
       <view class="page-title">
-        <text class="title-text">{{ t('financialProducts') }}</text>
+        <text class="title-text">{{ t('lending') }}</text>
       </view>
     </view>
 
