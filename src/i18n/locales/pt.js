@@ -63,6 +63,7 @@ export default {
     pleaseCheckConnection: 'Verifique a Conexão',
     pleaseEnterValidAmount: 'Digite um Valor Válido',
     pleaseEnterPositiveInteger: 'Digite um Número Inteiro Positivo',
+    suggestions: 'Sugestões',
     points: 'Pontos',
     users: 'Usuários'
   },
@@ -167,6 +168,7 @@ export default {
     connectingWallet: 'Conectando Carteira...',
     walletConnected: 'Carteira Conectada com Sucesso',
     walletConnectionFailed: 'Falha na Conexão da Carteira',
+    pleaseConnectWallet: 'Por favor, conecte sua carteira primeiro',
     userRejectedConnection: 'Usuário Rejeitou Conexão',
     noWalletDetected: 'Nenhuma Carteira Detectada',
     assetOverview: 'Visão Geral dos Ativos',
@@ -915,6 +917,18 @@ export default {
       successfullyReferUserThroughKYC: 'Referiu com sucesso usuário através de KYC e obteve pontos:',
       directReferral: 'Recompensa de Referência Direta',
       indirectReferral: 'Recompensa de Convite Indireto',
+      directPush: 'Direto',
+      indirectPush: 'Indireto',
+      // 后端返回值的映射
+      rewardTypeMapping: {
+        '直推': 'Direto',
+        '间推': 'Indireto',
+        'direct': 'Direto',
+        'indirect': 'Indireto',
+        '完成质押赎回获得积分': 'Resgate de Stake Completo',
+        'staking': 'Stake',
+        '质押': 'Stake'
+      },
       rewardsPerUser: '2 pontos/usuário',
       indirectRewardsPerUser: '0.2 pontos/usuário',
       pointsUnit: 'pontos/usuário',
@@ -950,8 +964,8 @@ export default {
       // Descrições dos tipos de operações de pontos
       createStakingOrder: 'Stake',
       inviteRelationship: 'Convite',
-      directReferral: 'Recompensa de Referência Direta',
-      indirectReferral: 'Recompensa de Convite Indireto',
+      directReferral: 'Direto',
+      indirectReferral: 'Indireto',
       lendingRepayment: 'Pagamento de Empréstimo'
     },
 

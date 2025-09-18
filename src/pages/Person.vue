@@ -5,7 +5,7 @@
       <text class="header-title">{{ $t('person.title') }}</text>
       <view class="header-actions">
         <view class="header-btn" @click="goToHistory">
-          <image src="/static/Person/History.png" class="header-icon" />
+          <image src="/static/history.png" class="header-icon" />
         </view>
         <view class="header-btn">
           <image src="/static/Person/Service.png" class="header-icon" />
@@ -174,24 +174,68 @@ const points = ref('0')
 const setupWalletEventListeners = () => {
   if (typeof window.ethereum !== 'undefined') {
     // 监听账户变化
-    window.ethereum.on('accountsChanged', (accounts) => {
+    window.ethereum.on('accountsChanged', async (accounts) => {
       console.log('🔄 钱包账户已切换:', accounts)
-      // 使用web3Service获取当前账户，保持与Home.vue一致
-      if (web3Service.isConnected && web3Service.currentAccount) {
-        walletAddress.value = web3Service.currentAccount
+      
+      if (accounts.length > 0) {
+        // 有账户连接
+        const wasConnected = walletConnected.value
+        const wasAddress = walletAddress.value
+        const newAddress = accounts[0]
+        
+        // 更新连接状态
+        walletAddress.value = newAddress
         walletConnected.value = true
-        console.log('✅ 更新钱包地址:', web3Service.currentAccount)
+        console.log('✅ 更新钱包地址:', newAddress)
+        
+        // 如果是从未连接状态变为连接状态，或者地址发生变化
+        if (!wasConnected || wasAddress !== newAddress) {
+          console.log('🔄 钱包状态变化，开始刷新数据...')
+          
+          // 延迟刷新数据，确保web3Service状态已更新
+          setTimeout(async () => {
+            try {
+              // 刷新用户信息和资产数据
+              await Promise.all([
+                getUserInfo(),
+                getAssetsInfo()
+              ])
+              console.log('✅ 钱包状态变化后数据刷新完成')
+            } catch (error) {
+              console.error('❌ 钱包状态变化后数据刷新失败:', error)
+            }
+          }, 500)
+        }
       } else {
-        walletAddress.value = ''
-        walletConnected.value = false
-        console.log('⚠️ 钱包已断开连接')
+        // 没有账户连接
+        if (walletConnected.value) {
+          console.log('⚠️ accountsChanged事件: 钱包已断开连接')
+          walletAddress.value = ''
+          walletConnected.value = false
+          
+          // 立即清除用户数据
+          console.log('🧹 accountsChanged事件: 立即清除个人中心数据...')
+          clearPersonalData()
+          console.log('✅ accountsChanged事件: 个人中心数据已清除')
+        }
       }
     })
     
     // 监听网络变化
     window.ethereum.on('chainChanged', (chainId) => {
       console.log('🔄 网络已切换:', chainId)
-      // 可以在这里添加网络切换的处理逻辑
+      // 网络切换时也刷新数据
+      setTimeout(async () => {
+        try {
+          await Promise.all([
+            getUserInfo(),
+            getAssetsInfo()
+          ])
+          console.log('✅ 网络切换后数据刷新完成')
+        } catch (error) {
+          console.error('❌ 网络切换后数据刷新失败:', error)
+        }
+      }, 500)
     })
   }
 }
@@ -200,7 +244,7 @@ const setupWalletEventListeners = () => {
 let walletCheckInterval = null
 
 const startWalletStatusCheck = () => {
-  // 每5秒检查一次钱包连接状态
+  // 每2秒检查一次钱包连接状态，提高响应速度
   walletCheckInterval = setInterval(async () => {
     try {
       const wasConnected = walletConnected.value
@@ -216,18 +260,40 @@ const startWalletStatusCheck = () => {
             nowConnected: true,
             address: web3Service.currentAccount
           })
+          
+          // 如果是从未连接状态变为连接状态，或者地址发生变化，刷新数据
+          if (!wasConnected || wasAddress !== web3Service.currentAccount) {
+            console.log('🔄 定期检查: 检测到钱包状态变化，开始刷新数据...')
+            setTimeout(async () => {
+              try {
+                await Promise.all([
+                  getUserInfo(),
+                  getAssetsInfo()
+                ])
+                console.log('✅ 定期检查: 数据刷新完成')
+              } catch (error) {
+                console.error('❌ 定期检查: 数据刷新失败:', error)
+              }
+            }, 500)
+          }
         }
       } else {
+        // 检查是否真的断开了连接
         if (wasConnected) {
+          console.log('🔄 定期检查: 检测到钱包断开连接')
           walletAddress.value = ''
           walletConnected.value = false
-          console.log('🔄 定期检查: 钱包已断开连接')
+          
+          // 立即清除数据，不等待其他事件
+          console.log('🧹 定期检查: 立即清除个人中心数据...')
+          clearPersonalData()
+          console.log('✅ 定期检查: 个人中心数据已清除')
         }
       }
     } catch (error) {
       console.error('定期检查钱包状态失败:', error)
     }
-  }, 5000) // 每5秒检查一次
+  }, 2000) // 每2秒检查一次，提高响应速度
 }
 
 const stopWalletStatusCheck = () => {
@@ -310,7 +376,14 @@ const getConnectedWalletAddress = async () => {
     
     // 确保web3Service已初始化
     if (!web3Service.web3) {
-      await web3Service.init()
+      console.log('🔧 web3Service未初始化，开始初始化...')
+      const initResult = await web3Service.init()
+      if (!initResult) {
+        console.log('❌ web3Service初始化失败')
+        walletAddress.value = ''
+        walletConnected.value = false
+        return false
+      }
     }
     
     // 使用web3Service获取当前账户，与Home.vue保持一致
@@ -318,21 +391,32 @@ const getConnectedWalletAddress = async () => {
       walletAddress.value = web3Service.currentAccount
       walletConnected.value = true
       console.log('✅ 获取到钱包地址:', web3Service.currentAccount)
+      return true
     } else {
       console.log('⚠️ 未检测到连接的钱包')
       walletAddress.value = ''
       walletConnected.value = false
+      return false
     }
   } catch (error) {
     console.error('获取钱包地址失败:', error)
     walletAddress.value = ''
     walletConnected.value = false
+    return false
   }
 }
 
 // 获取用户信息 - 调用 /api/auth/me 接口
 const getUserInfo = async () => {
   try {
+    // 检查钱包连接状态，如果未连接则不获取数据
+    if (!walletConnected.value || !walletAddress.value) {
+      console.log('⚠️ 钱包未连接，跳过获取用户信息')
+      userInfo.nickname = ''
+      userInfo.userId = ''
+      return
+    }
+    
     console.log('🔍 开始获取用户信息...')
     const response = await authAPI.getMe()
     
@@ -359,6 +443,18 @@ const getUserInfo = async () => {
 // 获取资产信息 - 调用API获取质押、借贷和积分数据
 const getAssetsInfo = async () => {
   try {
+    // 检查钱包连接状态，如果未连接则不获取数据
+    if (!walletConnected.value || !walletAddress.value) {
+      console.log('⚠️ 钱包未连接，跳过获取资产信息')
+      // 重置为默认值
+      assets.stakedVGAU = '0'
+      assets.stakingYield = '0'
+      assets.collateralVGAU = '0'
+      assets.remainingDebt = '0'
+      points.value = '0'
+      return
+    }
+    
     console.log('📊 开始获取资产信息...')
     
     // 并行调用质押统计、借贷汇总和积分详情接口
@@ -404,10 +500,18 @@ const getAssetsInfo = async () => {
       } else {
         assets.collateralVGAU = '0'
       }
+      
+      // 更新剩余债务数量
+      if (loanData.totalActiveDebt !== undefined) {
+        assets.remainingDebt = formatNumber(loanData.totalActiveDebt)
+      } else {
+        assets.remainingDebt = '0'
+      }
     } else {
       console.warn('⚠️ 借贷汇总接口调用失败:', loanResponse.reason)
       // 接口失败时保持默认值 0
       assets.collateralVGAU = '0'
+      assets.remainingDebt = '0'
     }
     
     // 处理积分统计数据
@@ -435,6 +539,7 @@ const getAssetsInfo = async () => {
     assets.stakedVGAU = '0'
     assets.stakingYield = '0'
     assets.collateralVGAU = '0'
+    assets.remainingDebt = '0'
     points.value = '0'
     
     // 不显示错误提示，静默处理
@@ -514,6 +619,28 @@ const goToSettings = () => {
 }
 
 
+// 清除个人中心数据
+const clearPersonalData = () => {
+  console.log('🧹 清除个人中心数据...')
+  
+  // 清除用户信息
+  userInfo.nickname = ''
+  userInfo.userId = ''
+  
+  // 清除资产数据
+  assets.stakedVGAU = '0'
+  assets.stakingYield = '0'
+  assets.collateralVGAU = '0'
+  assets.remainingDebt = '0'
+  points.value = '0'  // 修复：使用 points.value
+  
+  // 清除钱包状态
+  walletAddress.value = ''
+  walletConnected.value = false
+  
+  console.log('✅ 个人中心数据已清除')
+}
+
 // 页面加载时获取数据
 onMounted(async () => {
   await getConnectedWalletAddress()
@@ -524,14 +651,163 @@ onMounted(async () => {
   // 启动定期检查钱包状态
   startWalletStatusCheck()
   
-  getUserInfo()
-  getAssetsInfo()
+  // 监听钱包连接事件
+  uni.$on('walletConnected', async (data) => {
+    console.log('📡 收到钱包连接事件:', data)
+    if (data.walletAddress && data.isConnected) {
+      console.log('🔄 钱包已连接，更新个人中心数据...')
+      
+      // 更新钱包连接状态
+      walletAddress.value = data.walletAddress
+      walletConnected.value = true
+      
+      // 延迟获取数据，确保web3Service状态已更新
+      setTimeout(async () => {
+        try {
+          // 刷新用户信息和资产数据
+          await Promise.all([
+            getUserInfo(),
+            getAssetsInfo()
+          ])
+          console.log('✅ 钱包连接后数据刷新完成')
+        } catch (error) {
+          console.error('❌ 钱包连接后数据刷新失败:', error)
+        }
+      }, 500)
+    }
+  })
+  
+  // 监听钱包断开事件
+  uni.$on('walletDisconnected', (data) => {
+    console.log('📡 收到钱包断开事件:', data)
+    if (data.clearUserData || data.clearAssetsData) {
+      console.log('🧹 立即清除个人中心数据...')
+      clearPersonalData()
+      
+      // 立即更新钱包连接状态
+      walletAddress.value = ''
+      walletConnected.value = false
+      
+      console.log('✅ 个人中心数据已立即清除')
+    }
+  })
+  
+  // 监听钱包地址变化事件
+  uni.$on('walletAddressChanged', async (data) => {
+    console.log('📡 收到钱包地址变化事件:', data)
+    if (data.newAddress) {
+      console.log('🔄 钱包地址已变化，强制清除认证状态并重新认证...')
+      
+      // 1. 通知API服务重置认证状态
+      try {
+        const { default: apiService } = await import('@/api/apiService.js')
+        apiService.resetAuthState()
+        console.log('✅ API服务认证状态已重置')
+      } catch (error) {
+        console.warn('⚠️ 重置API服务认证状态失败:', error)
+      }
+      
+      // 2. 先调用后端登出接口，清除旧地址的session
+      try {
+        console.log('🔓 调用后端登出接口清除旧地址session...')
+        await authAPI.logout()
+        console.log('✅ 后端登出成功')
+      } catch (error) {
+        console.warn('⚠️ 后端登出失败，继续执行地址切换:', error)
+      }
+      
+      // 3. 清除本地认证相关数据
+      console.log('🧹 清除本地认证数据...')
+      const authKeys = [
+        'userToken',
+        'walletAddress', 
+        'userData',
+        'authToken',
+        'loginStatus',
+        'walletConnection',
+        'userLoginData',
+        'defi_session'
+      ]
+      
+      authKeys.forEach(key => {
+        localStorage.removeItem(key)
+        sessionStorage.removeItem(key)
+      })
+      
+      // 4. 更新钱包地址
+      walletAddress.value = data.newAddress
+      walletConnected.value = true
+      
+      // 5. 更新API服务的钱包地址
+      try {
+        const { default: apiService } = await import('@/api/apiService.js')
+        apiService.updateWalletAddress(data.newAddress)
+        console.log('✅ API服务钱包地址已更新')
+      } catch (error) {
+        console.warn('⚠️ 更新API服务钱包地址失败:', error)
+      }
+      
+      // 6. 清除当前页面数据
+      clearPersonalData()
+      
+      // 7. 重新获取新地址的数据
+      try {
+        console.log('🔄 重新获取新地址的数据...')
+        await Promise.all([
+          getUserInfo(),
+          getAssetsInfo()
+        ])
+        console.log('✅ 新地址数据获取完成')
+      } catch (error) {
+        console.error('❌ 获取新地址数据失败:', error)
+      }
+      
+      // 8. 显示地址变化提示
+      uni.showToast({
+        title: '钱包地址已变化，数据已更新',
+        icon: 'success',
+        duration: 2000
+      })
+      
+      console.log('✅ 钱包地址变化处理完成，数据已更新')
+    }
+  })
+  
+  // 延迟获取数据，确保web3Service完全初始化
+  setTimeout(async () => {
+    console.log('🔄 延迟获取个人中心数据...')
+    console.log('当前钱包状态:', {
+      isConnected: walletConnected.value,
+      address: walletAddress.value,
+      web3Connected: web3Service.isConnected,
+      web3Address: web3Service.currentAccount
+    })
+    
+    // 重新检查钱包连接状态
+    const isWalletConnected = await getConnectedWalletAddress()
+    
+    // 只有在钱包连接时才获取数据
+    if (isWalletConnected && walletAddress.value) {
+      console.log('✅ 钱包已连接，开始获取数据...')
+      await Promise.all([
+        getUserInfo(),
+        getAssetsInfo()
+      ])
+      console.log('✅ 个人中心数据获取完成')
+    } else {
+      console.log('⚠️ 钱包未连接，跳过数据获取')
+    }
+  }, 500) // 延迟500ms确保web3Service完全初始化
   
 })
 
-// 页面卸载时清理定时器
+// 页面卸载时清理定时器和事件监听
 onUnmounted(() => {
   stopWalletStatusCheck()
+  // 清理事件监听
+  uni.$off('walletConnected')
+  uni.$off('walletDisconnected')
+  uni.$off('walletAddressChanged')
 })
 </script>
 

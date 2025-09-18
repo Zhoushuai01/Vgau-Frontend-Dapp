@@ -5,10 +5,12 @@ class ApiService {
   constructor() {
     this.baseURL = BASE_URL
     this.endpoints = API_ENDPOINTS
+    this.lastWalletAddress = null
+    this.forceReauth = false
   }
 
-  // 通用请求方法
-  async request(url, options = {}) {
+  // 通用请求方法（带重试机制）
+  async request(url, options = {}, retries = 3) {
     const config = {
       ...REQUEST_CONFIG,
       ...options,
@@ -23,39 +25,66 @@ class ApiService {
       }
     }
 
+    // 检查是否需要重新认证
+    const needsReauth = this.checkIfNeedsReauth()
+    if (needsReauth) {
+      console.log('🔄 检测到需要重新认证，跳过API请求')
+      throw new Error('需要重新认证')
+    }
+
     console.log('🌐 API请求配置:', {
       method: config.method || 'GET',
       url: config.url,
       data: config.data,
       headers: config.headers,
-      timeout: config.timeout
+      timeout: config.timeout,
+      retries: retries
     })
 
-    try {
-      console.log('📤 开始发送请求...')
-      const response = await uni.request(config)
-      
-      console.log('📡 API响应详情:', {
-        statusCode: response.statusCode,
-        data: response.data,
-        header: response.header
-      })
-      
-      // 检查响应状态
-      if (RESPONSE_CONFIG.successCodes.includes(response.statusCode)) {
-        return response.data
-      } else {
-        console.error('❌ 响应状态码错误:', response.statusCode, response.data)
-        throw new Error(response.data?.message || `Request failed with status ${response.statusCode}`)
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`📤 开始发送请求 (尝试 ${attempt}/${retries})...`)
+        const response = await uni.request(config)
+        
+        console.log('📡 API响应详情:', {
+          statusCode: response.statusCode,
+          data: response.data,
+          header: response.header,
+          attempt: attempt
+        })
+        
+        // 检查响应状态
+        if (RESPONSE_CONFIG.successCodes.includes(response.statusCode)) {
+          return response.data
+        } else {
+          console.error('❌ 响应状态码错误:', response.statusCode, response.data)
+          throw new Error(response.data?.message || `Request failed with status ${response.statusCode}`)
+        }
+      } catch (error) {
+        console.error(`💥 API请求异常 (尝试 ${attempt}/${retries}):`, {
+          message: error.message,
+          stack: error.stack,
+          config: config,
+          attempt: attempt
+        })
+        
+        // 如果是最后一次尝试，直接抛出错误
+        if (attempt === retries) {
+          RESPONSE_CONFIG.errorHandler(error)
+          throw error
+        }
+        
+        // 如果是超时错误，等待后重试
+        if (error.message?.includes('timeout') || error.errMsg?.includes('timeout')) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000) // 指数退避，最大5秒
+          console.log(`⏳ 请求超时，${delay}ms后重试...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        } else {
+          // 其他错误直接抛出
+          RESPONSE_CONFIG.errorHandler(error)
+          throw error
+        }
       }
-    } catch (error) {
-      console.error('💥 API请求异常:', {
-        message: error.message,
-        stack: error.stack,
-        config: config
-      })
-      RESPONSE_CONFIG.errorHandler(error)
-      throw error
     }
   }
 
@@ -242,17 +271,17 @@ class ApiService {
     // 获取邀请码
     getCode: () => this.get(this.endpoints.INVITE.CODE),
     
-    // 获取我的邀请码
-    getMyCode: () => this.get(this.endpoints.INVITE.MY_CODE),
-    
     // 绑定邀请人
     bind: (code) => this.post(this.endpoints.INVITE.BIND, { code }),
     
     // 获取邀请关系
     getRelations: (params) => this.get(this.endpoints.INVITE.RELATIONS, params),
     
-    // 获取我的下线列表
-    getMyDownline: (params) => this.get(this.endpoints.INVITE.MY_DOWNLINE, params)
+    // 获取我的邀请统计（使用更长超时时间）
+    getMyStats: () => this.request(this.endpoints.INVITE.MY_STATS, { 
+      method: 'GET',
+      timeout: 45000 // 45秒超时
+    })
   }
 
   // 质押管理相关API
@@ -293,8 +322,11 @@ class ApiService {
     getOrderDetail: (orderNumber) => this.get(`${this.endpoints.LOAN.ORDER_DETAIL}/${orderNumber}`),
     // 创建借贷订单
     createOrder: (data) => this.post(this.endpoints.LOAN.ORDERS, data),
-    // 获取借贷汇总信息
-    getSummary: () => this.get(this.endpoints.LOAN.SUMMARY),
+    // 获取借贷汇总信息（使用更长超时时间）
+    getSummary: () => this.request(this.endpoints.LOAN.SUMMARY, { 
+      method: 'GET',
+      timeout: 60000 // 60秒超时
+    }),
     // 获取借贷统计数据
     getStatistics: () => this.get(this.endpoints.LOAN.STATISTICS),
     // 增加抵押金额
@@ -354,6 +386,72 @@ class ApiService {
     
     // 获取外链分类
     getLinkCategories: () => this.get(this.endpoints.CONTENT.LINK_CATEGORIES)
+  }
+
+  // 检查是否需要重新认证
+  checkIfNeedsReauth() {
+    // 如果强制重新认证标志为true，返回true
+    if (this.forceReauth) {
+      return true
+    }
+
+    // 检查当前钱包地址是否发生变化
+    const currentWalletAddress = this.getCurrentWalletAddress()
+    if (this.lastWalletAddress && currentWalletAddress && this.lastWalletAddress !== currentWalletAddress) {
+      console.log('🔄 检测到钱包地址变化，需要重新认证:', {
+        lastAddress: this.lastWalletAddress,
+        currentAddress: currentWalletAddress
+      })
+      return true
+    }
+
+    return false
+  }
+
+  // 获取当前钱包地址
+  getCurrentWalletAddress() {
+    try {
+      // 优先从web3Service获取
+      if (typeof window !== 'undefined' && window.web3Service && window.web3Service.currentAccount) {
+        return window.web3Service.currentAccount
+      }
+      
+      // 从localStorage获取
+      const storedAddress = localStorage.getItem('connectedWalletAddress')
+      if (storedAddress) {
+        return storedAddress
+      }
+      
+      // 从ethereum provider获取
+      if (typeof window !== 'undefined' && window.ethereum && window.ethereum.selectedAddress) {
+        return window.ethereum.selectedAddress
+      }
+      
+      return null
+    } catch (error) {
+      console.error('获取当前钱包地址失败:', error)
+      return null
+    }
+  }
+
+  // 更新钱包地址
+  updateWalletAddress(address) {
+    this.lastWalletAddress = address
+    this.forceReauth = false
+    console.log('✅ API服务钱包地址已更新:', address)
+  }
+
+  // 设置强制重新认证标志
+  setForceReauth(force = true) {
+    this.forceReauth = force
+    console.log('🔄 API服务强制重新认证标志已设置:', force)
+  }
+
+  // 重置认证状态
+  resetAuthState() {
+    this.lastWalletAddress = null
+    this.forceReauth = true
+    console.log('🧹 API服务认证状态已重置')
   }
 }
 

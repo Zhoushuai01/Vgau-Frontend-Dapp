@@ -63,6 +63,7 @@ export default {
     pleaseCheckConnection: 'Vérifiez la Connexion',
     pleaseEnterValidAmount: 'Veuillez Entrer un Montant Valide',
     pleaseEnterPositiveInteger: 'Veuillez Entrer un Entier Positif',
+    suggestions: 'Suggestions',
     points: 'Points',
     users: 'Utilisateurs'
   },
@@ -167,6 +168,7 @@ export default {
     connectingWallet: 'Connexion du Portefeuille...',
     walletConnected: 'Portefeuille Connecté avec Succès',
     walletConnectionFailed: 'Échec de la Connexion du Portefeuille',
+    pleaseConnectWallet: 'Veuillez d\'abord connecter votre portefeuille',
     userRejectedConnection: 'Utilisateur a Rejeté la Connexion',
     noWalletDetected: 'Aucun Portefeuille Détecté',
     assetOverview: 'Aperçu des Actifs',
@@ -915,6 +917,18 @@ export default {
       successfullyReferUserThroughKYC: 'Référence avec succès utilisateur via KYC et obtention de points :',
       directReferral: 'Récompense de Parrainage Direct',
       indirectReferral: 'Récompense d\'Invitation Indirecte',
+      directPush: 'Direct',
+      indirectPush: 'Indirect',
+      // 后端返回值的映射
+      rewardTypeMapping: {
+        '直推': 'Direct',
+        '间推': 'Indirect',
+        'direct': 'Direct',
+        'indirect': 'Indirect',
+        '完成质押赎回获得积分': 'Rachat de Stake Complet',
+        'staking': 'Stake',
+        '质押': 'Stake'
+      },
       rewardsPerUser: '2 points/utilisateur',
       indirectRewardsPerUser: '0.2 points/utilisateur',
       pointsUnit: 'points/utilisateur',
@@ -950,8 +964,8 @@ export default {
       // Descriptions des types d'opérations de points
       createStakingOrder: 'Stake',
       inviteRelationship: 'Invitation',
-      directReferral: 'Récompense de Parrainage Direct',
-      indirectReferral: 'Récompense d\'Invitation Indirecte',
+      directReferral: 'Direct',
+      indirectReferral: 'Indirect',
       lendingRepayment: 'Remboursement de Prêt'
     },
 

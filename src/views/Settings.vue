@@ -154,7 +154,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { inviteAPI } from '@/api/apiService.js'
 
@@ -241,6 +241,38 @@ const bindInviteCode = async () => {
     })
   }
 }
+
+// 清除设置页面数据
+const clearSettingsData = () => {
+  console.log('🧹 清除设置页面数据...')
+  
+  // 清除邀请码输入
+  inviteCode.value = ''
+  
+  // 重置页面状态
+  showServiceAgreement.value = false
+  showLiquidationRules.value = false
+  showInviterSection.value = false
+  
+  console.log('✅ 设置页面数据已清除')
+}
+
+// 页面加载时设置事件监听
+onMounted(() => {
+  // 监听钱包断开事件
+  uni.$on('walletDisconnected', (data) => {
+    console.log('📡 设置页面收到钱包断开事件:', data)
+    if (data.clearUserData || data.clearAssetsData) {
+      clearSettingsData()
+    }
+  })
+})
+
+// 页面卸载时清理事件监听
+onUnmounted(() => {
+  // 清理事件监听
+  uni.$off('walletDisconnected')
+})
 </script>
 
 <style scoped>

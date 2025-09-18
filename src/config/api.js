@@ -107,8 +107,7 @@ export const API_ENDPOINTS = {
     CODE: '/invite/code',
     BIND: '/invite/bind',
     RELATIONS: '/invite/relations',
-    MY_CODE: '/invite/my-code',
-    MY_DOWNLINE: '/invite/my-downline'
+    MY_STATS: '/invite/my-stats'
   },
   
   // 质押管理
@@ -150,7 +149,7 @@ export const API_ENDPOINTS = {
 
 // 请求拦截器配置
 export const REQUEST_CONFIG = {
-  timeout: 10000,
+  timeout: 30000, // 从10秒增加到30秒
   headers: {
     'Content-Type': 'application/json'
   },
@@ -181,6 +180,7 @@ export const RESPONSE_CONFIG = {
         403: '权限不足',
         404: '资源不存在',
         500: '服务器错误，请稍后重试',
+        timeout: '请求超时，请检查网络连接后重试',
         network: '网络错误，请检查连接',
         default: '请求失败'
       },
@@ -189,6 +189,7 @@ export const RESPONSE_CONFIG = {
         403: 'Permission denied',
         404: 'Resource not found',
         500: 'Server error, please try again later',
+        timeout: 'Request timeout, please check your network and try again',
         network: 'Network error, please check your connection',
         default: 'Request failed'
       }
@@ -223,21 +224,28 @@ export const RESPONSE_CONFIG = {
       uni.showToast({
         title: message,
         icon: 'none',
-        duration: 2000
+        duration: 3000
       })
     } else if (error.request) {
       // 网络错误
       uni.showToast({
         title: messages.network,
         icon: 'none',
-        duration: 2000
+        duration: 3000
+      })
+    } else if (error.message?.includes('timeout') || error.errMsg?.includes('timeout')) {
+      // 超时错误
+      uni.showToast({
+        title: messages.timeout,
+        icon: 'none',
+        duration: 3000
       })
     } else {
       // 其他错误
       uni.showToast({
         title: messages.default,
         icon: 'none',
-        duration: 2000
+        duration: 3000
       })
     }
     

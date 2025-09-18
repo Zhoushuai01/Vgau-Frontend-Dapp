@@ -103,7 +103,7 @@
  </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatShortAddress } from '@/utils/addressUtils'
 import { inviteAPI } from '@/api/apiService.js'
@@ -124,81 +124,267 @@ const directPushUsers = ref(0)
 // 邀请列表数据
 const invitationList = ref([])
 
-// 获取我的邀请码
-const fetchMyInviteCode = async () => {
-  loading.value = true
-  try {
-    const response = await inviteAPI.getMyCode()
-    console.log('我的邀请码响应:', response)
-    
-    if (response && response.data && response.data.inviteCode) {
-      inviteCode.value = response.data.inviteCode
-      // 生成邀请链接
-      inviteLink.value = `https://verigold.ai/register?inviter=${inviteCode.value}`
-    } else {
-      // 如果接口没有数据，使用测试数据
-      inviteCode.value = 'ABC123'
-      inviteLink.value = `https://verigold.ai/register?inviter=${inviteCode.value}`
-    }
-  } catch (error) {
-    console.error('获取邀请码失败:', error)
-    // 使用测试数据作为后备
+// 初始化邀请码和链接
+const initInviteData = () => {
+  // 检查钱包连接状态
+  const isWalletConnected = checkWalletConnection()
+  
+  if (isWalletConnected) {
+    // 钱包已连接，使用静态邀请码
     inviteCode.value = 'ABC123'
     inviteLink.value = `https://verigold.ai/register?inviter=${inviteCode.value}`
-    uni.showToast({
-      title: '获取邀请码失败',
-      icon: 'none',
-      duration: 2000
-    })
-  } finally {
-    loading.value = false
+  } else {
+    // 钱包未连接，清空邀请码和链接
+    inviteCode.value = ''
+    inviteLink.value = ''
   }
+  
+  loading.value = false
+}
+
+// 检查钱包连接状态
+const checkWalletConnection = () => {
+  // 检查是否被手动断开
+  const isManuallyDisconnected = localStorage.getItem('walletManuallyDisconnected') === 'true'
+  
+  // 如果被手动断开，直接返回false
+  if (isManuallyDisconnected) {
+    console.log('⚠️ 检测到钱包被手动断开，跳过API调用')
+    return false
+  }
+  
+  // 检查localStorage中的连接状态
+  const isWalletConnected = localStorage.getItem('walletConnected') === 'true'
+  
+  // 检查web3Service状态（如果可用）
+  const hasWeb3Service = typeof window !== 'undefined' && window.web3Service
+  const isWeb3Connected = hasWeb3Service && window.web3Service.isConnected && window.web3Service.currentAccount
+  
+  // 检查ethereum provider状态
+  const hasEthereum = typeof window.ethereum !== 'undefined'
+  const hasSelectedAccount = hasEthereum && window.ethereum.selectedAddress
+  
+  // 只要web3Service连接或ethereum有选中账户就认为已连接
+  const isConnected = isWeb3Connected || hasSelectedAccount
+  
+  console.log('🔍 邀请页面钱包连接状态检查:', {
+    isWalletConnected,
+    isManuallyDisconnected,
+    isWeb3Connected,
+    hasSelectedAccount,
+    isConnected
+  })
+  
+  return isConnected
 }
 
 // 获取统计数据
 const fetchStatistics = async () => {
   try {
-    // 这里可以调用相应的API接口获取统计数据
-    // 例如：const response = await inviteAPI.getStatistics()
-    // totalPoints.value = response.data.totalPoints
-    // invitedUsers.value = response.data.invitedUsers
-    // directPushUsers.value = response.data.directPushUsers
+    console.log('🔍 邀请页面开始获取统计数据...')
     
-    // 目前使用默认值，后续可以替换为API调用
-    console.log('获取统计数据...')
-  } catch (error) {
-    console.error('获取统计数据失败:', error)
-  }
-}
-
-// 获取邀请列表
-const fetchInvitationList = async () => {
-  try {
-    const response = await inviteAPI.getMyDownline()
-    console.log('邀请列表响应:', response)
+    // 检查钱包连接状态，如果未连接则不获取数据
+    const isWalletConnected = checkWalletConnection()
+    console.log('🔍 邀请页面钱包连接状态:', isWalletConnected)
     
-    if (response && response.data && Array.isArray(response.data)) {
-      // 处理API返回的数据，转换为前端需要的格式
-      invitationList.value = response.data.map((item, index) => ({
-        id: item.id || (index + 1).toString().padStart(3, '0'),
-        wallet: item.walletAddress || item.wallet || '',
-        type: item.type === 'direct' ? t('components.invitation.directReferral') : t('components.invitation.indirectReferral'),
-        rewards: item.rewards || item.points || '0'
-      }))
+    if (!isWalletConnected) {
+      console.log('⚠️ 钱包未连接，跳过获取邀请统计数据')
+      // 使用默认值
+      totalPoints.value = 0
+      invitedUsers.value = 0
+      directPushUsers.value = 0
+      invitationList.value = []
+      // 清空邀请链接
+      inviteLink.value = ''
+      return
+    }
+    
+    console.log('🔍 开始调用邀请统计API...')
+    const response = await inviteAPI.getMyStats()
+    console.log('🔍 邀请统计API响应:', response)
+    
+    if (response && response.data) {
+      const data = response.data
+      
+      // 设置统计数据
+      totalPoints.value = data.totalPoints || 0
+      invitedUsers.value = data.totalInvitedUsers || 0
+      directPushUsers.value = data.directInvitedUsers || 0
+      
+      // 设置邀请链接
+      if (data.inviteLink) {
+        inviteLink.value = data.inviteLink
+      }
+      
+      // 处理邀请奖励详情
+      if (data.rewardDetails && Array.isArray(data.rewardDetails)) {
+        console.log('🔍 邀请奖励详情原始数据:', data.rewardDetails)
+        
+        // 测试映射是否工作
+        console.log('🔍 测试映射功能:')
+        console.log('🔍 测试"完成质押赎回获得积分"映射:', t('components.invitation.rewardTypeMapping.完成质押赎回获得积分'))
+        console.log('🔍 测试"质押"映射:', t('components.invitation.rewardTypeMapping.质押'))
+        console.log('🔍 测试"staking"映射:', t('components.invitation.rewardTypeMapping.staking'))
+        console.log('🔍 测试"间推"映射:', t('components.invitation.rewardTypeMapping.间推'))
+        console.log('🔍 测试"直推"映射:', t('components.invitation.rewardTypeMapping.直推'))
+        
+        invitationList.value = data.rewardDetails.map((item, index) => {
+          console.log(`🔍 处理第${index + 1}条记录:`, {
+            reason: item.reason,
+            rewardType: item.rewardType,
+            businessType: item.businessType,
+            points: item.points
+          })
+          
+          let finalType = ''
+          
+          // 检查所有字段是否包含多语言键
+          const allFields = [item.reason, item.rewardType, item.businessType]
+          const fieldNames = ['reason', 'rewardType', 'businessType']
+          
+          console.log(`🔍 检查所有字段的多语言键:`)
+          for (let i = 0; i < allFields.length; i++) {
+            const field = allFields[i]
+            const fieldName = fieldNames[i]
+            if (field && field.startsWith('components.')) {
+              console.log(`🔍 字段 ${fieldName} 包含多语言键: "${field}"`)
+              const translation = t(field)
+              console.log(`🔍 翻译结果: "${field}" -> "${translation}"`)
+              if (translation && translation !== field) {
+                finalType = translation
+                console.log(`🔍 使用字段 ${fieldName} 的翻译结果: "${finalType}"`)
+                break
+              }
+            }
+          }
+          
+          // 如果没有找到有效的多语言键，检查是否包含 rewardTy
+          if (!finalType) {
+            for (let i = 0; i < allFields.length; i++) {
+              const field = allFields[i]
+              const fieldName = fieldNames[i]
+              if (field && field.includes('rewardTy')) {
+                console.log(`🔍 字段 ${fieldName} 包含 rewardTy: "${field}"`)
+                // 尝试多种补全方式
+                const possibleKeys = [
+                  field.replace('rewardTy', 'rewardTypeMapping'),
+                  field.replace('rewardTy', 'rewardType'),
+                  'components.invitation.rewardTypeMapping'
+                ]
+                
+                for (const key of possibleKeys) {
+                  const translation = t(key)
+                  console.log(`🔍 尝试键 "${key}" -> "${translation}"`)
+                  if (translation && translation !== key) {
+                    finalType = translation
+                    console.log(`🔍 使用补全键的翻译结果: "${finalType}"`)
+                    break
+                  }
+                }
+                if (finalType) break
+              }
+            }
+          }
+          
+          // 如果还是没有找到，使用映射逻辑
+          if (!finalType) {
+            console.log(`🔍 开始映射逻辑处理...`)
+            
+            // 优先处理 rewardType 字段（后端主要返回这个字段）
+            if (item.rewardType) {
+              const rewardTypeMapping = t(`components.invitation.rewardTypeMapping.${item.rewardType}`)
+              console.log(`🔍 rewardType映射结果: "${item.rewardType}" -> "${rewardTypeMapping}"`)
+              if (rewardTypeMapping && rewardTypeMapping !== `components.invitation.rewardTypeMapping.${item.rewardType}`) {
+                finalType = rewardTypeMapping
+                console.log(`🔍 使用rewardType映射结果: "${finalType}"`)
+              }
+            }
+            
+            // 如果rewardType映射失败，尝试reason字段
+            if (!finalType && item.reason) {
+              const reasonMapping = t(`components.invitation.rewardTypeMapping.${item.reason}`)
+              console.log(`🔍 reason映射结果: "${item.reason}" -> "${reasonMapping}"`)
+              if (reasonMapping && reasonMapping !== `components.invitation.rewardTypeMapping.${item.reason}`) {
+                finalType = reasonMapping
+                console.log(`🔍 使用reason映射结果: "${finalType}"`)
+              }
+            }
+            
+            // 如果映射都失败，使用原始值
+            if (!finalType) {
+              finalType = item.rewardType || item.reason || item.businessType || ''
+              console.log(`🔍 使用原始值: "${finalType}"`)
+            }
+          }
+          
+          // 如果最终类型仍然是键值对，使用默认值
+          if (!finalType || finalType.startsWith('components.') || finalType.includes('rewardTy')) {
+            console.log(`🔍 最终类型无效，使用默认值: "${finalType}"`)
+            // 根据业务类型设置默认值
+            if (item.businessType === 'STAKE_CREATE' || item.businessType === 'STAKE_REDEEM') {
+              finalType = t('components.invitation.rewardTypeMapping.质押')
+            } else if (item.businessType === 'USER_INVITE_BIND') {
+              // 检查是否是直推还是间推
+              if (item.reason && (item.reason.includes('直推') || item.reason.includes('direct'))) {
+                finalType = t('components.invitation.rewardTypeMapping.直推')
+              } else if (item.reason && (item.reason.includes('間接') || item.reason.includes('间接') || item.reason.includes('indirect'))) {
+                finalType = t('components.invitation.rewardTypeMapping.间推')
+              } else {
+                finalType = t('components.invitation.rewardTypeMapping.直推') // 默认直推
+              }
+            } else {
+              finalType = '其他' // 默认值
+            }
+            console.log(`🔍 使用默认值: "${finalType}"`)
+          }
+          
+          console.log(`🔍 最终类型: "${finalType}"`)
+          
+          return {
+            id: item.invitedUserId || (index + 1).toString().padStart(3, '0'),
+            wallet: item.walletAddress || '',
+            type: finalType,
+            rewards: item.points || '0'
+          }
+        })
+        console.log('🔍 处理后的邀请列表:', invitationList.value)
+      }
+      
+      console.log('统计数据更新完成:', {
+        totalPoints: totalPoints.value,
+        invitedUsers: invitedUsers.value,
+        directPushUsers: directPushUsers.value,
+        invitationListLength: invitationList.value.length
+      })
     } else {
-      // 如果接口没有数据，使用空数组
+      console.log('API返回数据为空，使用默认值')
+      // 使用默认值
+      totalPoints.value = 0
+      invitedUsers.value = 0
+      directPushUsers.value = 0
       invitationList.value = []
     }
   } catch (error) {
-    console.error('获取邀请列表失败:', error)
-    // 使用空数组作为后备
+    console.error('获取统计数据失败:', error)
+    
+    // 使用默认值作为后备
+    totalPoints.value = 0
+    invitedUsers.value = 0
+    directPushUsers.value = 0
     invitationList.value = []
+    
     uni.showToast({
-      title: '获取邀请列表失败',
+      title: '获取统计数据失败',
       icon: 'none',
       duration: 2000
     })
   }
+}
+
+// 初始化邀请列表（已合并到fetchStatistics中）
+const initInvitationList = () => {
+  // 邀请列表现在通过fetchStatistics获取
+  invitationList.value = []
 }
 
 // 返回上一页
@@ -246,11 +432,107 @@ const closeRuleModal = () => {
   showRuleModal.value = false
 }
 
-// 页面加载时获取邀请码、统计数据和邀请列表
+// 清除邀请页面数据
+const clearInvitationData = () => {
+  console.log('🧹 清除邀请页面数据...')
+  
+  // 清除统计数据
+  totalPoints.value = 0
+  invitedUsers.value = 0
+  directPushUsers.value = 0
+  
+  // 清除邀请列表
+  invitationList.value = []
+  
+  // 清除邀请链接
+  inviteLink.value = ''
+  
+  console.log('✅ 邀请页面数据已清除')
+}
+
+// 页面加载时初始化数据
 onMounted(() => {
-  fetchMyInviteCode()
-  fetchStatistics()
-  fetchInvitationList()
+  console.log('🔍 邀请页面已挂载，开始初始化...')
+  initInviteData()
+  
+  // 检查钱包连接状态
+  const isWalletConnected = checkWalletConnection()
+  console.log('🔍 邀请页面挂载时钱包连接状态:', isWalletConnected)
+  
+  // 只有在钱包连接时才获取统计数据
+  if (isWalletConnected) {
+    console.log('🔍 钱包已连接，开始获取统计数据...')
+    fetchStatistics() // 这个函数现在会获取所有数据包括邀请列表
+  } else {
+    console.log('🔍 钱包未连接，跳过数据获取')
+  }
+  
+  // 监听钱包连接事件
+  uni.$on('walletConnected', async (data) => {
+    console.log('📡 邀请页面收到钱包连接事件:', data)
+    console.log('🔍 邀请页面钱包连接事件详情:', {
+      data,
+      web3Service: window.web3Service ? {
+        isConnected: window.web3Service.isConnected,
+        currentAccount: window.web3Service.currentAccount
+      } : 'web3Service not available',
+      ethereum: window.ethereum ? {
+        selectedAddress: window.ethereum.selectedAddress
+      } : 'ethereum not available'
+    })
+    
+    // 重新检查钱包连接状态
+    const isConnected = checkWalletConnection()
+    console.log('🔍 邀请页面钱包连接检查结果:', isConnected)
+    
+    if (isConnected) {
+      console.log('✅ 邀请页面开始获取统计数据...')
+      await fetchStatistics()
+    } else {
+      console.log('❌ 邀请页面钱包连接检查失败，跳过API调用')
+    }
+  })
+  
+  // 监听钱包断开事件
+  uni.$on('walletDisconnected', (data) => {
+    console.log('📡 邀请页面收到钱包断开事件:', data)
+    if (data.clearUserData || data.clearAssetsData) {
+      clearInvitationData()
+    }
+  })
+  
+  // 监听钱包地址变化事件
+  uni.$on('walletAddressChanged', async (data) => {
+    console.log('📡 邀请页面收到钱包地址变化事件:', data)
+    if (data.newAddress) {
+      console.log('🔄 邀请页面钱包地址已变化，重新获取数据...')
+      
+      // 通知API服务重置认证状态
+      try {
+        const { default: apiService } = await import('@/api/apiService.js')
+        apiService.resetAuthState()
+        console.log('✅ 邀请页面API服务认证状态已重置')
+      } catch (error) {
+        console.warn('⚠️ 邀请页面重置API服务认证状态失败:', error)
+      }
+      
+      // 重新获取邀请统计数据
+      try {
+        await fetchStatistics()
+        console.log('✅ 邀请页面新地址数据获取完成')
+      } catch (error) {
+        console.error('❌ 邀请页面获取新地址数据失败:', error)
+      }
+    }
+  })
+})
+
+// 页面卸载时清理事件监听
+onUnmounted(() => {
+  // 清理事件监听
+  uni.$off('walletConnected')
+  uni.$off('walletDisconnected')
+  uni.$off('walletAddressChanged')
 })
 </script>
 

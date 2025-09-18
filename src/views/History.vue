@@ -238,9 +238,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { defiAPI, loanAPI, stakeAPI, userFundsAPI } from '@/api/apiService'
+import web3Service from '@/utils/web3.js'
 
 const { t } = useI18n()
 
@@ -250,6 +251,13 @@ const activeTab = ref('all')
 const earnActiveTab = ref('all')
 const hasMore = ref(true)
 const loading = ref(false)
+
+// 钱包连接状态
+const walletConnectionStatus = ref({
+  isConnected: false,
+  walletAddress: null,
+  lastConnectedAt: null
+})
 
 // 充值订单数据
 const depositOrders = ref([])
@@ -546,8 +554,101 @@ const formatUsdtAmount = (value) => {
   return parseFloat(num.toFixed(4)).toString()
 }
 
+// 检查钱包连接状态
+const checkWalletConnection = async () => {
+  try {
+    // 确保web3Service已初始化
+    if (!web3Service.web3) {
+      console.log('🔧 web3Service未初始化，开始初始化...')
+      const initResult = await web3Service.init()
+      if (!initResult) {
+        console.log('❌ web3Service初始化失败')
+        walletConnectionStatus.value = {
+          isConnected: false,
+          walletAddress: null,
+          lastConnectedAt: null
+        }
+        return false
+      }
+    }
+    
+    // 检查web3Service连接状态
+    if (web3Service.isConnected && web3Service.currentAccount) {
+      const currentAddress = web3Service.currentAccount
+      
+      // 检查地址是否发生变化
+      if (walletConnectionStatus.value.walletAddress !== currentAddress) {
+        console.log('🔄 检测到钱包地址变化:', {
+          old: walletConnectionStatus.value.walletAddress,
+          new: currentAddress
+        })
+        
+        // 地址变化，清空所有数据
+        clearAllData()
+        
+        // 更新连接状态
+        walletConnectionStatus.value = {
+          isConnected: true,
+          walletAddress: currentAddress,
+          lastConnectedAt: Date.now()
+        }
+        
+        return true
+      }
+      
+      // 地址未变化，更新连接状态
+      walletConnectionStatus.value = {
+        isConnected: true,
+        walletAddress: currentAddress,
+        lastConnectedAt: walletConnectionStatus.value.lastConnectedAt || Date.now()
+      }
+      
+      return true
+    } else {
+      // 钱包未连接
+      if (walletConnectionStatus.value.isConnected) {
+        console.log('⚠️ 钱包已断开连接')
+        // 清空所有数据
+        clearAllData()
+      }
+      
+      walletConnectionStatus.value = {
+        isConnected: false,
+        walletAddress: null,
+        lastConnectedAt: null
+      }
+      
+      return false
+    }
+  } catch (error) {
+    console.error('检查钱包连接状态失败:', error)
+    return false
+  }
+}
+
+// 清空所有历史数据
+const clearAllData = () => {
+  depositOrders.value = []
+  withdrawOrders.value = []
+  loanData.value = {
+    totalDebtUsdt: '0',
+    collateralAmount: '0',
+    borrowedAmount: '0'
+  }
+  loanOrders.value = []
+  stakeOrders.value = []
+  console.log('🗑️ 已清空所有历史数据')
+}
+
 // 获取充值订单列表
 const fetchDepositOrders = async () => {
+  // 检查钱包连接状态，如果未连接则不调用接口
+  if (!walletConnectionStatus.value.isConnected || !walletConnectionStatus.value.walletAddress) {
+    console.log('⚠️ 钱包未连接，跳过充值订单获取')
+    depositOrders.value = []
+    return
+  }
+  
   try {
     loading.value = true
     console.log('📡 开始获取充值订单列表...')
@@ -577,6 +678,13 @@ const fetchDepositOrders = async () => {
 
 // 获取提现订单列表
 const fetchWithdrawOrders = async () => {
+  // 检查钱包连接状态，如果未连接则不调用接口
+  if (!walletConnectionStatus.value.isConnected || !walletConnectionStatus.value.walletAddress) {
+    console.log('⚠️ 钱包未连接，跳过提现订单获取')
+    withdrawOrders.value = []
+    return
+  }
+  
   try {
     console.log('📡 开始获取提现订单列表...')
     
@@ -604,6 +712,18 @@ const fetchWithdrawOrders = async () => {
 
 // 获取借贷数据
 const fetchLoanData = async () => {
+  // 检查钱包连接状态，如果未连接则不调用接口
+  if (!walletConnectionStatus.value.isConnected || !walletConnectionStatus.value.walletAddress) {
+    console.log('⚠️ 钱包未连接，跳过借贷数据获取')
+    loanData.value = {
+      totalDebtUsdt: '0',
+      collateralAmount: '0',
+      borrowedAmount: '0'
+    }
+    loanOrders.value = []
+    return
+  }
+  
   try {
     console.log('📡 开始获取借贷数据...')
     
@@ -657,6 +777,13 @@ const fetchLoanData = async () => {
 
 // 获取质押订单数据
 const fetchStakeOrders = async () => {
+  // 检查钱包连接状态，如果未连接则不调用接口
+  if (!walletConnectionStatus.value.isConnected || !walletConnectionStatus.value.walletAddress) {
+    console.log('⚠️ 钱包未连接，跳过质押订单获取')
+    stakeOrders.value = []
+    return
+  }
+  
   try {
     console.log('📡 开始获取质押订单数据...')
     
@@ -818,13 +945,121 @@ const loadMore = () => {
   }, 1000)
 }
 
+// 设置钱包事件监听
+const setupWalletEventListeners = () => {
+  if (typeof window.ethereum !== 'undefined') {
+    // 监听账户变化
+    window.ethereum.on('accountsChanged', async (accounts) => {
+      console.log('🔄 钱包账户已切换:', accounts)
+      
+      if (accounts.length > 0) {
+        // 有账户连接
+        const wasConnected = walletConnectionStatus.value.isConnected
+        const wasAddress = walletConnectionStatus.value.walletAddress
+        const newAddress = accounts[0]
+        
+        // 更新连接状态
+        walletConnectionStatus.value = {
+          isConnected: true,
+          walletAddress: newAddress,
+          lastConnectedAt: Date.now()
+        }
+        
+        if (!wasConnected) {
+          console.log('✅ 检测到钱包重新连接')
+          uni.showToast({
+            title: '钱包已重新连接',
+            icon: 'success',
+            duration: 1500
+          })
+          // 钱包重新连接后，获取历史数据
+          Promise.all([
+            fetchDepositOrders(),
+            fetchWithdrawOrders(),
+            fetchLoanData(),
+            fetchStakeOrders()
+          ]).catch(error => {
+            console.error('重新连接后获取历史数据失败:', error)
+          })
+        } else if (wasAddress !== newAddress) {
+          console.log('🔄 检测到钱包地址变化')
+          // 地址变化，清空所有数据
+          clearAllData()
+          uni.showToast({
+            title: '钱包地址已变化，需要重新签名',
+            icon: 'none',
+            duration: 2000
+          })
+        }
+      } else {
+        // 没有账户连接
+        if (walletConnectionStatus.value.isConnected) {
+          console.log('⚠️ 检测到钱包断开连接')
+          // 清空所有数据
+          clearAllData()
+          walletConnectionStatus.value = {
+            isConnected: false,
+            walletAddress: null,
+            lastConnectedAt: null
+          }
+          uni.showToast({
+            title: '钱包已断开连接',
+            icon: 'none',
+            duration: 2000
+          })
+        }
+      }
+    })
+    
+    // 监听网络变化
+    window.ethereum.on('chainChanged', (chainId) => {
+      console.log('🔄 网络已切换:', chainId)
+      // 网络变化时清空所有数据
+      clearAllData()
+      uni.showToast({
+        title: '网络已切换，需要重新签名',
+        icon: 'none',
+        duration: 2000
+      })
+    })
+  }
+}
+
+const removeWalletEventListeners = () => {
+  if (typeof window.ethereum !== 'undefined') {
+    window.ethereum.removeAllListeners('accountsChanged')
+    window.ethereum.removeAllListeners('chainChanged')
+  }
+}
+
 // 页面加载
-onMounted(() => {
-  // 初始化逻辑
-  fetchDepositOrders()
-  fetchWithdrawOrders()
-  fetchLoanData()
-  fetchStakeOrders()
+onMounted(async () => {
+  console.log('History页面加载完成')
+  
+  // 初始化钱包连接状态
+  await checkWalletConnection()
+  
+  // 设置钱包事件监听
+  setupWalletEventListeners()
+  
+  // 只有在钱包连接时才获取历史数据
+  if (walletConnectionStatus.value.isConnected && walletConnectionStatus.value.walletAddress) {
+    await Promise.all([
+      fetchDepositOrders(),
+      fetchWithdrawOrders(),
+      fetchLoanData(),
+      fetchStakeOrders()
+    ])
+  } else {
+    console.log('⚠️ 钱包未连接，跳过历史数据获取')
+    // 确保所有数据为空
+    clearAllData()
+  }
+})
+
+// 页面卸载时清理事件监听
+onUnmounted(() => {
+  removeWalletEventListeners()
 })
 </script>
 

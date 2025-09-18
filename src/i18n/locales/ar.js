@@ -63,6 +63,7 @@ export default {
     pleaseCheckConnection: 'يرجى التحقق من الاتصال',
     pleaseEnterValidAmount: 'يرجى إدخال مبلغ صحيح',
     pleaseEnterPositiveInteger: 'يرجى إدخال رقم صحيح موجب',
+    suggestions: 'اقتراحات',
     points: 'النقاط',
     users: 'مستخدم'
   },
@@ -167,6 +168,7 @@ export default {
     connectingWallet: 'جاري ربط المحفظة...',
     walletConnected: 'تم ربط المحفظة بنجاح',
     walletConnectionFailed: 'فشل ربط المحفظة',
+    pleaseConnectWallet: 'يرجى ربط محفظتك أولاً',
     userRejectedConnection: 'رفض المستخدم الربط',
     noWalletDetected: 'لم يتم اكتشاف محفظة',
     assetOverview: 'نظرة عامة على الأصول',
@@ -915,6 +917,18 @@ export default {
       successfullyReferUserThroughKYC: 'نجح في إحالة المستخدم من خلال KYC والحصول على النقاط:',
       directReferral: 'مكافأة الإحالة المباشرة',
       indirectReferral: 'مكافأة الدعوة غير المباشرة',
+      directPush: 'مباشر',
+      indirectPush: 'غير مباشر',
+      // 后端返回值的映射
+      rewardTypeMapping: {
+        '直推': 'مباشر',
+        '间推': 'غير مباشر',
+        'direct': 'مباشر',
+        'indirect': 'غير مباشر',
+        '完成质押赎回获得积分': 'إكمال استرداد الرهان',
+        'staking': 'رهان',
+        '质押': 'رهان'
+      },
       rewardsPerUser: '2 نقطة/مستخدم',
       indirectRewardsPerUser: '0.2 نقطة/مستخدم',
       pointsUnit: 'نقطة/مستخدم',
@@ -950,8 +964,8 @@ export default {
       // أوصاف أنواع عمليات النقاط
       createStakingOrder: 'رهان',
       inviteRelationship: 'دعوة',
-      directReferral: 'مكافأة الإحالة المباشرة',
-      indirectReferral: 'مكافأة الدعوة غير المباشرة',
+      directReferral: 'مباشر',
+      indirectReferral: 'غير مباشر',
       lendingRepayment: 'سداد القرض'
     },
 

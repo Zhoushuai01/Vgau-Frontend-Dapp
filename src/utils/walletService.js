@@ -642,7 +642,7 @@ export const disconnectWallet = async () => {
     try {
       // 如果存在全局Web3实例，重置其状态
       if (window.web3Service) {
-        window.web3Service.disconnect()
+        window.web3Service.disconnect(true)
       }
       
       // 清除全局状态
@@ -744,7 +744,7 @@ export const forceDisconnectAll = async () => {
     
     // 2. 重置Web3状态
     if (window.web3Service) {
-      window.web3Service.disconnect()
+      window.web3Service.disconnect(true)
     }
     
     // 3. 移除所有事件监听器

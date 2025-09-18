@@ -31,6 +31,11 @@ class Web3Service {
         // 检查是否已经连接（页面刷新后恢复连接状态）
         await this.checkExistingConnection()
         
+        // 强制检查地址是否真的匹配MetaMask当前选中的地址
+        if (this.isConnected) {
+          await this.forceCheckAddressMatch(true) // 传入true表示这是初始化检查
+        }
+        
         console.log('Web3初始化成功')
         return true
       } else {
@@ -66,47 +71,64 @@ class Web3Service {
         const storedWalletAddress = localStorage.getItem('connectedWalletAddress')
         
         if (storedWalletAddress) {
-          // 如果localStorage中有存储的地址，检查MetaMask中是否还包含这个地址
-          const isStoredAddressAvailable = accounts.includes(storedWalletAddress)
+          // 检查MetaMask当前选中的地址是否与存储的地址不同
+          const metaMaskCurrentAddress = accounts[0]
+          const isAddressChanged = storedWalletAddress !== metaMaskCurrentAddress
           
-          console.log('检查存储的钱包地址:', {
+          console.log('检查钱包地址状态:', {
             storedAddress: storedWalletAddress,
+            metaMaskCurrentAddress: metaMaskCurrentAddress,
             availableAccounts: accounts,
-            isStoredAddressAvailable: isStoredAddressAvailable,
-            metaMaskCurrentAddress: accounts[0]
+            isAddressChanged: isAddressChanged
           })
           
-          if (isStoredAddressAvailable) {
-            // 使用之前存储的地址，而不是MetaMask当前选中的地址
+          if (isAddressChanged) {
+            // 地址已变化，使用MetaMask当前选中的地址
+            console.log('🔄 检测到钱包地址已变化，使用MetaMask当前选中的地址')
+            console.log('旧地址:', storedWalletAddress)
+            console.log('新地址:', metaMaskCurrentAddress)
+            
+            this.accounts = accounts
+            this.currentAccount = metaMaskCurrentAddress
+            this.isConnected = true
+            
+            // 更新存储的地址为新地址
+            localStorage.setItem('connectedWalletAddress', metaMaskCurrentAddress)
+            localStorage.setItem('walletLastConnectedAt', new Date().toISOString())
+            localStorage.setItem('walletAddressChangedAt', new Date().toISOString())
+            
+            console.log('✅ 已更新为MetaMask当前选中的地址:', this.currentAccount)
+            return true
+          } else {
+            // 地址未变化，使用存储的地址
             this.accounts = accounts
             this.currentAccount = storedWalletAddress
             this.isConnected = true
             
             console.log('✅ 恢复之前连接的钱包地址:', this.currentAccount)
             console.log('MetaMask当前选中的地址:', accounts[0])
-            console.log('使用存储的地址而不是当前选中的地址')
+            console.log('地址未变化，使用存储的地址')
             
             // 更新恢复时间
             localStorage.setItem('walletLastConnectedAt', new Date().toISOString())
             
             return true
-          } else {
-            // 存储的地址在MetaMask中不可用，需要用户重新连接
-            console.log('之前连接的钱包地址在MetaMask中不可用:', storedWalletAddress)
-            console.log('当前可用的地址:', accounts)
-            this.accounts = []
-            this.currentAccount = null
-            this.isConnected = false
-            return false
           }
         } else {
-          // 没有存储的地址，不自动连接，需要用户主动连接
-          console.log('没有之前连接的钱包地址记录，需要用户主动连接')
+          // 没有存储的地址，使用MetaMask当前选中的地址自动连接
+          console.log('没有之前连接的钱包地址记录，使用MetaMask当前选中的地址自动连接')
           console.log('MetaMask可用地址:', accounts)
-          this.accounts = []
-          this.currentAccount = null
-          this.isConnected = false
-          return false
+          
+          this.accounts = accounts
+          this.currentAccount = accounts[0]
+          this.isConnected = true
+          
+          // 保存当前地址
+          localStorage.setItem('connectedWalletAddress', this.currentAccount)
+          localStorage.setItem('walletLastConnectedAt', new Date().toISOString())
+          
+          console.log('✅ 自动连接MetaMask当前选中的地址:', this.currentAccount)
+          return true
         }
       } else {
         // 没有连接的账户
@@ -146,6 +168,9 @@ class Web3Service {
       // 清除手动断开连接的标记（用户重新连接）
       localStorage.removeItem('walletManuallyDisconnected')
       
+      // 设置钱包连接状态
+      localStorage.setItem('walletConnected', 'true')
+      
       // 存储连接的钱包地址到localStorage（可选，用于调试和状态跟踪）
       if (this.currentAccount) {
         localStorage.setItem('connectedWalletAddress', this.currentAccount)
@@ -168,24 +193,120 @@ class Web3Service {
     }
   }
 
+  // 强制检查地址是否匹配MetaMask当前选中的地址
+  async forceCheckAddressMatch(isInitialCheck = false) {
+    try {
+      if (!this.provider) {
+        console.log('⚠️ Provider未初始化，跳过地址匹配检查')
+        return
+      }
+
+      // 获取MetaMask当前选中的地址
+      const accounts = await this.provider.request({
+        method: 'eth_accounts'
+      })
+
+      if (accounts && accounts.length > 0) {
+        const metaMaskCurrentAddress = accounts[0]
+        
+        // 检查当前连接的地址是否与MetaMask当前选中的地址匹配
+        if (this.currentAccount && this.currentAccount !== metaMaskCurrentAddress) {
+          console.log('🚨 检测到地址不匹配，强制更新为MetaMask当前选中的地址')
+          console.log('当前连接地址:', this.currentAccount)
+          console.log('MetaMask当前地址:', metaMaskCurrentAddress)
+          console.log('是否为初始化检查:', isInitialCheck)
+          
+          // 保存旧地址
+          const oldAddress = this.currentAccount
+          
+          // 如果不是初始化检查，才清除认证状态
+          if (!isInitialCheck) {
+            console.log('🔄 非初始化检查，清除认证状态')
+            this.clearAllAuthState()
+          } else {
+            console.log('🔄 初始化检查，仅更新地址，不清除认证状态')
+          }
+          
+          // 更新为MetaMask当前选中的地址
+          this.currentAccount = metaMaskCurrentAddress
+          this.accounts = accounts
+          
+          // 更新localStorage
+          localStorage.setItem('connectedWalletAddress', metaMaskCurrentAddress)
+          localStorage.setItem('walletAddressChangedAt', new Date().toISOString())
+          
+          console.log('✅ 已强制更新为MetaMask当前选中的地址:', this.currentAccount)
+          
+          // 如果不是初始化检查，才触发地址变化事件
+          if (!isInitialCheck && typeof window !== 'undefined' && window.uni) {
+            window.uni.$emit('walletAddressChanged', {
+              oldAddress: oldAddress,
+              newAddress: metaMaskCurrentAddress,
+              reason: 'force_check'
+            })
+          }
+        } else {
+          console.log('✅ 地址匹配检查通过，当前地址:', this.currentAccount)
+        }
+      }
+    } catch (error) {
+      console.error('❌ 强制检查地址匹配失败:', error)
+    }
+  }
+
   // 处理账户变化
   async handleAccountsChanged(accounts, isInitialConnection = false) {
     if (accounts.length === 0) {
-      // 用户断开了钱包连接
-      this.accounts = []
-      this.currentAccount = null
-      this.isConnected = false
-      console.log('钱包已断开连接')
-      
-      // 清除localStorage中的钱包地址信息
-      localStorage.removeItem('connectedWalletAddress')
-      localStorage.removeItem('walletConnectedAt')
-      localStorage.removeItem('walletLastConnectedAt')
-      localStorage.removeItem('walletAccountChangedAt')
-      localStorage.setItem('walletDisconnectedAt', new Date().toISOString())
-      
-      // 清除本地缓存状态
-      this.clearLocalCache()
+      // 延迟检查，避免页面刷新时的误判
+      setTimeout(async () => {
+        try {
+          // 再次检查账户状态
+          const currentAccounts = await this.provider.request({
+            method: 'eth_accounts'
+          })
+          
+          if (currentAccounts.length === 0) {
+            // 确认用户断开了钱包连接
+            this.accounts = []
+            this.currentAccount = null
+            this.isConnected = false
+            console.log('确认钱包已断开连接')
+            
+            // 清除localStorage中的钱包地址信息
+            localStorage.removeItem('connectedWalletAddress')
+            localStorage.removeItem('walletConnectedAt')
+            localStorage.removeItem('walletLastConnectedAt')
+            localStorage.removeItem('walletAccountChangedAt')
+            localStorage.setItem('walletDisconnectedAt', new Date().toISOString())
+            localStorage.setItem('walletConnected', 'false')
+            
+            // 清除本地缓存状态
+            this.clearLocalCache()
+            
+            // 触发钱包断开连接事件
+            if (typeof window !== 'undefined' && window.uni) {
+              window.uni.$emit('walletDisconnected', {
+                clearUserData: true,
+                clearAssetsData: true,
+                reason: 'wallet_disconnected'
+              })
+            }
+          } else {
+            // 账户重新出现，恢复连接
+            console.log('检测到账户重新出现，恢复连接:', currentAccounts)
+            this.accounts = currentAccounts
+            this.currentAccount = currentAccounts[0]
+            this.isConnected = true
+            
+            // 恢复localStorage状态
+            localStorage.setItem('connectedWalletAddress', this.currentAccount)
+            localStorage.setItem('walletConnected', 'true')
+            localStorage.setItem('walletLastConnectedAt', new Date().toISOString())
+          }
+        } catch (error) {
+          console.error('延迟检查账户状态失败:', error)
+        }
+      }, 1000) // 延迟1秒检查
     } else if (accounts[0] !== this.currentAccount) {
       if (isInitialConnection) {
         // 只有明确标记为初始连接时才允许设置地址
@@ -197,6 +318,9 @@ class Web3Service {
         // 清除手动断开连接的标记（初始连接）
         localStorage.removeItem('walletManuallyDisconnected')
         
+        // 设置钱包连接状态
+        localStorage.setItem('walletConnected', 'true')
+        
         // 存储连接的钱包地址到localStorage
         localStorage.setItem('connectedWalletAddress', this.currentAccount)
         localStorage.setItem('walletConnectedAt', new Date().toISOString())
@@ -207,28 +331,60 @@ class Web3Service {
         // 清除本地缓存状态
         this.clearLocalCache()
       } else {
-        // 用户切换了账户，或者当前没有连接但不是初始连接
-        console.log('检测到钱包地址变化或无连接状态，但不自动连接')
+        // 用户切换了账户，强制更新地址
+        console.log('🔄 检测到钱包地址变化，强制更新地址')
         console.log('MetaMask中的地址:', accounts[0])
         console.log('应用当前连接的地址:', this.currentAccount || '无')
         
-        if (this.currentAccount) {
-          // 如果当前有连接的账户，记录变化但不切换
-          localStorage.setItem('walletAddressChangedAt', new Date().toISOString())
-          localStorage.setItem('metaMaskCurrentAddress', accounts[0])
+        if (this.currentAccount && this.currentAccount !== accounts[0]) {
+          console.log('🚨 检测到地址不匹配，强制清除认证状态并更新地址')
           
-          // 提示用户地址不匹配
-          this.handleWalletAddressMismatch(accounts[0])
-        } else {
+          // 保存旧地址
+          const oldAddress = this.currentAccount
+          const newAddress = accounts[0]
+          
+          // 强制清除所有认证状态
+          this.clearAllAuthState()
+          
+          // 更新地址
+          this.accounts = accounts
+          this.currentAccount = newAddress
+          this.isConnected = true
+          
+          // 更新localStorage
+          localStorage.setItem('connectedWalletAddress', this.currentAccount)
+          localStorage.setItem('walletAddressChangedAt', new Date().toISOString())
+          localStorage.setItem('metaMaskCurrentAddress', newAddress)
+          
+          // 通知API服务重置认证状态
+          try {
+            const { default: apiService } = await import('@/api/apiService.js')
+            apiService.resetAuthState()
+            console.log('✅ web3Service API服务认证状态已重置')
+          } catch (error) {
+            console.warn('⚠️ web3Service 重置API服务认证状态失败:', error)
+          }
+          
+          // 触发地址变化事件
+          if (typeof window !== 'undefined' && window.uni) {
+            console.log('📡 触发钱包地址变化事件:', {
+              oldAddress: oldAddress,
+              newAddress: newAddress,
+              reason: 'accounts_changed'
+            })
+            window.uni.$emit('walletAddressChanged', {
+              oldAddress: oldAddress,
+              newAddress: newAddress,
+              reason: 'accounts_changed'
+            })
+          }
+          
+          console.log('✅ 地址已强制更新:', this.currentAccount)
+        } else if (!this.currentAccount) {
           // 如果当前没有连接的账户，也不自动连接
           console.log('当前无连接账户，不自动连接MetaMask地址')
           localStorage.setItem('metaMaskCurrentAddress', accounts[0])
         }
-        
-        // 不更新当前账户，保持原有连接状态
-        // 不触发合约重新初始化
-        // 不清除本地缓存状态
-        // 不设置connectedWalletAddress
       }
     }
   }
@@ -255,6 +411,120 @@ class Web3Service {
     }
   }
 
+  // 清除所有认证状态（用于地址变化时）
+  clearAllAuthState() {
+    console.log('🚨 强制清除所有认证状态...')
+    
+    // 调用后端登出接口
+    if (typeof window !== 'undefined' && window.uni) {
+      // 异步调用登出接口，不阻塞地址更新
+      setTimeout(async () => {
+        try {
+          const { authAPI } = await import('@/api/apiService.js')
+          await authAPI.logout()
+          console.log('✅ 后端登出成功')
+        } catch (error) {
+          console.warn('⚠️ 后端登出失败:', error)
+        }
+      }, 100)
+    }
+    
+    // 清除本地认证状态
+    this.clearLocalCache()
+    
+    // 清除所有cookie（不刷新页面）
+    this.clearAllCookies()
+    
+    console.log('✅ 所有认证状态已清除')
+  }
+
+  // 清除所有cookie（不刷新页面）
+  clearAllCookies() {
+    if (typeof window === 'undefined') return
+    
+    try {
+      console.log('🍪 清除所有认证cookie...')
+      
+      // 获取当前域名
+      const hostname = window.location.hostname
+      const domain = hostname.includes('.') ? '.' + hostname.split('.').slice(-2).join('.') : hostname
+      
+      // 清除所有可能的认证cookie
+      const cookieNames = [
+        'sessionid', 'session_id', 'auth_token', 'access_token', 'refresh_token',
+        'user_token', 'login_token', 'jwt_token', 'bearer_token',
+        'defi_session', 'wallet_session', 'user_session', 'PHPSESSID',
+        'JSESSIONID', 'connect.sid', 'express.sid', 'session'
+      ]
+      
+      cookieNames.forEach(name => {
+        // 清除当前域名的cookie
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${hostname}`
+        // 清除父域名的cookie
+        if (domain !== hostname) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`
+        }
+        // 清除根路径的cookie
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+        // 清除子路径的cookie
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/api`
+      })
+      
+      console.log('✅ 认证cookie已清除')
+      
+    } catch (error) {
+      console.warn('⚠️ 清除cookie失败:', error)
+    }
+  }
+
+  // 强制清除所有cookie并刷新页面（备用方法）
+  forceClearCookiesAndReload() {
+    if (typeof window === 'undefined') return
+    
+    try {
+      console.log('🍪 强制清除所有认证cookie...')
+      
+      // 获取当前域名
+      const hostname = window.location.hostname
+      const domain = hostname.includes('.') ? '.' + hostname.split('.').slice(-2).join('.') : hostname
+      
+      // 清除所有可能的认证cookie
+      const cookieNames = [
+        'sessionid', 'session_id', 'auth_token', 'access_token', 'refresh_token',
+        'user_token', 'login_token', 'jwt_token', 'bearer_token',
+        'defi_session', 'wallet_session', 'user_session', 'PHPSESSID',
+        'JSESSIONID', 'connect.sid', 'express.sid', 'session'
+      ]
+      
+      cookieNames.forEach(name => {
+        // 清除当前域名的cookie
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${hostname}`
+        // 清除父域名的cookie
+        if (domain !== hostname) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`
+        }
+        // 清除根路径的cookie
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+        // 清除子路径的cookie
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/api`
+      })
+      
+      console.log('🔄 强制刷新页面以清除所有认证状态...')
+      
+      // 延迟刷新页面，确保cookie清除完成
+      setTimeout(() => {
+        window.location.reload()
+      }, 300)
+      
+    } catch (error) {
+      console.warn('⚠️ 清除cookie失败，直接刷新页面:', error)
+      // 如果清除cookie失败，仍然刷新页面
+      setTimeout(() => {
+        window.location.reload()
+      }, 300)
+    }
+  }
+
   // 清除本地缓存状态
   clearLocalCache() {
     console.log('🧹 Web3服务清除本地缓存状态...')
@@ -265,7 +535,8 @@ class Web3Service {
       const keysToRemove = []
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
-        if (key && (key.includes('user') || key.includes('auth') || key.includes('login'))) {
+        if (key && (key.includes('user') || key.includes('auth') || key.includes('login') || 
+                   key.includes('wallet') || key.includes('defi') || key.includes('session'))) {
           keysToRemove.push(key)
         }
       }
@@ -279,7 +550,8 @@ class Web3Service {
       const sessionKeysToRemove = []
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i)
-        if (key && (key.includes('user') || key.includes('auth') || key.includes('login'))) {
+        if (key && (key.includes('user') || key.includes('auth') || key.includes('login') || 
+                   key.includes('wallet') || key.includes('defi') || key.includes('session'))) {
           sessionKeysToRemove.push(key)
         }
       }
@@ -287,6 +559,28 @@ class Web3Service {
       sessionKeysToRemove.forEach(key => {
         sessionStorage.removeItem(key)
         console.log('🗑️ 清除会话缓存:', key)
+      })
+      
+      // 清除特定的缓存键
+      const specificKeys = [
+        'walletConnected',
+        'connectedWalletAddress',
+        'walletConnectedAt',
+        'walletLastConnectedAt',
+        'walletAccountChangedAt',
+        'walletManuallyDisconnected',
+        'defi_session',
+        'userToken',
+        'authToken',
+        'loginStatus',
+        'userData',
+        'userLoginData'
+      ]
+      
+      specificKeys.forEach(key => {
+        localStorage.removeItem(key)
+        sessionStorage.removeItem(key)
+        console.log('🗑️ 清除特定缓存:', key)
       })
     }
     
@@ -586,14 +880,22 @@ class Web3Service {
   }
 
   // 断开连接
-  disconnect() {
+  disconnect(isManualDisconnect = false) {
     this.accounts = []
     this.currentAccount = null
     this.isConnected = false
     this.contracts = {}
     
-    // 记录用户主动断开连接的状态
-    localStorage.setItem('walletManuallyDisconnected', 'true')
+    // 只有用户主动断开时才设置手动断开标志
+    if (isManualDisconnect) {
+      localStorage.setItem('walletManuallyDisconnected', 'true')
+      console.log('🔓 用户主动断开钱包连接')
+    } else {
+      // 非主动断开时，清除手动断开标志，允许页面刷新后恢复
+      localStorage.removeItem('walletManuallyDisconnected')
+      console.log('🔄 非主动断开，清除手动断开标志，允许页面刷新后恢复')
+    }
+    
     localStorage.setItem('walletDisconnectedAt', new Date().toISOString())
     
     // 清除localStorage中的钱包地址信息
@@ -612,6 +914,15 @@ class Web3Service {
       this.provider = null
     }
     
+    // 触发钱包断开连接事件
+    if (typeof window !== 'undefined' && window.uni) {
+      window.uni.$emit('walletDisconnected', {
+        clearUserData: true,
+        clearAssetsData: true,
+        reason: 'manual_disconnect'
+      })
+    }
+    
     console.log('Web3服务已断开连接')
   }
 
@@ -621,7 +932,7 @@ class Web3Service {
       console.log('开始完全断开Web3连接...')
       
       // 1. 清除基本状态
-      this.disconnect()
+      this.disconnect(true)
       
       // 2. 尝试撤销钱包权限
       if (typeof window.ethereum !== 'undefined' && window.ethereum.request) {
@@ -924,5 +1235,29 @@ class Web3Service {
 
 // 创建单例实例
 const web3Service = new Web3Service()
+
+// 开发环境下添加调试功能
+if (process.env.NODE_ENV === 'development') {
+  // 在开发环境下添加全局调试方法
+  if (typeof window !== 'undefined') {
+    window.web3Service = web3Service
+    window.testAddressChange = () => {
+      console.log('🧪 测试地址变化检测...')
+      web3Service.forceCheckAddressMatch()
+    }
+    window.clearAllAuth = () => {
+      console.log('🧪 测试清除所有认证状态...')
+      web3Service.clearAllAuthState()
+    }
+    window.getCurrentAddress = () => {
+      console.log('当前地址:', web3Service.currentAccount)
+      console.log('MetaMask地址:', window.ethereum?.selectedAddress)
+      return {
+        current: web3Service.currentAccount,
+        metaMask: window.ethereum?.selectedAddress
+      }
+    }
+  }
+}
 
 export default web3Service

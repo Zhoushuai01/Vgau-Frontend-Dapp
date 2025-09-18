@@ -172,7 +172,7 @@
       <view class="error-modal-content" @click.stop>
         <!-- 错误标题 -->
         <view class="error-header">
-          <text class="error-title">⚠️ 钱包连接失败</text>
+          <text class="error-title">⚠️ {{ t('wallet.connectionFailed') }}</text>
           <view class="close-btn" @click="showErrorModal = false">×</view>
         </view>
         
@@ -184,7 +184,7 @@
         
         <!-- 解决建议 -->
         <view class="error-suggestions" v-if="currentError.suggestions && currentError.suggestions.length > 0">
-          <text class="suggestions-title">解决建议：</text>
+          <text class="suggestions-title">{{ t('common.suggestions') }}：</text>
           <view class="suggestion-item" v-for="(suggestion, index) in currentError.suggestions" :key="index">
             <text class="suggestion-text">{{ index + 1 }}. {{ suggestion }}</text>
           </view>
@@ -193,10 +193,32 @@
         <!-- 操作按钮 -->
         <view class="error-actions">
           <view class="retry-btn" @click="retryWalletConnection">
-            <text class="retry-text">重试</text>
+            <text class="retry-text">{{ t('common.retry') }}</text>
           </view>
           <view class="close-error-btn" @click="showErrorModal = false">
-            <text class="close-error-text">关闭</text>
+            <text class="close-error-text">{{ t('common.close') }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 兑换错误模态框 -->
+    <view class="exchange-error-modal" v-if="showExchangeErrorModal" @click="showExchangeErrorModal = false">
+      <view class="exchange-error-modal-content" @click.stop>
+        <!-- 错误标题 -->
+        <view class="exchange-error-header">
+          <view class="exchange-close-btn" @click="showExchangeErrorModal = false">×</view>
+        </view>
+        
+        <!-- 错误详情 -->
+        <view class="exchange-error-details">
+          <text class="exchange-error-message">{{ exchangeErrorData.message }}</text>
+        </view>
+        
+        <!-- 操作按钮 -->
+        <view class="exchange-error-actions">
+          <view class="exchange-confirm-btn" @click="showExchangeErrorModal = false">
+            <text class="exchange-confirm-text">{{ t('common.confirm') }}</text>
           </view>
         </view>
       </view>
@@ -260,6 +282,12 @@
     suggestions: []
   })
   
+  // 兑换错误模态框相关状态
+  const showExchangeErrorModal = ref(false)
+  const exchangeErrorData = ref({
+    message: ''
+  })
+  
   // 首页兑换相关状态
   const homeExchangeAmount = ref('')
   const isHomeExchangeLoading = ref(false)
@@ -312,6 +340,16 @@
           currentAccount: currentAccount.value,
           web3ServiceConnected: web3Service.isConnected,
           web3ServiceAccount: web3Service.currentAccount
+        })
+        
+        // 设置钱包连接状态到localStorage
+        localStorage.setItem('walletConnected', 'true')
+        
+        // 触发钱包连接事件，通知其他页面
+        uni.$emit('walletConnected', {
+          walletAddress: currentAccount.value,
+          isConnected: true,
+          connectedAt: Date.now()
         })
         
         // 立即显示成功提示
@@ -538,7 +576,7 @@
 
       // 显示成功提示
       uni.showToast({
-        title: i18n.global.t('exchange.exchangeSuccess'),
+        title: i18n.global.t('components.exchange.exchangeSuccess'),
         icon: 'success',
         duration: 3000
       })
@@ -553,7 +591,7 @@
       uni.hideLoading()
       
       // 显示错误信息
-      let errorMessage = i18n.global.t('exchange.exchangeFailed')
+      let errorMessage = t('components.exchange.exchangeFailed')
       
       if (error.errorType === 'KYC_REQUIRED') {
         errorMessage = error.message
@@ -561,39 +599,144 @@
         if (error.message.includes('余额不足')) {
           errorMessage = error.message
         } else if (error.message.includes('用户取消') || error.message.includes('User rejected')) {
-          errorMessage = i18n.global.t('common.userRejected')
+          // 直接使用翻译文本，避免键值对显示
+          const locale = i18n.global.locale?.value || 'zh'
+          if (locale.startsWith('zh')) {
+            errorMessage = '用戶取消操作'
+          } else if (locale.startsWith('en')) {
+            errorMessage = 'User Cancelled Operation'
+          } else if (locale.startsWith('fr')) {
+            errorMessage = 'Utilisateur a Annulé l\'Opération'
+          } else if (locale.startsWith('ar')) {
+            errorMessage = 'رفض المستخدم العملية'
+          } else if (locale.startsWith('pt')) {
+            errorMessage = 'Usuário Cancelou Operação'
+          } else {
+            errorMessage = t('common.userRejected')
+          }
         } else if (error.message.includes('网络')) {
-          errorMessage = i18n.global.t('common.networkError')
+          // 直接使用翻译文本，避免键值对显示
+          const locale = i18n.global.locale?.value || 'zh'
+          if (locale.startsWith('zh')) {
+            errorMessage = '網絡錯誤'
+          } else if (locale.startsWith('en')) {
+            errorMessage = 'Network Error'
+          } else if (locale.startsWith('fr')) {
+            errorMessage = 'Erreur de Réseau'
+          } else if (locale.startsWith('ar')) {
+            errorMessage = 'خطأ في الشبكة'
+          } else if (locale.startsWith('pt')) {
+            errorMessage = 'Erro de Rede'
+          } else {
+            errorMessage = t('common.networkError')
+          }
         } else if (error.message.includes('Gas')) {
-          errorMessage = i18n.global.t('common.gasInsufficient')
+          // 直接使用翻译文本，避免键值对显示
+          const locale = i18n.global.locale?.value || 'zh'
+          if (locale.startsWith('zh')) {
+            errorMessage = 'Gas費用不足'
+          } else if (locale.startsWith('en')) {
+            errorMessage = 'Insufficient Gas Fee'
+          } else if (locale.startsWith('fr')) {
+            errorMessage = 'Frais de Gas Insuffisants'
+          } else if (locale.startsWith('ar')) {
+            errorMessage = 'رسوم الغاز غير كافية'
+          } else if (locale.startsWith('pt')) {
+            errorMessage = 'Taxa de Gas Insuficiente'
+          } else {
+            errorMessage = t('common.gasInsufficient')
+          }
+        } else if (error.message.includes('请先连接钱包')) {
+          // 直接使用翻译文本，避免键值对显示
+          const locale = i18n.global.locale?.value || 'zh'
+          if (locale.startsWith('zh')) {
+            errorMessage = '請先連接您的錢包'
+          } else if (locale.startsWith('en')) {
+            errorMessage = 'Please connect your wallet first'
+          } else if (locale.startsWith('fr')) {
+            errorMessage = 'Veuillez d\'abord connecter votre portefeuille'
+          } else if (locale.startsWith('ar')) {
+            errorMessage = 'يرجى ربط محفظتك أولاً'
+          } else if (locale.startsWith('pt')) {
+            errorMessage = 'Por favor, conecte sua carteira primeiro'
+          } else {
+            errorMessage = t('wallet.pleaseConnectWallet')
+          }
         }
       }
 
-      uni.showModal({
-        title: i18n.global.t('common.error'),
-        content: errorMessage,
-        showCancel: false,
-        confirmText: i18n.global.t('common.confirm')
-      })
+      // 显示自定义错误弹窗
+      exchangeErrorData.value = {
+        message: errorMessage
+      }
+      showExchangeErrorModal.value = true
     } finally {
       isHomeExchangeLoading.value = false
     }
   }
   
   // 断开钱包连接
-  const disconnectWallet = () => {
-    web3Service.disconnect()
-    walletConnected.value = false
-    currentAccount.value = ''
-    accountBalance.value = '0'
-    vgauBalance.value = '0'
-    showWalletModal.value = false
-    
-    uni.showToast({
-      title: t('wallet.disconnected'),
-      icon: 'success',
-      duration: 1000
-    })
+  const disconnectWallet = async () => {
+    try {
+      // 1. 调用logout接口
+      console.log('🔓 开始登出流程...')
+      try {
+        await authAPI.logout()
+        console.log('✅ 登出接口调用成功')
+      } catch (error) {
+        console.warn('⚠️ 登出接口调用失败，继续执行本地登出:', error)
+      }
+      
+      // 2. 断开钱包连接（保持原有逻辑）
+      web3Service.disconnect(true)
+      walletConnected.value = false
+      currentAccount.value = ''
+      accountBalance.value = '0'
+      vgauBalance.value = '0'
+      showWalletModal.value = false
+      
+      // 3. 设置钱包断开状态到localStorage
+      localStorage.setItem('walletManuallyDisconnected', 'true')
+      localStorage.setItem('walletConnected', 'false')
+      
+      // 4. 清除个人中心相关数据
+      console.log('🧹 清除个人中心数据...')
+      
+      // 触发个人中心数据清除事件
+      uni.$emit('walletDisconnected', {
+        clearUserData: true,
+        clearAssetsData: true
+      })
+      
+      // 5. 显示成功提示
+      uni.showToast({
+        title: t('wallet.disconnected'),
+        icon: 'success',
+        duration: 1000
+      })
+      
+      console.log('✅ 钱包断开和登出流程完成')
+    } catch (error) {
+      console.error('❌ 断开钱包时发生错误:', error)
+      
+      // 即使出错也要执行本地断开
+      web3Service.disconnect(true)
+      walletConnected.value = false
+      currentAccount.value = ''
+      accountBalance.value = '0'
+      vgauBalance.value = '0'
+      showWalletModal.value = false
+      
+      // 设置钱包断开状态到localStorage
+      localStorage.setItem('walletManuallyDisconnected', 'true')
+      localStorage.setItem('walletConnected', 'false')
+      
+      uni.showToast({
+        title: t('wallet.disconnected'),
+        icon: 'success',
+        duration: 1000
+      })
+    }
   }
 
   // 显示钱包错误模态框
@@ -904,7 +1047,7 @@
 .right-controls {
   display: flex;
   align-items: center;
-  gap: 24rpx;
+  gap: 32rpx;
   flex: 0 0 auto;
 }
 
@@ -1360,6 +1503,62 @@
     font-size: 20rpx;
     padding: 16rpx 24rpx;
   }
+  
+  /* 移动端顶部栏调整 */
+  .right-controls {
+    gap: 24rpx;
+  }
+  
+  .header-content {
+    padding: 0 24rpx;
+  }
+  
+  .official-link-btn {
+    padding: 4rpx 10rpx;
+    min-width: 60rpx;
+  }
+  
+  .official-link-text {
+    font-size: 16rpx;
+  }
+  
+  .connect-wallet-btn {
+    padding: 4rpx 12rpx;
+    min-width: 70rpx;
+  }
+  
+  .btn-text {
+    font-size: 20rpx;
+  }
+}
+
+/* 超小屏幕处理 */
+@media (max-width: 480px) {
+  .right-controls {
+    gap: 20rpx;
+  }
+  
+  .header-content {
+    padding: 0 20rpx;
+  }
+  
+  .official-link-btn {
+    padding: 3rpx 8rpx;
+    min-width: 55rpx;
+  }
+  
+  .official-link-text {
+    font-size: 14rpx;
+  }
+  
+  .connect-wallet-btn {
+    padding: 3rpx 10rpx;
+    min-width: 65rpx;
+  }
+  
+  .btn-text {
+    font-size: 18rpx;
+  }
 }
 
 /* 钱包弹窗样式 */
@@ -1595,6 +1794,106 @@
 .close-error-text {
   color: rgba(255, 255, 255, 0.8);
   font-size: 26rpx;
+  font-weight: 500;
+}
+
+/* 兑换错误模态框样式 */
+.exchange-error-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+}
+
+.exchange-error-modal-content {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-radius: 20rpx;
+  padding: 32rpx;
+  max-width: 600rpx;
+  width: 100%;
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.6);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.exchange-error-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 24rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.exchange-error-title {
+  color: #FF6B6B;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.exchange-close-btn {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 40rpx;
+  cursor: pointer;
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.exchange-close-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.exchange-error-details {
+  margin-bottom: 32rpx;
+  text-align: center;
+}
+
+.exchange-error-message {
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 500;
+  line-height: 1.5;
+  display: block;
+  text-align: center;
+}
+
+.exchange-error-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.exchange-confirm-btn {
+  background: linear-gradient(135deg, #E78B1B 0%, #D67A0A 100%);
+  border-radius: 12rpx;
+  padding: 16rpx 48rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120rpx;
+  text-align: center;
+}
+
+.exchange-confirm-btn:active {
+  transform: scale(0.95);
+  background: linear-gradient(135deg, #D67A0A 0%, #C66A00 100%);
+}
+
+.exchange-confirm-text {
+  color: #FFFFFF;
+  font-size: 28rpx;
   font-weight: 500;
 }
 </style> 

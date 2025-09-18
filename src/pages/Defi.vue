@@ -367,7 +367,13 @@
       sessionId: null
     }
     localStorage.removeItem('defi_session')
-    console.log('🗑️ 清除会话状态')
+    
+    // 清空余额数据
+    balances.VGAU = '0'
+    balances.USDT = '0'
+    yieldData.pending = '0'
+    
+    console.log('🗑️ 清除会话状态和余额数据')
   }
   
   const isSessionValid = () => {
@@ -440,6 +446,11 @@
           lastConnectedAt: null
         }
         
+        // 强制清除余额显示
+        balances.VGAU = '0'
+        balances.USDT = '0'
+        yieldData.pending = '0'
+        
         return false
       }
     } catch (error) {
@@ -508,6 +519,13 @@
   
   // 获取可领取利息
   const getClaimableInterest = async () => {
+    // 检查钱包连接状态，如果未连接则不调用接口
+    if (!walletConnectionStatus.value.isConnected || !walletConnectionStatus.value.walletAddress) {
+      console.log('⚠️ 钱包未连接，跳过可领取利息获取')
+      yieldData.pending = '0'
+      return
+    }
+    
     try {
       console.log('💰 开始获取可领取利息...')
       
@@ -614,6 +632,14 @@
   
   // 获取用户余额
   const getBalances = async () => {
+    // 检查钱包连接状态，如果未连接则不调用接口
+    if (!walletConnectionStatus.value.isConnected || !walletConnectionStatus.value.walletAddress) {
+      console.log('⚠️ 钱包未连接，跳过余额获取')
+      balances.VGAU = '0'
+      balances.USDT = '0'
+      return
+    }
+    
     try {
       console.log('💰 开始获取用户余额...')
       
@@ -969,6 +995,13 @@
               icon: 'success',
               duration: 1500
             })
+            // 钱包重新连接后，获取用户数据
+            Promise.all([
+              getBalances(),
+              getClaimableInterest()
+            ]).catch(error => {
+              console.error('重新连接后获取数据失败:', error)
+            })
           } else if (wasAddress !== newAddress) {
             console.log('🔄 检测到钱包地址变化')
             // 地址变化，清除会话
@@ -983,13 +1016,17 @@
           // 没有账户连接
           if (walletConnectionStatus.value.isConnected) {
             console.log('⚠️ 检测到钱包断开连接')
-            // 清除会话状态
+            // 清除会话状态和余额数据
             clearSession()
             walletConnectionStatus.value = {
               isConnected: false,
               walletAddress: null,
               lastConnectedAt: null
             }
+            // 强制清除余额显示
+            balances.VGAU = '0'
+            balances.USDT = '0'
+            yieldData.pending = '0'
             uni.showToast({
               title: '钱包已断开连接',
               icon: 'none',
@@ -1002,8 +1039,12 @@
       // 监听网络变化
       window.ethereum.on('chainChanged', (chainId) => {
         console.log('🔄 网络已切换:', chainId)
-        // 网络变化时清除会话，需要重新签名
+        // 网络变化时清除会话和余额数据，需要重新签名
         clearSession()
+        // 强制清除余额显示
+        balances.VGAU = '0'
+        balances.USDT = '0'
+        yieldData.pending = '0'
         uni.showToast({
           title: '网络已切换，需要重新签名',
           icon: 'none',
@@ -1055,12 +1096,120 @@
     // 设置钱包事件监听
     setupWalletEventListeners()
     
-    // 获取用户余额、可领取利息和汇率数据
-    await Promise.all([
-      getBalances(),
-      getClaimableInterest(),
-      getExchangeRate()
-    ])
+    // 监听钱包连接状态变化
+    uni.$on('walletConnected', async (data) => {
+      console.log('📡 DeFi页面收到钱包连接事件:', data)
+      // 重新检查钱包连接状态
+      await checkWalletConnection()
+      // 获取用户数据
+      if (walletConnectionStatus.value.isConnected && walletConnectionStatus.value.walletAddress) {
+        await Promise.all([
+          getBalances(),
+          getClaimableInterest()
+        ])
+      }
+    })
+    
+    // 监听钱包地址变化事件
+    uni.$on('walletAddressChanged', async (data) => {
+      console.log('📡 DeFi页面收到钱包地址变化事件:', data)
+      if (data.newAddress) {
+        console.log('🔄 钱包地址已变化，强制清除认证状态并重新认证...')
+        
+        // 1. 通知API服务重置认证状态
+        try {
+          const { default: apiService } = await import('@/api/apiService.js')
+          apiService.resetAuthState()
+          console.log('✅ DeFi页面API服务认证状态已重置')
+        } catch (error) {
+          console.warn('⚠️ DeFi页面重置API服务认证状态失败:', error)
+        }
+        
+        // 2. 先调用后端登出接口，清除旧地址的session
+        try {
+          console.log('🔓 调用后端登出接口清除旧地址session...')
+          await authAPI.logout()
+          console.log('✅ 后端登出成功')
+        } catch (error) {
+          console.warn('⚠️ 后端登出失败，继续执行地址切换:', error)
+        }
+        
+        // 3. 清除本地认证相关数据
+        console.log('🧹 清除本地认证数据...')
+        const authKeys = [
+          'userToken',
+          'walletAddress', 
+          'userData',
+          'authToken',
+          'loginStatus',
+          'walletConnection',
+          'userLoginData',
+          'defi_session'
+        ]
+        
+        authKeys.forEach(key => {
+          localStorage.removeItem(key)
+          sessionStorage.removeItem(key)
+        })
+        
+        // 4. 更新钱包连接状态
+        walletConnectionStatus.value = {
+          isConnected: true,
+          walletAddress: data.newAddress,
+          lastConnectedAt: Date.now()
+        }
+        
+        // 5. 更新API服务的钱包地址
+        try {
+          const { default: apiService } = await import('@/api/apiService.js')
+          apiService.updateWalletAddress(data.newAddress)
+          console.log('✅ DeFi页面API服务钱包地址已更新')
+        } catch (error) {
+          console.warn('⚠️ DeFi页面更新API服务钱包地址失败:', error)
+        }
+        
+        // 6. 清除会话，需要重新认证
+        clearSession()
+        
+        // 7. 重新获取新地址的数据
+        try {
+          console.log('🔄 DeFi页面重新获取新地址的数据...')
+          await Promise.all([
+            getBalances(),
+            getClaimableInterest()
+          ])
+          console.log('✅ DeFi页面新地址数据获取完成')
+        } catch (error) {
+          console.error('❌ DeFi页面获取新地址数据失败:', error)
+        }
+        
+        // 8. 显示地址变化提示
+        uni.showToast({
+          title: '钱包地址已变化，数据已更新',
+          icon: 'success',
+          duration: 2000
+        })
+        
+        console.log('✅ DeFi页面钱包地址变化处理完成，数据已更新')
+      }
+    })
+    
+    // 获取汇率数据（不需要钱包连接）
+    await getExchangeRate()
+    
+    // 只有在钱包连接时才获取用户相关数据
+    if (walletConnectionStatus.value.isConnected && walletConnectionStatus.value.walletAddress) {
+      await Promise.all([
+        getBalances(),
+        getClaimableInterest()
+      ])
+    } else {
+      console.log('⚠️ 钱包未连接，跳过用户数据获取')
+      // 确保余额和收益数据为0
+      balances.VGAU = '0'
+      balances.USDT = '0'
+      yieldData.pending = '0'
+    }
     
     // 启动汇率更新定时器（无论钱包是否连接）
     startExchangeRateTimer()
@@ -1069,6 +1218,10 @@
   // 页面卸载时清理事件监听
   onUnmounted(() => {
     removeWalletEventListeners()
+    
+    // 清理钱包连接事件监听
+    uni.$off('walletConnected')
+    uni.$off('walletAddressChanged')
     
     // 停止汇率更新定时器
     stopExchangeRateTimer()

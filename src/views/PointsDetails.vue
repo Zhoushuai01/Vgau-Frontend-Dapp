@@ -74,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { pointsAPI } from '@/api/apiService.js'
 
@@ -101,8 +101,13 @@ const tabTypeMapping = {
   'ecosystem': 'ecosystem' // 生态
 }
 
-// 根据业务类型获取前端分类
-const getTypeFromBusinessType = (businessType) => {
+// 根据业务类型和原因获取前端分类
+const getTypeFromBusinessType = (businessType, reason) => {
+  // 首先检查reason字段，如果是质押赎回相关，直接分类为质押
+  if (reason && reason.includes('质押赎回')) {
+    return 'staking'
+  }
+  
   const typeMapping = {
     'STAKE_CREATE': 'staking',        // 质押
     'USER_INVITE_BIND': 'invite',     // 邀请
@@ -115,6 +120,11 @@ const getTypeFromBusinessType = (businessType) => {
 
 // 根据业务类型获取简化的积分操作描述
 const getPointsOperationDescription = (businessType, reason) => {
+  // 首先检查reason字段，如果是质押赎回相关，使用映射的简化文字
+  if (reason && reason.includes('质押赎回')) {
+    return t(`components.invitation.rewardTypeMapping.${reason}`) || reason
+  }
+  
   const descriptionMapping = {
     'STAKE_CREATE': t('components.pointsDetails.createStakingOrder'),        // 质押
     'USER_INVITE_BIND': t('components.pointsDetails.inviteRelationship'),    // 邀请
@@ -125,9 +135,9 @@ const getPointsOperationDescription = (businessType, reason) => {
   
   // 如果是邀请相关的，根据原因进一步细分
   if (businessType === 'USER_INVITE_BIND') {
-    if (reason && reason.includes('直推')) {
+    if (reason && (reason.includes('直推') || reason.includes('direct'))) {
       return t('components.pointsDetails.directReferral')
-    } else if (reason && reason.includes('间接')) {
+    } else if (reason && (reason.includes('間接') || reason.includes('间接') || reason.includes('indirect'))) {
       return t('components.pointsDetails.indirectReferral')
     }
     return t('components.pointsDetails.inviteRelationship')
@@ -168,9 +178,54 @@ const filteredPointsList = computed(() => {
   return pointsList.value.filter(item => item.type === activeTab.value)
 })
 
+// 检查钱包连接状态
+const checkWalletConnection = () => {
+  // 检查是否被手动断开
+  const isManuallyDisconnected = localStorage.getItem('walletManuallyDisconnected') === 'true'
+  
+  // 如果被手动断开，直接返回false
+  if (isManuallyDisconnected) {
+    console.log('⚠️ 检测到钱包被手动断开，跳过API调用')
+    return false
+  }
+  
+  // 检查localStorage中的连接状态
+  const isWalletConnected = localStorage.getItem('walletConnected') === 'true'
+  
+  // 检查web3Service状态（如果可用）
+  const hasWeb3Service = typeof window !== 'undefined' && window.web3Service
+  const isWeb3Connected = hasWeb3Service && window.web3Service.isConnected && window.web3Service.currentAccount
+  
+  // 检查ethereum provider状态
+  const hasEthereum = typeof window.ethereum !== 'undefined'
+  const hasSelectedAccount = hasEthereum && window.ethereum.selectedAddress
+  
+  // 只要web3Service连接或ethereum有选中账户就认为已连接
+  const isConnected = isWeb3Connected || hasSelectedAccount
+  
+  console.log('🔍 积分页面钱包连接状态检查:', {
+    isWalletConnected,
+    isManuallyDisconnected,
+    isWeb3Connected,
+    hasSelectedAccount,
+    isConnected
+  })
+  
+  return isConnected
+}
+
 // 获取积分详情数据
 const fetchPointsDetails = async () => {
   try {
+    // 检查钱包连接状态，如果未连接则不获取数据
+    const isWalletConnected = checkWalletConnection()
+    if (!isWalletConnected) {
+      console.log('⚠️ 钱包未连接，跳过获取积分详情')
+      totalPoints.value = '0.000'
+      pointsList.value = []
+      return
+    }
+    
     loading.value = true
     console.log('🔍 开始获取积分详情...')
     
@@ -187,7 +242,7 @@ const fetchPointsDetails = async () => {
           title: getPointsOperationDescription(item.businessType, item.reason) || '积分操作',
           time: formatTime(item.createdAt || item.time || ''),
           points: (item.signedPointsChange > 0 ? '+' : '') + item.pointsAmount,
-          type: getTypeFromBusinessType(item.businessType) || 'other'
+          type: getTypeFromBusinessType(item.businessType, item.reason) || 'other'
         }))
         console.log('📊 处理后的积分记录:', pointsList.value)
       } else if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
@@ -226,6 +281,14 @@ const fetchPointsDetails = async () => {
 // 获取积分记录数据
 const fetchPointsRecords = async () => {
   try {
+    // 检查钱包连接状态，如果未连接则不获取数据
+    const isWalletConnected = checkWalletConnection()
+    if (!isWalletConnected) {
+      console.log('⚠️ 钱包未连接，跳过获取积分记录')
+      pointsList.value = []
+      return
+    }
+    
     loading.value = true
     console.log('🔍 开始获取积分记录...')
     
@@ -239,7 +302,7 @@ const fetchPointsRecords = async () => {
           title: getPointsOperationDescription(item.businessType, item.reason) || '积分操作',
           time: formatTime(item.createdAt || item.time || ''),
           points: (item.signedPointsChange > 0 ? '+' : '') + item.pointsAmount,
-          type: getTypeFromBusinessType(item.businessType) || 'other'
+          type: getTypeFromBusinessType(item.businessType, item.reason) || 'other'
         }))
         console.log('📊 处理后的积分记录:', pointsList.value)
       } else if (response.data.pointsList && Array.isArray(response.data.pointsList)) {
@@ -307,12 +370,104 @@ const goBack = () => {
   uni.navigateBack()
 }
 
+// 清除积分详情页面数据
+const clearPointsDetailsData = () => {
+  console.log('🧹 清除积分详情页面数据...')
+  
+  // 清除总积分
+  totalPoints.value = '0.000'
+  
+  // 清除积分明细列表
+  pointsList.value = []
+  
+  // 重置标签
+  activeTab.value = 'all'
+  
+  console.log('✅ 积分详情页面数据已清除')
+}
+
 // 页面加载时获取数据
 onMounted(async () => {
-  // 先获取积分详情（包含总积分）
-  await fetchPointsDetails()
-  // 然后获取积分记录（包含全部数据）
-  await fetchPointsRecords()
+  // 只有在钱包连接时才获取积分数据
+  if (checkWalletConnection()) {
+    // 先获取积分详情（包含总积分）
+    await fetchPointsDetails()
+    // 然后获取积分记录（包含全部数据）
+    await fetchPointsRecords()
+  }
+  
+  // 监听钱包连接事件
+  uni.$on('walletConnected', async (data) => {
+    console.log('📡 积分详情页面收到钱包连接事件:', data)
+    console.log('🔍 积分页面钱包连接事件详情:', {
+      data,
+      web3Service: window.web3Service ? {
+        isConnected: window.web3Service.isConnected,
+        currentAccount: window.web3Service.currentAccount
+      } : 'web3Service not available',
+      ethereum: window.ethereum ? {
+        selectedAddress: window.ethereum.selectedAddress
+      } : 'ethereum not available'
+    })
+    
+    // 重新检查钱包连接状态
+    const isConnected = checkWalletConnection()
+    console.log('🔍 积分页面钱包连接检查结果:', isConnected)
+    
+    if (isConnected) {
+      console.log('✅ 积分页面开始获取数据...')
+      // 先获取积分详情（包含总积分）
+      await fetchPointsDetails()
+      // 然后获取积分记录（包含全部数据）
+      await fetchPointsRecords()
+    } else {
+      console.log('❌ 积分页面钱包连接检查失败，跳过API调用')
+    }
+  })
+  
+  // 监听钱包断开事件
+  uni.$on('walletDisconnected', (data) => {
+    console.log('📡 积分详情页面收到钱包断开事件:', data)
+    if (data.clearUserData || data.clearAssetsData) {
+      clearPointsDetailsData()
+    }
+  })
+  
+  // 监听钱包地址变化事件
+  uni.$on('walletAddressChanged', async (data) => {
+    console.log('📡 积分详情页面收到钱包地址变化事件:', data)
+    if (data.newAddress) {
+      console.log('🔄 积分页面钱包地址已变化，重新获取数据...')
+      
+      // 通知API服务重置认证状态
+      try {
+        const { default: apiService } = await import('@/api/apiService.js')
+        apiService.resetAuthState()
+        console.log('✅ 积分页面API服务认证状态已重置')
+      } catch (error) {
+        console.warn('⚠️ 积分页面重置API服务认证状态失败:', error)
+      }
+      
+      // 重新获取积分数据
+      try {
+        // 先获取积分详情（包含总积分）
+        await fetchPointsDetails()
+        // 然后获取积分记录（包含全部数据）
+        await fetchPointsRecords()
+        console.log('✅ 积分页面新地址数据获取完成')
+      } catch (error) {
+        console.error('❌ 积分页面获取新地址数据失败:', error)
+      }
+    }
+  })
+})
+
+// 页面卸载时清理事件监听
+onUnmounted(() => {
+  // 清理事件监听
+  uni.$off('walletConnected')
+  uni.$off('walletDisconnected')
+  uni.$off('walletAddressChanged')
 })
 </script>
 

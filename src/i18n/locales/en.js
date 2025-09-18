@@ -63,6 +63,7 @@ export default {
     pleaseCheckConnection: 'Please Check Connection',
     pleaseEnterValidAmount: 'Please Enter Valid Amount',
     pleaseEnterPositiveInteger: 'Please Enter Positive Integer',
+    suggestions: 'Suggestions',
     points: 'Points',
     users: 'Users'
   },
@@ -179,6 +180,7 @@ export default {
     connectingWallet: 'Connecting wallet...',
     walletConnectionSuccess: 'Wallet connected successfully',
     walletConnectionFailed: 'Wallet connection failed',
+    pleaseConnectWallet: 'Please connect your wallet first',
     userRejectedConnection: 'User rejected connection',
     noWalletDetected: 'No wallet detected',
     assetOverview: 'Asset Overview',
@@ -946,6 +948,18 @@ export default {
       successfullyReferUserThroughKYC: 'Successfully refer a user through KYC to earn points:',
       directReferral: 'Direct Referral Reward',
       indirectReferral: 'Indirect Invitation Reward',
+      directPush: 'Direct',
+      indirectPush: 'Indirect',
+      // 后端返回值的映射
+      rewardTypeMapping: {
+        '直推': 'Direct',
+        '间推': 'Indirect',
+        'direct': 'Direct',
+        'indirect': 'Indirect',
+        '完成质押赎回获得积分': 'Complete Staking Redemption',
+        'staking': 'Staking',
+        '质押': 'Staking'
+      },
       rewardsPerUser: '2 Points/User',
       indirectRewardsPerUser: '0.2 Points/User',
       pointsUnit: 'Points/User',
@@ -981,8 +995,8 @@ export default {
       // Points operation type descriptions
       createStakingOrder: 'Staking',
       inviteRelationship: 'Invite',
-      directReferral: 'Direct Referral Reward',
-      indirectReferral: 'Indirect Invitation Reward',
+      directReferral: 'Direct',
+      indirectReferral: 'Indirect',
       lendingRepayment: 'Lending Repayment'
     },
 

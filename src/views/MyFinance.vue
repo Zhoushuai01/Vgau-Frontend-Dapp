@@ -65,8 +65,8 @@
         <text class="empty-text">{{ t('components.myFinance.noOrders') }}</text>
       </view>
 
-      <!-- 底部状态 -->
-      <view class="loading-status">
+      <!-- 底部状态 - 只在有订单时显示 -->
+      <view class="loading-status" v-if="stakeOrders.length > 0">
         <text class="loading-text">{{ t('components.myFinance.allLoaded') }}</text>
       </view>
     </view>

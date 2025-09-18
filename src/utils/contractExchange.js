@@ -28,11 +28,12 @@ class ContractExchange {
         throw new Error('Web3初始化失败')
       }
 
-      // 连接钱包
-      const walletConnected = await web3Service.connectWallet()
-      if (!walletConnected.success) {
-        throw new Error('钱包连接失败')
+      // 检查钱包是否已连接，如果未连接则抛出错误而不是自动连接
+      if (!web3Service.isConnected || !web3Service.currentAccount) {
+        throw new Error('请先连接钱包后再进行兑换操作')
       }
+
+      console.log('✅ 钱包已连接，继续初始化合约...')
 
       // 加载合约
       await web3Service.loadContract(CONTRACT_ADDRESSES.VGAU_EXCHANGE, VGAUExchangeABI.abi, 'VGAUExchange')

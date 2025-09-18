@@ -65,6 +65,7 @@ export default {
     pleaseCheckConnection: '請檢查連接',
     pleaseEnterValidAmount: '請輸入有效金額',
     pleaseEnterPositiveInteger: '請輸入正整數',
+    suggestions: '建議',
     points: '積分',
     users: '用戶'
   },
@@ -182,6 +183,7 @@ export default {
     connectingWallet: '正在連接錢包...',
     walletConnectionSuccess: '錢包連接成功',
     walletConnectionFailed: '錢包連接失敗',
+    pleaseConnectWallet: '請先連接您的錢包',
     userRejectedConnection: '用戶拒絕連接',
     noWalletDetected: '未檢測到錢包',
     assetOverview: '資產概覽',
@@ -970,6 +972,18 @@ export default {
       successfullyReferUserThroughKYC: '成功通過KYC推薦用戶獲得積分：',
       directReferral: '直推獎勵',
       indirectReferral: '間接邀請獎勵',
+      directPush: '直推',
+      indirectPush: '間推',
+      // 后端返回值的映射
+      rewardTypeMapping: {
+        '直推': '直推',
+        '间推': '間推',
+        'direct': '直推',
+        'indirect': '間推',
+        '完成质押赎回获得积分': '完成质押赎回',
+        'staking': '质押',
+        '质押': '质押'
+      },
       rewardsPerUser: '2 積分/用戶',
       indirectRewardsPerUser: '0.2 積分/用戶',
       pointsUnit: '積分/用戶',
@@ -1005,9 +1019,9 @@ export default {
       // 积分操作类型描述
       createStakingOrder: '質押',
       inviteRelationship: '邀請',
-      directReferral: '直推獎勵',
-      indirectReferral: '間接邀請獎勵',
-      lendingRepayment: '借貸還款'
+      lendingRepayment: '借貸還款',
+      directReferral: '直推',
+      indirectReferral: '間推'
     },
 
     // Exchange
