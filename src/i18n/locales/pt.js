@@ -646,15 +646,13 @@ export default {
     codePlaceholder: 'Digite o código de verificação'
   },
 
-  // Modal de autenticação 2FA
-  twoFA: {
+  // Modal de verificação por email
+  emailVerification: {
     modal: {
-      title: 'Selecionar método de verificação',
-      subtitle: 'Precisa verificar 1 método, 1 restante',
+      title: 'Verificação por email necessária',
+      subtitle: 'Por favor, verifique seu email para completar o saque',
       methods: {
-        email: 'Verificação por email',
-        totp: '2FA - Verificação TOTP',
-        totpEnabled: '✓ TOTP Ativado'
+        email: 'Verificação por email'
       },
       sendCode: {
         sending: 'Enviando...',

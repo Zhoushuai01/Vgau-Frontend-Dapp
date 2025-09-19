@@ -678,15 +678,13 @@ export default {
     codePlaceholder: '請輸入驗證碼'
   },
 
-  // 2FA 認證模態框
-  twoFA: {
+  // 郵箱驗證模態框
+  emailVerification: {
     modal: {
-      title: '選擇驗證方式',
-      subtitle: '需要驗證 1 種方式，剩餘 1 種',
+      title: '需要郵箱驗證',
+      subtitle: '請驗證您的郵箱以完成提現',
       methods: {
-        email: '郵箱驗證',
-        totp: '2FA - TOTP 驗證',
-        totpEnabled: '✓ TOTP 已啟用'
+        email: '郵箱驗證'
       },
       sendCode: {
         sending: '發送中...',

@@ -61,7 +61,17 @@ export const API_ENDPOINTS = {
   USER_FUNDS: {
     BALANCES: '/user-funds/balances',
     WITHDRAW: '/user-funds/withdraw/request',
-    OPERATIONS: '/user-funds/operations'
+    EXECUTE_WITHDRAW: '/user-funds/withdraw/execute',
+    OPERATIONS: '/user-funds/operations',
+    // 邮箱验证相关
+    SEND_EMAIL_CODE: '/user-funds/withdraw/email/send-code',
+    VERIFY_EMAIL_CODE: '/user-funds/withdraw/email/verify-code',
+    EMAIL_STATUS: '/user-funds/withdraw/email/status'
+  },
+
+  // 平台资金总览
+  PLATFORM_FUNDS: {
+    OVERVIEW: '/user-funds/platform/funds-overview'
   },
   
   // 借贷配置
@@ -89,11 +99,6 @@ export const API_ENDPOINTS = {
     DISABLE: '/totp/disable'
   },
 
-  // 新版 2FA 验证（/auth/2fa/verify）
-  AUTH_2FA: {
-    VERIFY: '/auth/2fa/verify',
-    SEND_EMAIL_CODE: '/auth/2fa/email/send-code'
-  },
   
   // 文件管理
   FILE: {

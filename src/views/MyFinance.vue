@@ -155,34 +155,50 @@ const fetchStakeOrders = async () => {
       ]
     }
     
-    // 处理每个订单的字段映射
-    stakeOrders.value = ordersData.map((order, index) => {
-      console.log(`📋 处理订单 ${index + 1}:`, {
-        原始订单ID: order.id,
-        订单ID类型: typeof order.id,
-        订单状态: order.status,
-        质押金额: order.stakeAmount || order.totalStakeAmount,
-        完整订单数据: order
+    // 处理每个订单的字段映射，并过滤掉已完成的订单
+    stakeOrders.value = ordersData
+      .filter(order => {
+        // 过滤掉状态为 COMPLETED 的订单
+        const status = order.status?.toUpperCase()
+        const shouldExclude = status === 'COMPLETED'
+        
+        if (shouldExclude) {
+          console.log(`🚫 过滤掉已完成的订单:`, {
+            订单ID: order.id,
+            订单状态: order.status,
+            原因: '订单已完成，不在我的理财中显示'
+          })
+        }
+        
+        return !shouldExclude
       })
-      
-      const mappedOrder = {
-        ...order,
-        // 确保字段映射正确
-        createTime: order.createTime || order.firstStakeTime || order.startTime || '',
-        lastStakeTime: order.lastStakeTime || order.endTime || '',
-        totalStakeAmount: order.totalStakeAmount || order.stakeAmount || '0',
-        totalInterestEarned: order.totalInterestEarned || order.interestEarned || '0'
-      }
-      
-      console.log(`✅ 映射后的订单 ${index + 1}:`, {
-        最终订单ID: mappedOrder.id,
-        订单ID类型: typeof mappedOrder.id,
-        订单状态: mappedOrder.status,
-        质押金额: mappedOrder.totalStakeAmount
+      .map((order, index) => {
+        console.log(`📋 处理订单 ${index + 1}:`, {
+          原始订单ID: order.id,
+          订单ID类型: typeof order.id,
+          订单状态: order.status,
+          质押金额: order.stakeAmount || order.totalStakeAmount,
+          完整订单数据: order
+        })
+        
+        const mappedOrder = {
+          ...order,
+          // 确保字段映射正确
+          createTime: order.createTime || order.firstStakeTime || order.startTime || '',
+          lastStakeTime: order.lastStakeTime || order.endTime || '',
+          totalStakeAmount: order.totalStakeAmount || order.stakeAmount || '0',
+          totalInterestEarned: order.totalInterestEarned || order.interestEarned || '0'
+        }
+        
+        console.log(`✅ 映射后的订单 ${index + 1}:`, {
+          最终订单ID: mappedOrder.id,
+          订单ID类型: typeof mappedOrder.id,
+          订单状态: mappedOrder.status,
+          质押金额: mappedOrder.totalStakeAmount
+        })
+        
+        return mappedOrder
       })
-      
-      return mappedOrder
-    })
     console.log('最终订单列表:', stakeOrders.value)
   } catch (error) {
     console.error('获取质押订单失败:', error)

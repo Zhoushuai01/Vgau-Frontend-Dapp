@@ -272,7 +272,7 @@ class ApiService {
     getCode: () => this.get(this.endpoints.INVITE.CODE),
     
     // 绑定邀请人
-    bind: (code) => this.post(this.endpoints.INVITE.BIND, { code }),
+    bind: (code) => this.post(this.endpoints.INVITE.BIND, { inviteCode: code }),
     
     // 获取邀请关系
     getRelations: (params) => this.get(this.endpoints.INVITE.RELATIONS, params),
@@ -308,10 +308,26 @@ class ApiService {
     getBalances: () => this.get(this.endpoints.USER_FUNDS.BALANCES),
     // 提现申请
     withdraw: (data) => this.post(this.endpoints.USER_FUNDS.WITHDRAW, data),
+    // 执行提现
+    executeWithdraw: (operationId, idempotencyKey) => this.post(
+      `${this.endpoints.USER_FUNDS.EXECUTE_WITHDRAW}/${operationId}?idempotencyKey=${idempotencyKey}`
+    ),
     // 查询2FA状态
     check2FAStatus: (operationId) => this.get(`/user-funds/withdraw/${operationId}/2fa-status`),
     // 获取用户资金操作记录
-    getOperations: (params = {}) => this.get(this.endpoints.USER_FUNDS.OPERATIONS, params)
+    getOperations: (params = {}) => this.get(this.endpoints.USER_FUNDS.OPERATIONS, params),
+    // 发送邮箱验证码
+    sendEmailCode: (data) => this.post(this.endpoints.USER_FUNDS.SEND_EMAIL_CODE, data),
+    // 验证邮箱验证码
+    verifyEmailCode: (data) => this.post(this.endpoints.USER_FUNDS.VERIFY_EMAIL_CODE, data),
+    // 查询邮箱验证状态
+    getEmailStatus: (operationId) => this.get(`${this.endpoints.USER_FUNDS.EMAIL_STATUS}/${operationId}`)
+  }
+
+  // 平台资金总览相关API
+  platformFunds = {
+    // 获取平台资金总览统计
+    getOverview: () => this.get(this.endpoints.PLATFORM_FUNDS.OVERVIEW)
   }
   
   // 借贷配置相关API
@@ -473,6 +489,7 @@ export const fileAPI = apiService.file
 export const inviteAPI = apiService.invite
 export const stakeAPI = apiService.stake
 export const userFundsAPI = apiService.userFunds
+export const platformFundsAPI = apiService.platformFunds
 export const loanAPI = apiService.loan
 export const pointsAPI = apiService.points
 export const vgauSavingsAPI = apiService.vgauSavings

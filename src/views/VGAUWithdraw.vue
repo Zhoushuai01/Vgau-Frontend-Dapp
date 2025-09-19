@@ -89,83 +89,60 @@
         </view>
       </view>
 
-      <!-- 2FA 认证模态框 -->
-      <view v-if="show2faModal" class="auth-modal-overlay" @click="cancel2FA">
+      <!-- 邮箱验证模态框 -->
+      <view v-if="showEmailModal" class="auth-modal-overlay" @click="cancelEmailVerification">
         <view class="auth-modal" @click.stop>
           <!-- 返回按钮 -->
           <view class="auth-modal-header">
-            <view class="back-button" @click="cancel2FA">
+            <view class="back-button" @click="cancelEmailVerification">
               <image class="back-icon" src="/static/back.png" mode="aspectFit" />
             </view>
           </view>
           
           <!-- 标题 -->
           <view class="auth-modal-title">
-            <text class="title-text">{{ t('twoFA.modal.title') }}</text>
+            <text class="title-text">{{ t('emailVerification.modal.title') }}</text>
           </view>
           
           <!-- 说明文字 -->
           <view class="auth-modal-subtitle">
-            <text class="subtitle-text">{{ t('twoFA.modal.subtitle') }}</text>
+            <text class="subtitle-text">{{ t('emailVerification.modal.subtitle') }}</text>
           </view>
           
-          <!-- 验证方式选择 -->
+          <!-- 邮箱验证说明 -->
           <view class="auth-methods">
-            <!-- 邮箱验证码 -->
-            <view 
-              class="auth-method-item" 
-              :class="{ active: selectedMethod === 'EMAIL_VERIFY_CODE' }"
-              @click="selectMethod('EMAIL_VERIFY_CODE')"
-              v-if="availableMethods.includes('EMAIL_VERIFY_CODE')"
-            >
+            <view class="auth-method-item active">
               <view class="method-icon">
                 <text class="icon-text">✉</text>
               </view>
-              <text class="method-text">{{ t('twoFA.modal.methods.email') }}</text>
-            </view>
-            
-            <!-- TOTP验证码 -->
-            <view 
-              class="auth-method-item"
-              :class="{ active: selectedMethod === 'TOTP_CODE' }"
-              @click="selectMethod('TOTP_CODE')"
-              v-if="availableMethods.includes('TOTP_CODE')"
-            >
-              <view class="method-icon">
-                <text class="icon-text">🕒</text>
-              </view>
-              <view class="method-content">
-                <text class="method-text">{{ t('twoFA.modal.methods.totp') }}</text>
-                <text class="method-status">{{ t('twoFA.modal.methods.totpEnabled') }}</text>
-              </view>
+              <text class="method-text">{{ t('emailVerification.modal.methods.email') }}</text>
             </view>
           </view>
           
           <!-- 验证码输入 -->
-          <view v-if="selectedMethod" class="code-input-section">
+          <view class="code-input-section">
             <view class="code-input-container">
               <input 
                 class="code-input" 
                 type="text" 
-                v-model="twoFACode" 
+                v-model="emailCode" 
                 :placeholder="getCodePlaceholder()" 
                 maxlength="6"
               />
               <!-- 邮箱验证码发送按钮 -->
               <view 
-                v-if="selectedMethod === 'EMAIL_VERIFY_CODE'" 
                 class="send-code-btn"
                 :class="{ disabled: emailCodeSending || emailCodeCountdown > 0 }"
                 @click="sendEmailCode"
               >
                 <text class="send-code-text">
-                  {{ emailCodeSending ? t('twoFA.modal.sendCode.sending') : emailCodeCountdown > 0 ? t('twoFA.modal.sendCode.countdown', { seconds: emailCodeCountdown }) : t('twoFA.modal.sendCode.send') }}
+                  {{ emailCodeSending ? t('emailVerification.modal.sendCode.sending') : emailCodeCountdown > 0 ? t('emailVerification.modal.sendCode.countdown', { seconds: emailCodeCountdown }) : t('emailVerification.modal.sendCode.send') }}
                 </text>
               </view>
             </view>
             <!-- 邮箱验证码发送状态提示 -->
-            <view v-if="selectedMethod === 'EMAIL_VERIFY_CODE' && emailCodeSent" class="email-code-tip">
-              <text class="tip-text">{{ t('twoFA.modal.emailCodeSent') }}</text>
+            <view v-if="emailCodeSent" class="email-code-tip">
+              <text class="tip-text">{{ t('emailVerification.modal.emailCodeSent') }}</text>
             </view>
           </view>
           
@@ -173,10 +150,10 @@
           <view class="auth-modal-actions">
             <view 
               class="confirm-auth-btn" 
-              :class="{ disabled: !selectedMethod || !twoFACode || submitting }"
-              @click="confirm2FA"
+              :class="{ disabled: !emailCode || submitting }"
+              @click="confirmEmailVerification"
             >
-              <text class="confirm-auth-text">{{ submitting ? t('twoFA.modal.confirm.verifying') : t('twoFA.modal.confirm.confirm') }}</text>
+              <text class="confirm-auth-text">{{ submitting ? t('emailVerification.modal.confirm.verifying') : t('emailVerification.modal.confirm.confirm') }}</text>
             </view>
           </view>
         </view>
@@ -197,13 +174,11 @@ const { t } = useI18n()
 const inputAmount = ref('')
 // 可用VGAU余额（后端返回）
 const vgauAvailable = ref('0.00')
-// 2FA 模态框
-const show2faModal = ref(false)
-const twoFACode = ref('')
+// 邮箱验证模态框
+const showEmailModal = ref(false)
+const emailCode = ref('')
 const submitting = ref(false)
 let pendingWithdraw = null
-const availableMethods = ref([]) // ["EMAIL_VERIFY_CODE", "TOTP_CODE"]
-const selectedMethod = ref('')
 
 // 邮箱验证码发送相关
 const emailCodeSent = ref(false)
@@ -246,7 +221,7 @@ const generateUUID = () => {
   })
 }
 
-// 提交提现请求（第一步）：先发起withdraw，若需要2FA则弹窗
+// 提交提现请求（第一步）：先发起withdraw，若需要邮箱验证则弹窗
 const handleConfirm = async () => {
   if (!inputAmount.value || Number(inputAmount.value) <= 0) {
     uni.showToast({ title: t('pleaseEnterWithdrawAmount'), icon: 'none', duration: 2000 })
@@ -270,19 +245,15 @@ const handleConfirm = async () => {
       idempotencyKey: generateUUID()
     }
     const resp = await userFundsAPI.withdraw(body)
-    const requires2FA = resp?.requires2FA || resp?.data?.requires2FA
-    const methods = resp?.availableMethods || resp?.data?.availableMethods || []
-    const operationId = resp?.data?.operationId
+    const requiresEmailVerification = resp?.data?.requiresEmailVerification
     
-    if (requires2FA) {
-      // 保存operationId和idempotencyKey用于后续执行
+    if (requiresEmailVerification) {
+      // 保存operationId和提现数据用于后续执行
       pendingWithdraw = {
         ...body,
-        operationId: operationId
+        operationId: resp.data.operationId
       }
-      availableMethods.value = Array.isArray(methods) ? methods : []
-      selectedMethod.value = '' // 让用户手动选择
-      show2faModal.value = true
+      showEmailModal.value = true
     } else if (resp?.success) {
       uni.showToast({ title: t('withdrawSuccess') || '提现成功', icon: 'success', duration: 1500 })
       setTimeout(() => {
@@ -300,9 +271,9 @@ const handleConfirm = async () => {
   }
 }
 
-// 验证2FA并最终提交
-const confirm2FA = async () => {
-  if (!twoFACode.value) {
+// 验证邮箱验证码并最终提交
+const confirmEmailVerification = async () => {
+  if (!emailCode.value) {
     uni.showToast({ title: t('validation.code'), icon: 'none' })
     return
   }
@@ -310,55 +281,33 @@ const confirm2FA = async () => {
     submitting.value = true
     uni.showLoading({ title: t('processing') })
     
-    // 1. 验证2FA
-    const methodCode = selectedMethod.value
-    let verifyOk = false
-    try {
-      const vr = await authAPI.verify2FA({ code: twoFACode.value, method: methodCode })
-      verifyOk = vr?.success !== false
-    } catch (err) {
-      // 兜底直调接口
-      const res2 = await uni.request({
-        url: '/api/auth/2fa/verify',
-        method: 'POST',
-        data: { code: twoFACode.value, method: methodCode },
-        withCredentials: true,
-        header: { 'Content-Type': 'application/json' }
-      })
-      verifyOk = res2.statusCode === 200 && res2.data?.success
-      if (!verifyOk) throw new Error(res2.data?.message || '2FA 验证失败')
+    // 调用邮箱验证码验证接口
+    const verifyData = {
+      operationId: pendingWithdraw.operationId,
+      code: emailCode.value
     }
-    if (!verifyOk) throw new Error('2FA 验证失败')
     
-    // 2. 查询2FA状态确认完成
-    try {
-      const statusResp = await userFundsAPI.check2FAStatus(pendingWithdraw.operationId)
-      console.log('2FA状态查询结果:', statusResp)
+    const resp = await userFundsAPI.verifyEmailCode(verifyData)
+    
+    if (resp?.success) {
+      uni.showToast({ title: t('withdrawSuccess') || '提现成功', icon: 'success', duration: 1500 })
+      showEmailModal.value = false
+      emailCode.value = ''
+      pendingWithdraw = null
       
-      if (statusResp?.isCompleted) {
-        uni.showToast({ title: t('withdrawSuccess') || '提现成功', icon: 'success', duration: 1500 })
-        show2faModal.value = false
-        twoFACode.value = ''
-        pendingWithdraw = null
-        selectedMethod.value = ''
-        
-        // 刷新余额
-        await loadVgauAvailable()
-        
-        // 返回或跳转
-        setTimeout(() => {
-          uni.switchTab({ url: '/pages/Defi' })
-        }, 500)
-      } else {
-        throw new Error('2FA验证未完成')
-      }
-    } catch (statusError) {
-      console.error('查询2FA状态失败:', statusError)
-      throw new Error('查询提现状态失败')
+      // 刷新余额
+      await loadVgauAvailable()
+      
+      // 返回或跳转
+      setTimeout(() => {
+        uni.switchTab({ url: '/pages/Defi' })
+      }, 500)
+    } else {
+      throw new Error(resp?.message || '验证失败')
     }
     
   } catch (e) {
-    console.error('2FA 验证或提现失败:', e)
+    console.error('邮箱验证失败:', e)
     uni.showToast({ title: e.message || t('requestFailed'), icon: 'none' })
   } finally {
     submitting.value = false
@@ -366,22 +315,9 @@ const confirm2FA = async () => {
   }
 }
 
-const cancel2FA = () => {
-  show2faModal.value = false
-  selectedMethod.value = ''
-  twoFACode.value = ''
-}
-
-// 选择验证方式
-const selectMethod = (method) => {
-  selectedMethod.value = method
-  twoFACode.value = '' // 清空之前输入的验证码
-  
-  // 如果选择邮箱验证，重置邮箱验证码状态
-  if (method === 'EMAIL_VERIFY_CODE') {
-    emailCodeSent.value = false
-    emailCodeCountdown.value = 0
-  }
+const cancelEmailVerification = () => {
+  showEmailModal.value = false
+  emailCode.value = ''
 }
 
 // 发送邮箱验证码
@@ -394,7 +330,12 @@ const sendEmailCode = async () => {
     emailCodeSending.value = true
     uni.showLoading({ title: '发送中...' })
     
-    const response = await authAPI.sendEmailCode()
+    // 调用发送邮箱验证码接口
+    const sendData = {
+      operationId: pendingWithdraw.operationId
+    }
+    
+    const response = await userFundsAPI.sendEmailCode(sendData)
     
     if (response?.success) {
       emailCodeSent.value = true
@@ -436,12 +377,7 @@ const startCountdown = () => {
 
 // 获取验证码输入框占位符
 const getCodePlaceholder = () => {
-  if (selectedMethod.value === 'EMAIL_VERIFY_CODE') {
-    return t('validation.emailCodePlaceholder')
-  } else if (selectedMethod.value === 'TOTP_CODE') {
-    return t('validation.totpCodePlaceholder')
-  }
-  return t('validation.codePlaceholder')
+  return t('validation.emailCodePlaceholder')
 }
 </script>
 
@@ -755,7 +691,7 @@ const getCodePlaceholder = () => {
   font-weight: 400;
 }
 
-/* 2FA 认证模态框样式 */
+/* 邮箱验证模态框样式 */
 .auth-modal-overlay {
   position: fixed;
   top: 0;

@@ -236,6 +236,7 @@
   import vgauService from '../utils/vgauService.js'
   import contractExchange from '@/utils/contractExchange.js'
   import { formatShortAddress } from '@/utils/addressUtils'
+  import { platformFundsAPI } from '@/api/apiService.js'
   
   const { t, locale } = useI18n()
   
@@ -434,22 +435,30 @@
     }
   }
   
-  // 获取TVL数据（中心化接口）
+  // 获取TVL数据（平台资金总览接口）
   const getTVLData = async () => {
     try {
       console.log('💰 开始获取TVL数据...')
       
-      // TODO: 后续对接中心化接口获取TVL数据
-      // 目前使用默认值
-      tvlData.value = '1,000'
-      console.log('✅ TVL数据更新:', tvlData.value)
+      const response = await platformFundsAPI.getOverview()
       
-      // 示例：对接中心化接口的代码结构
-      // const response = await fetch('/api/tvl')
-      // const data = await response.json()
-      // if (data.success) {
-      //   tvlData.value = parseFloat(data.tvl).toLocaleString()
-      // }
+      if (response?.success && response?.data) {
+        const { totalStakeValue } = response.data
+        
+        // 直接使用totalStakeValue字段作为TVL数据
+        const totalTvl = parseFloat(totalStakeValue || 0)
+        
+        // 格式化显示（整数，添加千分位分隔符）
+        tvlData.value = Math.round(totalTvl).toLocaleString('en-US')
+        
+        console.log('✅ TVL数据更新:', {
+          totalStakeValue: totalStakeValue,
+          totalTvl: tvlData.value
+        })
+      } else {
+        console.warn('⚠️ 平台资金总览接口返回数据格式异常，使用默认值')
+        tvlData.value = '1,000'
+      }
     } catch (error) {
       console.error('❌ 获取TVL数据失败:', error)
       // 发生异常时使用默认值

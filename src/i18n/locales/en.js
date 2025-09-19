@@ -654,15 +654,13 @@ export default {
     codePlaceholder: 'Please enter verification code'
   },
 
-  // 2FA Authentication Modal
-  twoFA: {
+  // Email Verification Modal
+  emailVerification: {
     modal: {
-      title: 'Select Verification Method',
-      subtitle: 'Need to verify 1 method, 1 remaining',
+      title: 'Email Verification Required',
+      subtitle: 'Please verify your email to complete the withdrawal',
       methods: {
-        email: 'Email Verification',
-        totp: '2FA - TOTP Verification',
-        totpEnabled: '✓ TOTP Enabled'
+        email: 'Email Verification'
       },
       sendCode: {
         sending: 'Sending...',
