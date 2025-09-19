@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Verigold Platform API",
-    "description": "Verigold Platform Backend Service\n\n## Authentication\n- Most APIs require login to access\n- Uses Session authentication, authentication info is automatically carried after login\n- Public APIs do not require authentication\n\n## Default Account\n- Username: admin\n- Password: admin123\n\n## Core Modules\n### 文件存储 (File Storage)\n- **核心API**: 文件上传确认等基础功能\n- **管理API**: 系统管理和监控功能，需要管理员权限\n- **支持功能**: 多存储策略、客户端直传、事件监听\n\n### 用户钱包 (User Wallet)\n- **用户API**: 个人钱包管理功能\n- **管理API**: 系统级钱包管理，需要管理员权限\n- **支持功能**: 多链钱包、状态管理、权限控制",
+    "description": "Verigold Platform Backend Service\n\n## Authentication\n- Most APIs require login to access\n- Uses Session authentication, authentication info is automatically carried after login\n- Public APIs do not require authentication\n\n## Default Account\n- Username: admin\n- Password: admin123\n\n## Core Modules\n### 文件存储 (File Storage)\n- **核心API**: 文件上传确认等基础功能\n- **管理API**: 系统管理和监控功能，需要管理员权限\n- **支持功能**: 多存储策略、客户端直传、事件监听\n\n### 用户钱包 (User Wallet)\n- **用户API**: 个人钱包管理功能\n- **管理API**: 系统级钱包管理，需要管理员权限\n- **支持功能**: 多链钱包、状态管理、权限控制\n\n### 用户邀请 (User Invite)\n- **邀请API**: 邀请码管理、邀请关系绑定\n- **统计API**: 邀请统计信息、奖励详情查询\n- **管理API**: 邀请关系管理、排行榜查询\n- **支持功能**: 多级邀请关系、积分奖励系统\n\n### 用户积分 (User Points)\n- **积分API**: 积分查询、积分记录管理\n- **奖励API**: 邀请奖励、任务奖励\n- **支持功能**: 积分计算、奖励发放、历史记录",
     "contact": {
       "name": "ABT Platform Team",
       "email": "admin@example.com"
@@ -154,6 +154,10 @@
       "description": "用户端 VGAU 实物黄金提现相关接口"
     },
     {
+      "name": "兑换监听器监控",
+      "description": "兑换和赎回事件监听器的监控和管理API"
+    },
+    {
       "name": "外链管理（管理员）",
       "description": "# 外链管理员API\n\n## 概述\n提供管理员权限的外链管理接口，用于创建、更新、删除和管理外链。\n\n## 主要功能\n- 创建外链\n- 更新外链信息\n- 删除外链\n- 启用/禁用外链\n- 更新外链排序\n- 批量调整排序\n- 获取所有外链（包括禁用的）\n- 获取分类统计信息\n\n## 安全特性\n- 需要ADMIN角色权限\n- 完整的CRUD操作\n- 返回完整的外链信息（包括点击统计）\n"
     },
@@ -184,10 +188,6 @@
     {
       "name": "管理员资金管理",
       "description": "# 管理员资金管理API\n\n## 概述\n提供管理员专用的资金管理和监控功能，用于平台资金的管理和维护。\n\n## 权限要求\n- 需要管理员（ADMIN）角色权限\n- 所有操作都会记录完整的审计日志\n\n## 主要功能\n- **用户资金管理**: 查询任意用户的余额和操作历史\n- **交易分析**: 分析区块链交易Hash，解析充值事件和处理状态\n- **充值补录**: 手动补录系统故障期间的遗漏充值\n- **批量操作**: 批量调整用户余额、冻结/解冻账户\n- **提现审核**: 审核和处理用户提现申请\n- **系统监控**: 查看平台资金统计和健康状态\n- **数据导出**: 导出用户余额和操作记录\n\n## 安全特性\n- 严格的角色权限控制\n- 所有操作强制记录操作人和原因\n- 支持批量操作的事务回滚\n- 实时的操作审计和监控\n"
-    },
-    {
-      "name": "DeFi提现预订单API",
-      "description": "管理用户提现预订单的创建、查询和管理功能。支持USDT和VGAU代币的提现预订单处理。"
     },
     {
       "name": "VGAU活期存款",
@@ -2184,11 +2184,8 @@
     "/api/user-funds/withdraw": {
       "post": {
         "tags": [
-          "用户资金管理",
-          "提现管理"
+          "用户资金管理"
         ],
-        "summary": "提交提现申请",
-        "description": "用户提交提现申请，系统会验证余额、限额等条件，并根据配置启动2FA验证流程",
         "operationId": "submitWithdraw",
         "requestBody": {
           "content": {
@@ -2200,6 +2197,104 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user-funds/withdraw/request": {
+      "post": {
+        "tags": [
+          "用户资金管理"
+        ],
+        "summary": "提交提现申请（需要人工审核）",
+        "description": "用户提交提现申请，系统会冻结资金并等待管理员审核。\n无论是否通过2FA验证，都需要管理员审核后才能完成提现。\n",
+        "operationId": "submitWithdrawRequest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user-funds/withdraw/execute/{operationId}": {
+      "post": {
+        "tags": [
+          "用户资金管理"
+        ],
+        "operationId": "executeWithdraw",
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "description": "操作ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "idempotencyKey",
+            "in": "query",
+            "description": "幂等性键（UUID格式）",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseUserFundsOperationDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user-funds/withdraw/clear-rate-limit": {
+      "post": {
+        "tags": [
+          "用户资金管理",
+          "提现管理"
+        ],
+        "summary": "提交提现申请",
+        "description": "用户提交提现申请，系统会验证余额、限额等条件，并根据配置启动2FA验证流程",
+        "operationId": "clearWithdrawRateLimit",
         "responses": {
           "200": {
             "description": "提现申请成功",
@@ -2254,7 +2349,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommonApiResponseObject"
+                  "$ref": "#/components/schemas/CommonApiResponseString"
                 }
               }
             }
@@ -2277,49 +2372,6 @@
                 "example": {
                   "success": false,
                   "message": "操作过于频繁，请稍后再试"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/user-funds/withdraw/execute/{operationId}": {
-      "post": {
-        "tags": [
-          "用户资金管理"
-        ],
-        "operationId": "executeWithdraw",
-        "parameters": [
-          {
-            "name": "operationId",
-            "in": "path",
-            "description": "操作ID",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64",
-              "minimum": 1
-            }
-          },
-          {
-            "name": "idempotencyKey",
-            "in": "query",
-            "description": "幂等性键（UUID格式）",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommonApiResponseUserFundsOperationDto"
                 }
               }
             }
@@ -3924,255 +3976,6 @@
         }
       }
     },
-    "/api/defi/withdraws/status": {
-      "post": {
-        "tags": [
-          "DeFi提现预订单API"
-        ],
-        "summary": "按交易哈希查询订单状态",
-        "description": "根据区块链交易哈希查询对应的预提现订单状态。用于检查订单是否已被系统处理。\n\n**使用场景：**\n- 用户完成提现后查询订单状态\n- 检查交易是否已被系统识别\n- 监控订单处理进度\n\n**请求体：**\n- txHash: 区块链交易哈希\n\n**返回状态说明：**\n- PENDING: 待处理\n- SUBMITTED: 已提交\n- SUCCESS: 已完成\n- FAILED: 失败\n- TIMEOUT: 超时\n- UNSEEN: 未发现记录\n",
-        "operationId": "status",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "example": {
-                  "txHash": "0xabc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
-                }
-              },
-              "examples": {
-                "查询订单状态": {
-                  "summary": "根据交易哈希查询订单状态",
-                  "description": "查询订单状态",
-                  "value": {
-                    "txHash": "0xabc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
-                  }
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "查询成功",
-            "content": {
-              "application/json": {
-                "examples": {
-                  "找到订单": {
-                    "summary": "订单存在",
-                    "description": "找到订单",
-                    "value": {
-                      "success": true,
-                      "code": 0,
-                      "message": "success",
-                      "data": {
-                        "status": "SUCCESS",
-                        "orderId": "wdr_abc1234567890abcdef123456",
-                        "operationId": 12345
-                      }
-                    }
-                  },
-                  "未找到订单": {
-                    "summary": "订单不存在",
-                    "description": "未找到订单",
-                    "value": {
-                      "success": true,
-                      "code": 0,
-                      "message": "success",
-                      "data": {
-                        "status": "UNSEEN"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/defi/withdraws/orders": {
-      "post": {
-        "tags": [
-          "DeFi提现预订单API"
-        ],
-        "summary": "创建提现预订单",
-        "description": "创建用户提现预订单，用于记录用户发起的提现交易。此接口在用户完成区块链交易后调用。\n\n**使用流程：**\n1. 用户在前端发起提现交易\n2. 用户完成区块链交易，获得交易哈希(txHash)\n3. 前端调用此接口创建预订单记录\n4. 系统监听器会监听区块链事件并处理订单\n\n**必填字段：**\n- chainId: 区块链网络ID（如BSC测试网97）\n- currency: 货币类型（USDT/VGAU，必须明确指定）\n- fromAddress: 平台钱包地址\n- amountRaw: 提现金额（最小单位字符串）\n- txHash: 区块链交易哈希\n\n**可选字段：**\n- toAddress: 用户提现地址（可选，系统会自动解析）\n- tokenAddress: 代币合约地址（可选）\n- idempotencyKey: 幂等键（防止重复提交）\n\n**金额格式说明：**\n- USDT: 18位小数，1 USDT = 1000000000000000000 wei\n- VGAU: 0位小数，1 VGAU = 1 wei\n",
-        "operationId": "create",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateDefiWithdrawOrderRequest"
-              },
-              "examples": {
-                "USDT提现示例": {
-                  "summary": "提现1 USDT",
-                  "description": "用户提现1 USDT到BSC测试网",
-                  "value": {
-                    "chainId": 97,
-                    "currency": "USDT",
-                    "tokenAddress": "",
-                    "toAddress": "0xUserAddr",
-                    "fromAddress": "0xPlatformWallet",
-                    "amountRaw": "1",
-                    "txHash": "0xabc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                    "idempotencyKey": "b7b0d7f1-4d27-4cb8-9f5a-1c2a3b4d5e6f"
-                  }
-                },
-                "VGAU提现示例": {
-                  "summary": "提现10 VGAU",
-                  "description": "用户提现10 VGAU到BSC测试网",
-                  "value": {
-                    "chainId": 97,
-                    "currency": "VGAU",
-                    "tokenAddress": "0x75579C9FB3A30e7c3CaBB5c74E4A6c0DB1e2054d",
-                    "toAddress": "0xUserAddr",
-                    "fromAddress": "0xbEe820f5ACA3a90f21af24a6573F69E3D3232609",
-                    "amountRaw": "10",
-                    "txHash": "0xdef4567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                    "idempotencyKey": "c8c1e8g2-5e38-5dc9-af6b-2d3b4c5d6e7g"
-                  }
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "创建成功",
-            "content": {
-              "application/json": {
-                "examples": {
-                  "成功响应": {
-                    "summary": "预订单创建成功",
-                    "description": "成功响应",
-                    "value": {
-                      "success": true,
-                      "code": 0,
-                      "message": "success",
-                      "data": {
-                        "orderId": "wdr_abc1234567890abcdef123456",
-                        "status": "SUBMITTED",
-                        "txHash": "0xabc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "请求参数错误",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "code": 400,
-                  "message": "amountRaw不能为空",
-                  "data": null
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "code": 401,
-                  "message": "Unauthorized access",
-                  "data": null
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/defi/withdraws/orders/{orderId}/tx": {
-      "post": {
-        "tags": [
-          "DeFi提现预订单API"
-        ],
-        "summary": "回填订单交易哈希",
-        "description": "为已创建的预订单回填交易哈希。当用户完成区块链交易后，可以使用此接口更新订单的交易哈希。\n\n**使用场景：**\n- 创建订单时未提供交易哈希\n- 需要更新订单的交易哈希信息\n\n**路径参数：**\n- orderId: 预订单ID（格式：wdr_xxx）\n\n**请求体：**\n- txHash: 区块链交易哈希\n",
-        "operationId": "attachTx",
-        "parameters": [
-          {
-            "name": "orderId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "example": {
-                  "txHash": "0xabc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
-                }
-              },
-              "examples": {
-                "回填交易哈希": {
-                  "summary": "为订单回填交易哈希",
-                  "description": "回填交易哈希",
-                  "value": {
-                    "txHash": "0xabc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
-                  }
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "回填成功",
-            "content": {
-              "application/json": {
-                "examples": {
-                  "成功响应": {
-                    "description": "成功响应",
-                    "value": {
-                      "success": true,
-                      "code": 0,
-                      "message": "success",
-                      "data": {
-                        "orderId": "wdr_abc1234567890abcdef123456",
-                        "status": "SUBMITTED",
-                        "txHash": "0xabc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "订单不存在",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "code": 404,
-                  "message": "order not found",
-                  "data": null
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/defi/deposits/status": {
       "post": {
         "tags": [
@@ -4180,7 +3983,7 @@
         ],
         "summary": "按交易哈希查询订单状态",
         "description": "根据区块链交易哈希查询对应的预充值订单状态。用于检查订单是否已被系统处理。\n\n**使用场景：**\n- 用户完成充值后查询订单状态\n- 检查交易是否已被系统识别\n- 监控订单处理进度\n\n**请求体：**\n- txHash: 区块链交易哈希\n\n**返回状态说明：**\n- PENDING: 待处理\n- SUBMITTED: 已提交\n- SUCCESS: 已完成\n- FAILED: 失败\n- TIMEOUT: 超时\n- UNSEEN: 未发现记录\n",
-        "operationId": "status_1",
+        "operationId": "status",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4249,7 +4052,7 @@
         ],
         "summary": "创建充值预订单",
         "description": "创建用户充值预订单，用于记录用户发起的充值交易。此接口在用户完成区块链交易后调用。\n\n**使用流程：**\n1. 用户在前端发起充值交易\n2. 用户完成区块链交易，获得交易哈希(txHash)\n3. 前端调用此接口创建预订单记录\n4. 系统监听器会监听区块链事件并处理订单\n\n**必填字段：**\n- chainId: 区块链网络ID（如BSC测试网97）\n- currency: 货币类型（USDT/VGAU，必须明确指定）\n- fromAddress: 用户钱包地址\n- amountRaw: 充值金额（最小单位字符串）\n- txHash: 区块链交易哈希\n\n**可选字段：**\n- toAddress: 平台收款地址（可选，系统会自动解析）\n- tokenAddress: 代币合约地址（可选）\n- idempotencyKey: 幂等键（防止重复提交）\n\n**金额格式说明：**\n- USDT: 18位小数，1 USDT = 1000000000000000000 wei\n- VGAU: 0位小数，1 VGAU = 1 wei\n",
-        "operationId": "create_1",
+        "operationId": "create",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4350,7 +4153,7 @@
         ],
         "summary": "回填订单交易哈希",
         "description": "为已创建的预订单回填交易哈希。当用户完成区块链交易后，可以使用此接口更新订单的交易哈希。\n\n**使用场景：**\n- 创建订单时未提供交易哈希\n- 需要更新订单的交易哈希信息\n\n**路径参数：**\n- orderId: 预订单ID（格式：dep_xxx）\n\n**请求体：**\n- txHash: 区块链交易哈希\n",
-        "operationId": "attachTx_1",
+        "operationId": "attachTx",
         "parameters": [
           {
             "name": "orderId",
@@ -4747,6 +4550,39 @@
         }
       }
     },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "用户认证管理"
+        ],
+        "summary": "用户登出",
+        "description": "安全登出当前用户，清理所有会话数据。\n\n## 登出流程\n1. 清除SecurityContext\n2. 使HttpSession无效\n3. 清理2FA会话数据\n4. 返回登出成功响应\n\n## 安全特性\n- 完全清理用户会话状态\n- 防止会话劫持\n- 清理所有相关的缓存数据\n- 确保用户完全登出\n\n## 使用场景\n- 用户主动登出\n- 安全登出\n- 会话过期处理\n",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "登出成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "登出成功": {
+                    "summary": "用户登出成功",
+                    "description": "登出成功",
+                    "value": {
+                      "success": true,
+                      "message": "登出成功",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": [
@@ -5118,6 +4954,76 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CommonApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/2fa/send-verify-code": {
+      "post": {
+        "tags": [
+          "2FA认证"
+        ],
+        "summary": "发送2FA验证码",
+        "description": "根据当前 HttpSession 绑定的 2FA 会话发送验证码。\n\n请求体：{ method }\n- method：EMAIL_VERIFY_CODE | TOTP_CODE | BACKUP_CODE\n\n注意：不需要也不接受 twoFASessionId，后台通过 HttpSession 自动关联当前 2FA 会话",
+        "operationId": "sendVerifyCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "验证码发送成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "Success": {
+                    "summary": "发送成功",
+                    "description": "Success",
+                    "value": {
+                      "success": true,
+                      "message": "验证码已发送",
+                      "data": {
+                        "method": "EMAIL_VERIFY_CODE",
+                        "sentAt": "2025-01-01T12:00:00"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误或会话未绑定",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "Error": {
+                    "summary": "错误示例",
+                    "description": "Error",
+                    "value": {
+                      "success": false,
+                      "message": "当前会话未绑定2FA会话或已过期",
+                      "code": 400
+                    }
+                  }
                 }
               }
             }
@@ -7186,6 +7092,98 @@
         }
       }
     },
+    "/api/admin/recharge-listener/trigger-historical-scan": {
+      "post": {
+        "tags": [
+          "充值监听器管理"
+        ],
+        "summary": "触发历史事件扫描",
+        "description": "手动触发指定链的历史事件扫描，用于检测和处理遗漏的历史充值事件\n\n## 功能说明\n- 重置历史扫描进度到更早的区块\n- 立即开始扫描历史区块中的充值事件\n- 处理之前可能遗漏的USDTRecharged和VGAURecharged事件\n- 支持批量处理历史事件\n\n## 使用场景\n- 系统重启后需要重新扫描历史事件\n- 发现遗漏的充值事件需要补充处理\n- 系统维护后需要重新同步历史数据\n- 调试和测试历史事件处理逻辑\n",
+        "operationId": "triggerHistoricalScan",
+        "parameters": [
+          {
+            "name": "chainType",
+            "in": "query",
+            "description": "链类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ETH",
+                "BSC_TESTNET",
+                "POLYGON",
+                "ARB"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "历史扫描触发成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "触发成功": {
+                    "description": "触发成功",
+                    "value": {
+                      "success": true,
+                      "message": "历史扫描已触发: BSC_TESTNET",
+                      "data": {
+                        "chainType": "BSC_TESTNET",
+                        "status": "triggered"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "管理员未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要ADMIN角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "触发失败",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/recharge-listener/stop/{chainType}": {
       "post": {
         "tags": [
@@ -7456,6 +7454,76 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CommonApiResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/recharge-listener/reset-historical-scan": {
+      "post": {
+        "tags": [
+          "充值监听器管理"
+        ],
+        "summary": "重置历史扫描进度",
+        "description": "重置所有链的历史扫描进度，重新开始历史事件扫描\n\n## 功能说明\n- 清除所有链的历史扫描进度记录\n- 重置扫描状态，重新开始历史扫描\n- 适用于需要完全重新扫描历史事件的场景\n\n## 使用场景\n- 系统配置变更后需要重新扫描\n- 历史扫描出现异常需要重置\n- 调试和测试历史扫描功能\n",
+        "operationId": "resetHistoricalScan",
+        "responses": {
+          "200": {
+            "description": "重置成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "重置成功": {
+                    "description": "重置成功",
+                    "value": {
+                      "success": true,
+                      "message": "所有历史扫描进度已重置",
+                      "data": {
+                        "status": "reset",
+                        "chains": [
+                          "ETH",
+                          "BSC_TESTNET",
+                          "POLYGON",
+                          "ARB"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "管理员未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要ADMIN角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "重置失败",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
                 }
               }
             }
@@ -8585,6 +8653,162 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CommonApiResponseMyInviteCodeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/exchange-listener/stop": {
+      "post": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "停止监听器",
+        "description": "停止兑换事件监听器",
+        "operationId": "stopListener_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/exchange-listener/start": {
+      "post": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "启动监听器",
+        "description": "启动兑换事件监听器",
+        "operationId": "startListener_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/exchange-listener/scan-historical/{chainType}": {
+      "post": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "触发历史事件扫描",
+        "description": "手动触发指定链的历史事件扫描",
+        "operationId": "triggerHistoricalScan_1",
+        "parameters": [
+          {
+            "name": "chainType",
+            "in": "path",
+            "description": "链类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1",
+                "56",
+                "137",
+                "42161",
+                "10",
+                "43114",
+                "250",
+                "11155111",
+                "97",
+                "80001"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/exchange-listener/restart/{chainType}": {
+      "post": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "重启指定链监听器",
+        "description": "重启指定链的兑换事件监听器",
+        "operationId": "restartChainListener",
+        "parameters": [
+          {
+            "name": "chainType",
+            "in": "path",
+            "description": "链类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1",
+                "56",
+                "137",
+                "42161",
+                "10",
+                "43114",
+                "250",
+                "11155111",
+                "97",
+                "80001"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/exchange-listener/reset-historical-scan": {
+      "post": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "重置历史扫描进度",
+        "description": "重置所有链的历史事件扫描进度",
+        "operationId": "resetHistoricalScan_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseString"
                 }
               }
             }
@@ -10214,6 +10438,91 @@
         }
       }
     },
+    "/api/user-funds/withdraw/requests": {
+      "get": {
+        "tags": [
+          "用户资金管理"
+        ],
+        "summary": "查询提现申请列表",
+        "description": "查询用户的提现申请列表，支持状态筛选和分页",
+        "operationId": "getWithdrawRequests",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user-funds/withdraw/request/{operationId}": {
+      "get": {
+        "tags": [
+          "用户资金管理"
+        ],
+        "summary": "查询提现申请状态",
+        "description": "查询用户提现申请的当前状态",
+        "operationId": "getWithdrawRequestStatus",
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/user-funds/withdraw/info": {
       "get": {
         "tags": [
@@ -10306,6 +10615,7 @@
               "type": "string",
               "enum": [
                 "PENDING",
+                "PROCESSING",
                 "COMPLETED",
                 "CANCELLED",
                 "FAILED"
@@ -10375,6 +10685,7 @@
                             "amount": "1000.000000000000000000",
                             "status": "COMPLETED",
                             "externalRef": "deposit_12345",
+                            "orderFlowNumber": "OP202401150001",
                             "relatedWalletAddress": "0x1234567890123456789012345678901234567890",
                             "onchainTxHash": "0xabc123def4567890123456789012345678901234567890abcdef1234567890abcd",
                             "chainTransactionStatus": "CONFIRMED",
@@ -10406,6 +10717,7 @@
                             "amount": "50",
                             "status": "COMPLETED",
                             "externalRef": "stake_order_67890",
+                            "orderFlowNumber": "OP202401150002",
                             "relatedWalletAddress": null,
                             "onchainTxHash": null,
                             "chainTransactionStatus": null,
@@ -13377,6 +13689,85 @@
         }
       }
     },
+    "/api/invite/my-stats": {
+      "get": {
+        "tags": [
+          "用户邀请管理"
+        ],
+        "summary": "获取我的邀请统计信息",
+        "description": "获取当前用户的邀请统计信息\n\n## 功能说明\n- 返回邀请总积分、邀请总人数、直推人数等统计信息\n- 提供邀请链接用于分享\n- 显示邀请奖励详情列表\n\n## 返回数据\n- **totalPoints**: 邀请总积分\n- **totalInvitedUsers**: 邀请总人数（包含所有下级）\n- **directInvitedUsers**: 直推人数（直接邀请的一级下级）\n- **inviteLink**: 邀请链接\n- **rewardDetails**: 邀请奖励详情列表\n\n## 使用场景\n- 查看邀请推广效果\n- 了解积分收益情况\n- 获取分享链接\n- 查看奖励明细\n",
+        "operationId": "getMyInviteStats",
+        "responses": {
+          "200": {
+            "description": "获取统计信息成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "成功示例": {
+                    "summary": "成功获取邀请统计信息",
+                    "description": "成功示例",
+                    "value": {
+                      "success": true,
+                      "message": "OK",
+                      "data": {
+                        "totalPoints": "15.600",
+                        "totalInvitedUsers": 25,
+                        "directInvitedUsers": 8,
+                        "inviteLink": "https://verigold.ai/register?inviter=ABC123",
+                        "rewardDetails": [
+                          {
+                            "userId": 12345,
+                            "walletAddress": "0x1234...abcd",
+                            "rewardType": "直推",
+                            "points": "1.000",
+                            "rewardTime": "2024-01-20T15:30:00",
+                            "invitedUserId": 67890,
+                            "level": 1
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "用户未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMyInviteStatsResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要USER角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMyInviteStatsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMyInviteStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/invite/my-inviter": {
       "get": {
         "tags": [
@@ -13747,160 +14138,6 @@
         }
       }
     },
-    "/api/defi/withdraws/orders/list": {
-      "get": {
-        "tags": [
-          "DeFi提现预订单API"
-        ],
-        "summary": "查询用户提现预订单历史",
-        "description": "查询当前用户的提现预订单历史记录，支持分页和筛选功能。\n\n**功能特性：**\n- 分页查询，支持自定义每页大小\n- 按订单状态筛选（PENDING/SUBMITTED/SUCCESS/FAILED/TIMEOUT）\n- 按代币类型筛选（USDT/VGAU）\n- 返回完整的订单信息和格式化显示字段\n\n**查询参数：**\n- page: 页码，从0开始（默认：0）\n- size: 每页大小（默认：20，最大：100）\n- status: 订单状态筛选（可选）\n\n**返回字段说明：**\n- id: 数据库主键ID\n- orderId: 订单ID（格式：wdr_xxx）\n- status: 订单状态\n- statusText: 状态中文描述\n- currency: 代币类型\n- amountRaw: 用户友好的金额显示（USDT: 1.5, VGAU: 5）\n- amountRawWei: 原始金额（最小单位wei）\n- displayAmount: 格式化显示金额\n- txHash: 交易哈希\n- fromAddress: 平台钱包地址\n- toAddress: 用户提现地址\n- chainId: 链ID\n- chainName: 链名称\n- createdAt: 创建时间\n- processedAt: 处理完成时间\n- amountMismatch: 金额是否不匹配\n- actualAmount: 实际到账金额\n- errorMessage: 错误信息\n- operationId: 关联操作ID\n",
-        "operationId": "getOrders_1",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "description": "页码，从0开始",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 0,
-              "minimum": 0
-            },
-            "example": 0
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "description": "每页大小，最大100",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 20,
-              "maximum": 100,
-              "minimum": 1
-            },
-            "example": 20
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "description": "订单状态筛选",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "PENDING",
-                "SUBMITTED",
-                "SUCCESS",
-                "FAILED",
-                "TIMEOUT"
-              ]
-            },
-            "example": "SUCCESS"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "查询成功",
-            "content": {
-              "application/json": {
-                "examples": {
-                  "成功响应": {
-                    "summary": "查询到订单列表",
-                    "description": "成功响应",
-                    "value": {
-                      "success": true,
-                      "code": 0,
-                      "message": "success",
-                      "data": [
-                        {
-                          "id": 1,
-                          "orderId": "wdr_abc1234567890abcdef123456",
-                          "status": "SUCCESS",
-                          "statusText": "已完成",
-                          "currency": "USDT",
-                          "amountRaw": "1000000000000000000",
-                          "displayAmount": "1.000000000000000000",
-                          "txHash": "0xabc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                          "fromAddress": "0xPlatform1234567890abcdef1234567890abcdef",
-                          "toAddress": "0x7eCf1234567890abcdef1234567890abcdef87af",
-                          "chainId": 97,
-                          "chainName": "BSC Testnet",
-                          "createdAt": "2025-01-15T10:30:00",
-                          "processedAt": "2025-01-15T10:31:00",
-                          "updatedAt": "2025-01-15T10:31:00",
-                          "amountMismatch": false,
-                          "actualAmount": "1000000000000000000",
-                          "errorMessage": null,
-                          "operationId": 12345
-                        },
-                        {
-                          "id": 2,
-                          "orderId": "wdr_def4567890abcdef1234567890",
-                          "status": "PENDING",
-                          "statusText": "待处理",
-                          "currency": "VGAU",
-                          "amountRaw": "100",
-                          "displayAmount": "100",
-                          "txHash": "0xdef4567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                          "fromAddress": "0xVGAUContract1234567890abcdef1234567890",
-                          "toAddress": "0x7eCf1234567890abcdef1234567890abcdef87af",
-                          "chainId": 97,
-                          "chainName": "BSC Testnet",
-                          "createdAt": "2025-01-15T11:00:00",
-                          "processedAt": null,
-                          "updatedAt": "2025-01-15T11:00:00",
-                          "amountMismatch": false,
-                          "actualAmount": null,
-                          "errorMessage": null,
-                          "operationId": null
-                        }
-                      ]
-                    }
-                  },
-                  "空列表": {
-                    "summary": "没有找到订单",
-                    "description": "空列表",
-                    "value": {
-                      "success": true,
-                      "code": 0,
-                      "message": "success",
-                      "data": []
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "未授权访问",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "code": 401,
-                  "message": "Unauthorized access",
-                  "data": null
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "请求参数错误",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "code": 400,
-                  "message": "每页大小不能超过100",
-                  "data": null
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/defi/deposits/orders/list": {
       "get": {
         "tags": [
@@ -13908,7 +14145,7 @@
         ],
         "summary": "查询用户充值预订单历史",
         "description": "查询当前用户的充值预订单历史记录，支持分页和筛选功能。\n\n**功能特性：**\n- 分页查询，支持自定义每页大小\n- 按订单状态筛选（PENDING/SUBMITTED/SUCCESS/FAILED/TIMEOUT）\n- 按代币类型筛选（USDT/VGAU）\n- 返回完整的订单信息和格式化显示字段\n\n**查询参数：**\n- page: 页码，从0开始（默认：0）\n- size: 每页大小（默认：20，最大：100）\n- status: 订单状态筛选（可选）\n\n**返回字段说明：**\n- id: 数据库主键ID\n- orderId: 订单ID（格式：dep_xxx）\n- status: 订单状态\n- statusText: 状态中文描述\n- currency: 代币类型\n- amountRaw: 用户友好的金额显示（USDT: 1.5, VGAU: 5）\n- amountRawWei: 原始金额（最小单位wei）\n- displayAmount: 格式化显示金额\n- txHash: 交易哈希\n- fromAddress: 用户钱包地址\n- toAddress: 平台接收地址\n- chainId: 链ID\n- chainName: 链名称\n- createdAt: 创建时间\n- processedAt: 处理完成时间\n- amountMismatch: 金额是否不匹配\n- actualAmount: 实际到账金额\n- errorMessage: 错误信息\n- operationId: 关联操作ID\n",
-        "operationId": "getOrders_2",
+        "operationId": "getOrders_1",
         "parameters": [
           {
             "name": "page",
@@ -17268,6 +17505,7 @@
               "type": "string",
               "enum": [
                 "PENDING",
+                "PROCESSING",
                 "COMPLETED",
                 "CANCELLED",
                 "FAILED"
@@ -17718,7 +17956,7 @@
         ],
         "summary": "获取订单列表",
         "description": "获取所有质押订单列表，支持分页和多维度筛选。\n\n## 筛选条件\n- **状态筛选**: 可按订单状态筛选（ACTIVE、COMPLETED、CANCELLED）\n- **用户筛选**: 可按用户ID筛选特定用户的订单\n- **分页查询**: 支持分页查询，避免数据量过大\n\n## 返回数据\n- 包含订单的完整信息：质押金额、利率、期限、状态等\n- 计算字段：剩余天数、已计息天数\n- 资金池相关信息（如果适用）\n\n## 权限要求\n- 需要管理员权限 (ROLE_ADMIN)\n",
-        "operationId": "getOrders_3",
+        "operationId": "getOrders_2",
         "parameters": [
           {
             "name": "status",
@@ -18222,6 +18460,77 @@
         "responses": {
           "200": {
             "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/recharge-listener/historical-scan-status": {
+      "get": {
+        "tags": [
+          "充值监听器管理"
+        ],
+        "summary": "获取历史扫描状态",
+        "description": "获取所有链的历史扫描状态和进度信息\n\n## 返回内容\n- **扫描进度**: 各链的历史扫描进度\n- **扫描状态**: 是否正在扫描中\n- **配置信息**: 历史扫描的配置参数\n",
+        "operationId": "getHistoricalScanStatus",
+        "responses": {
+          "200": {
+            "description": "获取状态成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponse"
+                },
+                "examples": {
+                  "历史扫描状态": {
+                    "description": "历史扫描状态",
+                    "value": {
+                      "success": true,
+                      "message": "获取历史扫描状态成功",
+                      "data": {
+                        "BSC_TESTNET": {
+                          "lastScanBlock": 65800000,
+                          "scanInProgress": false
+                        },
+                        "ETH": {
+                          "lastScanBlock": 18500000,
+                          "scanInProgress": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "管理员未登录",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足，需要ADMIN角色",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "获取状态失败",
             "content": {
               "*/*": {
                 "schema": {
@@ -21139,6 +21448,139 @@
         }
       }
     },
+    "/api/admin/exchange-listener/status": {
+      "get": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "获取监听器状态",
+        "description": "获取兑换事件监听器的运行状态",
+        "operationId": "getListenerStatus_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/exchange-listener/status/{chainType}": {
+      "get": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "获取指定链状态",
+        "description": "获取指定链的详细监听状态和进度信息",
+        "operationId": "getChainStatus_1",
+        "parameters": [
+          {
+            "name": "chainType",
+            "in": "path",
+            "description": "链类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1",
+                "56",
+                "137",
+                "42161",
+                "10",
+                "43114",
+                "250",
+                "11155111",
+                "97",
+                "80001"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/exchange-listener/historical-scan-status": {
+      "get": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "获取历史扫描状态",
+        "description": "获取所有链的历史事件扫描状态",
+        "operationId": "getHistoricalScanStatus_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/exchange-listener/health": {
+      "get": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "健康检查",
+        "description": "检查兑换监听器的健康状态",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/exchange-listener/config": {
+      "get": {
+        "tags": [
+          "兑换监听器监控"
+        ],
+        "summary": "获取配置信息",
+        "description": "获取兑换监听器的配置信息",
+        "operationId": "getConfig",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/content/pages/{pageId}": {
       "get": {
         "tags": [
@@ -22104,6 +22546,29 @@
             "description": "手续费是否从提现金额中扣除",
             "example": true
           },
+          "usePercentageRate": {
+            "type": "boolean",
+            "description": "是否使用百分比费率",
+            "example": true
+          },
+          "percentageRate": {
+            "type": "number",
+            "description": "百分比费率（如0.01表示1%）",
+            "example": 0.01,
+            "minimum": 0
+          },
+          "minFeeAmount": {
+            "type": "number",
+            "description": "最小手续费金额",
+            "example": 0.01,
+            "minimum": 0
+          },
+          "maxFeeAmount": {
+            "type": "number",
+            "description": "最大手续费金额",
+            "example": 100,
+            "minimum": 0
+          },
           "updateReason": {
             "type": "string",
             "description": "更新原因",
@@ -22917,6 +23382,13 @@
             "minLength": 1,
             "pattern": "^\\d+(\\.\\d+)?$"
           },
+          "targetWalletAddress": {
+            "type": "string",
+            "description": "目标钱包地址，接收提现的以太坊地址",
+            "example": "0x1234567890abcdef1234567890abcdef12345678",
+            "minLength": 1,
+            "pattern": "^0x[a-fA-F0-9]{40}$"
+          },
           "remark": {
             "type": "string",
             "description": "提现备注信息",
@@ -22934,7 +23406,8 @@
         "required": [
           "amount",
           "currency",
-          "idempotencyKey"
+          "idempotencyKey",
+          "targetWalletAddress"
         ]
       },
       "CommonApiResponseUserFundsOperationDto": {
@@ -22977,6 +23450,7 @@
           "operatorId": 1001,
           "relatedWalletAddress": "0x1234...",
           "externalRef": "withdraw_001",
+          "orderFlowNumber": "OP202401150001",
           "onchainTxHash": "0xabc123...",
           "remark": "提现到个人钱包",
           "targetWalletAddress": "0x742d35Cc6638C0532925a3b8D0aB9eEB4d1b0C2e",
@@ -23217,14 +23691,14 @@
             "example": 1000.5,
             "minimum": 0
           },
-          "collateralAmountInWei": {
-            "type": "integer"
+          "loanAmountInStandardUnit": {
+            "type": "number"
           },
           "collateralAmountInStandardUnit": {
             "type": "number"
           },
-          "loanAmountInStandardUnit": {
-            "type": "number"
+          "collateralAmountInWei": {
+            "type": "integer"
           }
         },
         "required": [
@@ -23440,17 +23914,17 @@
           "fileExtension": {
             "type": "string"
           },
-          "validMimeTypeForFileType": {
-            "type": "boolean"
-          },
-          "formattedFileSize": {
-            "type": "string"
-          },
           "validFileSizeForFileType": {
             "type": "boolean"
           },
           "extensionMatchesMimeType": {
             "type": "boolean"
+          },
+          "validMimeTypeForFileType": {
+            "type": "boolean"
+          },
+          "formattedFileSize": {
+            "type": "string"
           }
         },
         "required": [
@@ -23713,10 +24187,10 @@
               "type": "string"
             }
           },
-          "usingMultipleFileMode": {
+          "otherDocumentDescriptionRequired": {
             "type": "boolean"
           },
-          "otherDocumentDescriptionRequired": {
+          "usingMultipleFileMode": {
             "type": "boolean"
           }
         },
@@ -23775,63 +24249,6 @@
         },
         "required": [
           "uploadToken"
-        ]
-      },
-      "CreateDefiWithdrawOrderRequest": {
-        "type": "object",
-        "description": "创建提现预订单请求体",
-        "properties": {
-          "chainId": {
-            "type": "integer",
-            "format": "int32",
-            "description": "链ID（如BSC测试网97，主网56等）",
-            "example": 97
-          },
-          "currency": {
-            "type": "string",
-            "description": "货币类型，必填：USDT/VGAU（建议前端明确传递，避免自动识别错误）",
-            "example": "VGAU",
-            "minLength": 1
-          },
-          "tokenAddress": {
-            "type": "string",
-            "description": "代币合约地址（可选）。说明：后端已按链ID+代币类型配置了默认合约映射；若为原生币或前端不便传此字段，可留空，由后端根据 chainId+tokenType 解析。"
-          },
-          "toAddress": {
-            "type": "string",
-            "description": "用户提现地址（toAddress）。可留空，后端将依据chainId+tokenType解析用户地址",
-            "example": "0xUserAddr"
-          },
-          "fromAddress": {
-            "type": "string",
-            "description": "平台钱包地址（fromAddress）",
-            "example": "0xPlatformWallet",
-            "minLength": 1
-          },
-          "amountRaw": {
-            "type": "string",
-            "description": "提现金额（最小单位字符串：USDT一般为6位，VGAU为18位）",
-            "example": 1000000,
-            "minLength": 1
-          },
-          "txHash": {
-            "type": "string",
-            "description": "交易哈希（钱包确认后获取）",
-            "example": "0xabc123...",
-            "minLength": 1
-          },
-          "idempotencyKey": {
-            "type": "string",
-            "description": "幂等键（可选，建议使用UUID）",
-            "example": "b7b0d7f1-4d27-4cb8-9f5a-1c2a3b4d5e6f"
-          }
-        },
-        "required": [
-          "amountRaw",
-          "chainId",
-          "currency",
-          "fromAddress",
-          "txHash"
         ]
       },
       "CreateDefiDepositOrderRequest": {
@@ -25295,14 +25712,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -25390,14 +25807,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -25874,14 +26291,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -25989,9 +26406,6 @@
             "description": "记录创建时间",
             "example": "2024-01-20T08:30:00"
           },
-          "consumeRecord": {
-            "type": "boolean"
-          },
           "systemOperation": {
             "type": "boolean"
           },
@@ -26001,13 +26415,16 @@
           "userOperation": {
             "type": "boolean"
           },
+          "consumeRecord": {
+            "type": "boolean"
+          },
           "earnRecord": {
             "type": "boolean"
           },
-          "operatorTypeClass": {
+          "operationTypeClass": {
             "type": "string"
           },
-          "operationTypeClass": {
+          "operatorTypeClass": {
             "type": "string"
           }
         }
@@ -26236,22 +26653,22 @@
             "description": "增加1克VGAU抵押品后的质押率",
             "example": 0.72
           },
+          "statusDescription": {
+            "type": "string"
+          },
           "actualReceiveAmount": {
             "type": "number"
           },
           "annualRateAsPercentage": {
             "type": "number"
           },
-          "collateralAmountStandard": {
-            "type": "number"
-          },
           "currentLtvRatioAsPercentage": {
             "type": "number"
           },
-          "statusDescription": {
-            "type": "string"
-          },
           "ltvRatioAfterAddingCollateralAsPercentage": {
+            "type": "number"
+          },
+          "collateralAmountStandard": {
             "type": "number"
           },
           "finalStatus": {
@@ -26372,14 +26789,14 @@
           "averageLtvRatioAsPercentage": {
             "type": "number"
           },
-          "maxLtvRatioAsPercentage": {
-            "type": "number"
+          "riskNotice": {
+            "type": "string"
           },
           "repaymentCompletionRate": {
             "type": "number"
           },
-          "riskNotice": {
-            "type": "string"
+          "maxLtvRatioAsPercentage": {
+            "type": "number"
           },
           "borrowingExperienceLevel": {
             "type": "string"
@@ -26446,14 +26863,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -26586,6 +27003,116 @@
             "format": "int32",
             "description": "风险检测批次大小",
             "example": 100
+          }
+        }
+      },
+      "CommonApiResponseMyInviteStatsResponse": {
+        "type": "object",
+        "description": "统一API响应结构",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "请求是否成功",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "响应消息",
+            "example": "操作成功"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyInviteStatsResponse",
+            "description": "响应数据（必须使用 DTO 包装，不能是单一值）"
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "description": "错误码",
+            "example": 0
+          }
+        }
+      },
+      "InviteRewardDetail": {
+        "type": "object",
+        "description": "邀请奖励详情",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "用户ID",
+            "example": 12345
+          },
+          "walletAddress": {
+            "type": "string",
+            "description": "钱包地址",
+            "example": "0x1234567890123456789012345678901234567890"
+          },
+          "rewardType": {
+            "type": "string",
+            "description": "奖励类型",
+            "enum": [
+              "直推",
+              "间推"
+            ],
+            "example": "直推"
+          },
+          "points": {
+            "type": "number",
+            "description": "积分数量",
+            "example": 1
+          },
+          "rewardTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "奖励时间",
+            "example": "2024-01-20T15:30:00"
+          },
+          "invitedUserId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "被邀请用户ID",
+            "example": 67890
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "邀请层级",
+            "example": 1
+          }
+        }
+      },
+      "MyInviteStatsResponse": {
+        "type": "object",
+        "description": "我的邀请统计响应",
+        "properties": {
+          "totalPoints": {
+            "type": "number",
+            "description": "邀请总积分",
+            "example": 15.6
+          },
+          "totalInvitedUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "邀请总人数",
+            "example": 25
+          },
+          "directInvitedUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "直推人数",
+            "example": 8
+          },
+          "inviteLink": {
+            "type": "string",
+            "description": "邀请链接",
+            "example": "https://verigold.ai/register?inviter=ABC123"
+          },
+          "rewardDetails": {
+            "type": "array",
+            "description": "邀请奖励详情列表",
+            "items": {
+              "$ref": "#/components/schemas/InviteRewardDetail"
+            }
           }
         }
       },
@@ -26774,14 +27301,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -27220,14 +27747,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -27274,14 +27801,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -28249,14 +28776,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -28666,14 +29193,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -29158,20 +29685,8 @@
           "priceChangeRate": {
             "type": "number"
           },
-          "annualRateAtCreationAsPercentage": {
-            "type": "number"
-          },
-          "collateralAmountStandard": {
-            "type": "number"
-          },
-          "initialLtvRatioAsPercentage": {
-            "type": "number"
-          },
-          "currentLtvRatioAsPercentage": {
-            "type": "number"
-          },
-          "currentAnnualRateAsPercentage": {
-            "type": "number"
+          "statusDescription": {
+            "type": "string"
           },
           "currentCollateralValue": {
             "type": "number"
@@ -29179,8 +29694,20 @@
           "riskLevelDescription": {
             "type": "string"
           },
-          "statusDescription": {
-            "type": "string"
+          "currentLtvRatioAsPercentage": {
+            "type": "number"
+          },
+          "annualRateAtCreationAsPercentage": {
+            "type": "number"
+          },
+          "currentAnnualRateAsPercentage": {
+            "type": "number"
+          },
+          "initialLtvRatioAsPercentage": {
+            "type": "number"
+          },
+          "collateralAmountStandard": {
+            "type": "number"
           }
         }
       },
@@ -29227,14 +29754,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -29503,19 +30030,13 @@
       "PageKycApplicationResponse": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
-          "first": {
-            "type": "boolean"
-          },
-          "last": {
-            "type": "boolean"
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
           },
           "size": {
             "type": "integer",
@@ -29533,6 +30054,12 @@
           },
           "sort": {
             "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
           },
           "numberOfElements": {
             "type": "integer",
@@ -29556,16 +30083,16 @@
           "sort": {
             "$ref": "#/components/schemas/SortObject"
           },
-          "paged": {
-            "type": "boolean"
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
           },
           "pageNumber": {
             "type": "integer",
             "format": "int32"
           },
-          "pageSize": {
-            "type": "integer",
-            "format": "int32"
+          "paged": {
+            "type": "boolean"
           },
           "unpaged": {
             "type": "boolean"
@@ -30531,14 +31058,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "current": {
+            "type": "integer",
+            "format": "int64"
+          },
           "pages": {
             "type": "integer",
             "format": "int64",
             "deprecated": true
-          },
-          "current": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },

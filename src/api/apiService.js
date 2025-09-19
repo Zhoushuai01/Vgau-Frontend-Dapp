@@ -308,6 +308,8 @@ class ApiService {
     getBalances: () => this.get(this.endpoints.USER_FUNDS.BALANCES),
     // 提现申请
     withdraw: (data) => this.post(this.endpoints.USER_FUNDS.WITHDRAW, data),
+    // 查询2FA状态
+    check2FAStatus: (operationId) => this.get(`/user-funds/withdraw/${operationId}/2fa-status`),
     // 获取用户资金操作记录
     getOperations: (params = {}) => this.get(this.endpoints.USER_FUNDS.OPERATIONS, params)
   }

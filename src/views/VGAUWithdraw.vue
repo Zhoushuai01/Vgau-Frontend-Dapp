@@ -270,10 +270,16 @@ const handleConfirm = async () => {
       idempotencyKey: generateUUID()
     }
     const resp = await userFundsAPI.withdraw(body)
-    pendingWithdraw = body
     const requires2FA = resp?.requires2FA || resp?.data?.requires2FA
     const methods = resp?.availableMethods || resp?.data?.availableMethods || []
+    const operationId = resp?.data?.operationId
+    
     if (requires2FA) {
+      // 保存operationId和idempotencyKey用于后续执行
+      pendingWithdraw = {
+        ...body,
+        operationId: operationId
+      }
       availableMethods.value = Array.isArray(methods) ? methods : []
       selectedMethod.value = '' // 让用户手动选择
       show2faModal.value = true
@@ -303,12 +309,15 @@ const confirm2FA = async () => {
   try {
     submitting.value = true
     uni.showLoading({ title: t('processing') })
+    
+    // 1. 验证2FA
     const methodCode = selectedMethod.value
     let verifyOk = false
     try {
       const vr = await authAPI.verify2FA({ code: twoFACode.value, method: methodCode })
       verifyOk = vr?.success !== false
     } catch (err) {
+      // 兜底直调接口
       const res2 = await uni.request({
         url: '/api/auth/2fa/verify',
         method: 'POST',
@@ -321,17 +330,12 @@ const confirm2FA = async () => {
     }
     if (!verifyOk) throw new Error('2FA 验证失败')
     
-    // 2FA验证成功后，执行实际的提现操作
-    console.log('2FA验证成功，开始执行提现操作:', pendingWithdraw)
-    
+    // 2. 查询2FA状态确认完成
     try {
-      // 重新调用提现接口，这次应该直接成功（因为2FA已验证）
-      const withdrawResp = await userFundsAPI.withdraw({
-        ...pendingWithdraw,
-        verified2FA: true // 标记2FA已验证
-      })
+      const statusResp = await userFundsAPI.check2FAStatus(pendingWithdraw.operationId)
+      console.log('2FA状态查询结果:', statusResp)
       
-      if (withdrawResp?.success) {
+      if (statusResp?.isCompleted) {
         uni.showToast({ title: t('withdrawSuccess') || '提现成功', icon: 'success', duration: 1500 })
         show2faModal.value = false
         twoFACode.value = ''
@@ -346,12 +350,13 @@ const confirm2FA = async () => {
           uni.switchTab({ url: '/pages/Defi' })
         }, 500)
       } else {
-        throw new Error(withdrawResp?.message || '提现失败')
+        throw new Error('2FA验证未完成')
       }
-    } catch (withdrawError) {
-      console.error('提现执行失败:', withdrawError)
-      throw new Error(withdrawError?.message || '提现执行失败')
+    } catch (statusError) {
+      console.error('查询2FA状态失败:', statusError)
+      throw new Error('查询提现状态失败')
     }
+    
   } catch (e) {
     console.error('2FA 验证或提现失败:', e)
     uni.showToast({ title: e.message || t('requestFailed'), icon: 'none' })
