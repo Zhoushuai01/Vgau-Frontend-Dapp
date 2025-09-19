@@ -101,12 +101,12 @@
           
           <!-- 标题 -->
           <view class="auth-modal-title">
-            <text class="title-text">選擇驗證方式</text>
+            <text class="title-text">{{ t('twoFA.modal.title') }}</text>
           </view>
           
           <!-- 说明文字 -->
           <view class="auth-modal-subtitle">
-            <text class="subtitle-text">需要驗證 1 種方式，剩餘 1 種</text>
+            <text class="subtitle-text">{{ t('twoFA.modal.subtitle') }}</text>
           </view>
           
           <!-- 验证方式选择 -->
@@ -121,7 +121,7 @@
               <view class="method-icon">
                 <text class="icon-text">✉</text>
               </view>
-              <text class="method-text">郵箱驗證</text>
+              <text class="method-text">{{ t('twoFA.modal.methods.email') }}</text>
             </view>
             
             <!-- TOTP验证码 -->
@@ -135,8 +135,8 @@
                 <text class="icon-text">🕒</text>
               </view>
               <view class="method-content">
-                <text class="method-text">2FA - TOTP 驗證</text>
-                <text class="method-status">✓ TOTP 已啟用</text>
+                <text class="method-text">{{ t('twoFA.modal.methods.totp') }}</text>
+                <text class="method-status">{{ t('twoFA.modal.methods.totpEnabled') }}</text>
               </view>
             </view>
           </view>
@@ -159,13 +159,13 @@
                 @click="sendEmailCode"
               >
                 <text class="send-code-text">
-                  {{ emailCodeSending ? '发送中...' : emailCodeCountdown > 0 ? `${emailCodeCountdown}s` : '发送验证码' }}
+                  {{ emailCodeSending ? t('twoFA.modal.sendCode.sending') : emailCodeCountdown > 0 ? t('twoFA.modal.sendCode.countdown', { seconds: emailCodeCountdown }) : t('twoFA.modal.sendCode.send') }}
                 </text>
               </view>
             </view>
             <!-- 邮箱验证码发送状态提示 -->
             <view v-if="selectedMethod === 'EMAIL_VERIFY_CODE' && emailCodeSent" class="email-code-tip">
-              <text class="tip-text">验证码已发送到您的邮箱，请查收</text>
+              <text class="tip-text">{{ t('twoFA.modal.emailCodeSent') }}</text>
             </view>
           </view>
           
@@ -176,7 +176,7 @@
               :class="{ disabled: !selectedMethod || !twoFACode || submitting }"
               @click="confirm2FA"
             >
-              <text class="confirm-auth-text">{{ submitting ? '驗證中...' : '確認' }}</text>
+              <text class="confirm-auth-text">{{ submitting ? t('twoFA.modal.confirm.verifying') : t('twoFA.modal.confirm.confirm') }}</text>
             </view>
           </view>
         </view>

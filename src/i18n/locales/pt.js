@@ -646,6 +646,29 @@ export default {
     codePlaceholder: 'Digite o código de verificação'
   },
 
+  // Modal de autenticação 2FA
+  twoFA: {
+    modal: {
+      title: 'Selecionar método de verificação',
+      subtitle: 'Precisa verificar 1 método, 1 restante',
+      methods: {
+        email: 'Verificação por email',
+        totp: '2FA - Verificação TOTP',
+        totpEnabled: '✓ TOTP Ativado'
+      },
+      sendCode: {
+        sending: 'Enviando...',
+        send: 'Enviar código de verificação',
+        countdown: '{seconds}s'
+      },
+      emailCodeSent: 'Código de verificação foi enviado para seu email, verifique',
+      confirm: {
+        verifying: 'Verificando...',
+        confirm: 'Confirmar'
+      }
+    }
+  },
+
   // 組件特定鍵值
   components: {
     // Exchange

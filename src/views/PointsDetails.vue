@@ -33,9 +33,6 @@
         <view class="tab-item" :class="{ active: activeTab === 'lending' }" @click="setActiveTab('lending')">
           <text class="tab-text">{{ t('components.pointsDetails.lending') }}</text>
         </view>
-        <view class="tab-item" :class="{ active: activeTab === 'exchange' }" @click="setActiveTab('exchange')">
-          <text class="tab-text">{{ t('components.pointsDetails.exchange') }}</text>
-        </view>
         <view class="tab-item" :class="{ active: activeTab === 'ecosystem' }" @click="setActiveTab('ecosystem')">
           <text class="tab-text">{{ t('components.pointsDetails.ecosystem') }}</text>
         </view> 
@@ -97,7 +94,6 @@ const tabTypeMapping = {
   'staking': 'staking',    // 质押
   'invite': 'invite',      // 邀请
   'lending': 'lending',    // 借贷
-  'exchange': 'exchange',  // 兑换
   'ecosystem': 'ecosystem' // 生态
 }
 
@@ -112,7 +108,6 @@ const getTypeFromBusinessType = (businessType, reason) => {
     'STAKE_CREATE': 'staking',        // 质押
     'USER_INVITE_BIND': 'invite',     // 邀请
     'LOAN_REPAY': 'lending',          // 借贷
-    'EXCHANGE': 'exchange',           // 兑换
     'ECOSYSTEM': 'ecosystem'          // 生态
   }
   return typeMapping[businessType] || 'other'
@@ -129,7 +124,6 @@ const getPointsOperationDescription = (businessType, reason) => {
     'STAKE_CREATE': t('components.pointsDetails.createStakingOrder'),        // 质押
     'USER_INVITE_BIND': t('components.pointsDetails.inviteRelationship'),    // 邀请
     'LOAN_REPAY': t('components.pointsDetails.lendingRepayment'),            // 借贷还款
-    'EXCHANGE': t('components.pointsDetails.exchange'),                      // 兑换
     'ECOSYSTEM': t('components.pointsDetails.ecosystem')                     // 生态
   }
   

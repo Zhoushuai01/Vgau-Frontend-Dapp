@@ -646,6 +646,29 @@ export default {
     codePlaceholder: 'يرجى إدخال رمز التحقق'
   },
 
+  // نافذة مصادقة 2FA
+  twoFA: {
+    modal: {
+      title: 'اختر طريقة التحقق',
+      subtitle: 'تحتاج للتحقق من طريقة واحدة، متبقية واحدة',
+      methods: {
+        email: 'التحقق عبر البريد الإلكتروني',
+        totp: '2FA - التحقق TOTP',
+        totpEnabled: '✓ TOTP مفعل'
+      },
+      sendCode: {
+        sending: 'جاري الإرسال...',
+        send: 'إرسال رمز التحقق',
+        countdown: '{seconds}ث'
+      },
+      emailCodeSent: 'تم إرسال رمز التحقق إلى بريدك الإلكتروني، يرجى التحقق',
+      confirm: {
+        verifying: 'جاري التحقق...',
+        confirm: 'تأكيد'
+      }
+    }
+  },
+
   // 組件特定鍵值
   components: {
     // Exchange

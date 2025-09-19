@@ -654,6 +654,29 @@ export default {
     codePlaceholder: 'Please enter verification code'
   },
 
+  // 2FA Authentication Modal
+  twoFA: {
+    modal: {
+      title: 'Select Verification Method',
+      subtitle: 'Need to verify 1 method, 1 remaining',
+      methods: {
+        email: 'Email Verification',
+        totp: '2FA - TOTP Verification',
+        totpEnabled: '✓ TOTP Enabled'
+      },
+      sendCode: {
+        sending: 'Sending...',
+        send: 'Send Verification Code',
+        countdown: '{seconds}s'
+      },
+      emailCodeSent: 'Verification code has been sent to your email, please check',
+      confirm: {
+        verifying: 'Verifying...',
+        confirm: 'Confirm'
+      }
+    }
+  },
+
   // Component Specific Keys
   components: {
     // Exchange

@@ -678,6 +678,29 @@ export default {
     codePlaceholder: '請輸入驗證碼'
   },
 
+  // 2FA 認證模態框
+  twoFA: {
+    modal: {
+      title: '選擇驗證方式',
+      subtitle: '需要驗證 1 種方式，剩餘 1 種',
+      methods: {
+        email: '郵箱驗證',
+        totp: '2FA - TOTP 驗證',
+        totpEnabled: '✓ TOTP 已啟用'
+      },
+      sendCode: {
+        sending: '發送中...',
+        send: '發送驗證碼',
+        countdown: '{seconds}s'
+      },
+      emailCodeSent: '驗證碼已發送到您的郵箱，請查收',
+      confirm: {
+        verifying: '驗證中...',
+        confirm: '確認'
+      }
+    }
+  },
+
   // 組件特定鍵值
   components: {
     // Exchange
