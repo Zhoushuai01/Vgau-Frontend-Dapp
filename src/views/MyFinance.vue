@@ -38,7 +38,7 @@
             </view>
             <view class="info-row">
               <text class="info-label">{{ t('components.myFinance.maturityYield') }}</text>
-              <text class="info-value">{{ order.totalInterestEarned || '0' }} USDT</text>
+              <text class="info-value">{{ formatInterest(order.accumulatedInterest) }} USDT</text>
             </view>
             <view class="info-row">
               <text class="info-label">{{ t('components.myFinance.startTime') }}</text>
@@ -93,7 +93,7 @@
             </view>
             <view class="detail-item">
               <text class="detail-label">{{ t('components.myFinance.redeemConfirm.interest') }}:</text>
-              <text class="detail-value">{{ selectedRedeemOrder?.totalInterestEarned || '0' }} {{ t('components.myFinance.redeemConfirm.currency.usdt') }}</text>
+              <text class="detail-value">{{ formatInterest(selectedRedeemOrder?.accumulatedInterest) }} {{ t('components.myFinance.redeemConfirm.currency.usdt') }}</text>
             </view>
           </view>
           
@@ -187,7 +187,7 @@ const fetchStakeOrders = async () => {
           createTime: order.createTime || order.firstStakeTime || order.startTime || '',
           lastStakeTime: order.lastStakeTime || order.endTime || '',
           totalStakeAmount: order.totalStakeAmount || order.stakeAmount || '0',
-          totalInterestEarned: order.totalInterestEarned || order.interestEarned || '0'
+          accumulatedInterest: order.accumulatedInterest || order.totalInterestEarned || order.interestEarned || '0'
         }
         
         console.log(`✅ 映射后的订单 ${index + 1}:`, {
@@ -234,6 +234,24 @@ const formatTime = (timeStr) => {
   } catch (error) {
     console.error('时间格式化错误:', error)
     return timeStr || '暂无'
+  }
+}
+
+// 格式化收益，保留小数点后四位，去掉末尾多余的零
+const formatInterest = (interest) => {
+  if (!interest || interest === '0' || interest === 0) {
+    return '0'
+  }
+  try {
+    const num = parseFloat(interest)
+    if (isNaN(num)) {
+      return '0'
+    }
+    // 保留4位小数，然后去掉末尾的零
+    return parseFloat(num.toFixed(4)).toString()
+  } catch (error) {
+    console.error('收益格式化错误:', error)
+    return '0'
   }
 }
 
@@ -331,7 +349,7 @@ const redeemOrder = async (order) => {
     console.log('开始赎回订单:', {
       orderId: order.id,
       stakeAmount: order.totalStakeAmount,
-      interestEarned: order.totalInterestEarned,
+      interestEarned: order.accumulatedInterest,
       apiEndpoint: `/api/stake/orders/${order.id}/redeem`
     })
     
