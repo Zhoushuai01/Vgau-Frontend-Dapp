@@ -285,6 +285,13 @@ const handleConfirm = async () => {
       showEmailModal.value = true
     } else if (resp?.success) {
       showSuccessModal.value = true
+      
+      // 通知DeFi页面更新余额
+      uni.$emit('balanceUpdated', {
+        type: 'withdraw',
+        currency: 'VGAU',
+        amount: inputAmount.value
+      })
     } else {
       throw new Error(resp?.message || '提现失败')
     }
@@ -323,6 +330,13 @@ const confirmEmailVerification = async () => {
       
       // 刷新余额
       await loadVgauAvailable()
+      
+      // 通知DeFi页面更新余额
+      uni.$emit('balanceUpdated', {
+        type: 'withdraw',
+        currency: 'VGAU',
+        amount: pendingWithdraw?.amount || inputAmount.value
+      })
     } else {
       throw new Error(resp?.message || '验证失败')
     }

@@ -694,6 +694,17 @@
     }
   }
   
+  // 实时更新余额（用于操作完成后调用）
+  const refreshBalances = async () => {
+    console.log('🔄 开始实时更新余额...')
+    try {
+      await getBalances()
+      console.log('✅ 余额实时更新完成')
+    } catch (error) {
+      console.error('❌ 余额实时更新失败:', error)
+    }
+  }
+  
   // 钱包验证
   const checkWalletBinding = async () => {
     try {
@@ -1366,6 +1377,23 @@
         
         console.log('✅ DeFi页面钱包地址变化处理完成，数据已更新')
       }
+    })
+    
+    // 监听余额更新事件
+    uni.$on('balanceUpdated', async (data) => {
+      console.log('📡 DeFi页面收到余额更新事件:', data)
+      console.log('🔄 操作类型:', data.type, '币种:', data.currency, '金额:', data.amount)
+      
+      // 延迟一点时间确保后端数据已更新
+      setTimeout(async () => {
+        try {
+          console.log('🔄 开始实时更新余额...')
+          await refreshBalances()
+          console.log('✅ 余额实时更新完成')
+        } catch (error) {
+          console.error('❌ 余额实时更新失败:', error)
+        }
+      }, 1000) // 延迟1秒确保后端数据已更新
     })
     
     // 获取汇率数据（不需要钱包连接）

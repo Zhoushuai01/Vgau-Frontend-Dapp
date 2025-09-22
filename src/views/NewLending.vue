@@ -457,6 +457,14 @@ const confirmLending = async () => {
 
     if (resp && resp.success) {
       uni.showToast({ title: '创建成功', icon: 'success', duration: 1500 })
+      
+      // 通知DeFi页面更新余额
+      uni.$emit('balanceUpdated', {
+        type: 'lending',
+        currency: 'VGAU',
+        amount: borrowAmount.value
+      })
+      
       // 立即跳转到DeFi页面
       console.log('🚀 准备跳转到DeFi页面...')
       

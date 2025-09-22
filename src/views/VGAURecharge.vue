@@ -384,6 +384,13 @@
           // 刷新余额
           await loadUserData()
           
+          // 通知DeFi页面更新余额
+          uni.$emit('balanceUpdated', {
+            type: 'recharge',
+            currency: 'VGAU',
+            amount: amount.value
+          })
+          
           // 清空输入
           amount.value = ''
           
@@ -402,6 +409,13 @@
           
           // 刷新余额
           await loadUserData()
+          
+          // 通知DeFi页面更新余额
+          uni.$emit('balanceUpdated', {
+            type: 'recharge',
+            currency: 'VGAU',
+            amount: amount.value
+          })
           
           // 清空输入
           amount.value = ''

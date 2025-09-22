@@ -274,6 +274,13 @@ const executeRecharge = async (amount) => {
         // 刷新余额
         await loadUserData()
         
+        // 通知DeFi页面更新余额
+        uni.$emit('balanceUpdated', {
+          type: 'recharge',
+          currency: 'USDT',
+          amount: amount
+        })
+        
         // 清空输入
         inputAmount.value = ''
         
@@ -292,6 +299,13 @@ const executeRecharge = async (amount) => {
         
         // 刷新余额
         await loadUserData()
+        
+        // 通知DeFi页面更新余额
+        uni.$emit('balanceUpdated', {
+          type: 'recharge',
+          currency: 'USDT',
+          amount: amount
+        })
         
         // 清空输入
         inputAmount.value = ''

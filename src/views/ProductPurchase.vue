@@ -478,6 +478,13 @@ const createStakeOrder = async () => {
       // 刷新VGAU余额
       await fetchVGAUBalance()
       
+      // 通知DeFi页面更新余额
+      uni.$emit('balanceUpdated', {
+        type: 'finance',
+        currency: 'VGAU',
+        amount: stakingAmount.value
+      })
+      
              // 延迟返回上一页
        setTimeout(() => {
          uni.navigateBack()

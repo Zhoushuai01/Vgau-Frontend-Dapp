@@ -376,6 +376,13 @@ const redeemOrder = async (order) => {
       
       // 刷新订单列表
       await fetchStakeOrders()
+      
+      // 通知DeFi页面更新余额
+      uni.$emit('balanceUpdated', {
+        type: 'redeem',
+        currency: 'VGAU',
+        amount: selectedRedeemOrder.value?.amount || '0'
+      })
     } else {
       // 处理不同的响应格式
       const errorMessage = response?.message || response?.error || t('components.myFinance.redeemFailed')
