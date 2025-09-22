@@ -349,9 +349,16 @@ const processedWithdrawTransactions = computed(() => {
   })
 })
 
-// 计算属性 - 合并所有交易记录
+// 计算属性 - 合并所有交易记录并按时间排序
 const processedTransactions = computed(() => {
-  return [...processedDepositTransactions.value, ...processedWithdrawTransactions.value]
+  const allTransactions = [...processedDepositTransactions.value, ...processedWithdrawTransactions.value]
+  
+  // 按时间降序排序（最新的在前面）
+  return allTransactions.sort((a, b) => {
+    const timeA = new Date(a.rawData?.createdAt || a.rawData?.createTime || 0).getTime()
+    const timeB = new Date(b.rawData?.createdAt || b.rawData?.createTime || 0).getTime()
+    return timeB - timeA
+  })
 })
 
 // 计算属性 - 筛选交易记录

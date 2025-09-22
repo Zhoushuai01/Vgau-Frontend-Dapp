@@ -18,7 +18,14 @@ export default {
       confirm: 'تأكيد',
       cancel: 'إلغاء'
     },
-    loading: 'جاري السحب...'
+    loading: 'جاري السحب...',
+    successModal: {
+      modal: {
+        title: 'تم تقديم طلب السحب',
+        message: 'تم تقديم طلب السحب، في انتظار المراجعة اليدوية. يمكنك التحقق من الحالة في طلباتك السابقة.',
+        confirm: 'موافق'
+      }
+    }
   },
 
   // 通用UI元素
@@ -171,6 +178,10 @@ export default {
     pleaseConnectWallet: 'يرجى ربط محفظتك أولاً',
     userRejectedConnection: 'رفض المستخدم الربط',
     noWalletDetected: 'لم يتم اكتشاف محفظة',
+    claiming: 'جاري المطالبة...',
+    claimSuccess: 'تمت المطالبة بنجاح',
+    claimFailed: 'فشلت المطالبة',
+    claimRetry: 'فشلت المطالبة، يرجى المحاولة مرة أخرى لاحقاً',
     assetOverview: 'نظرة عامة على الأصول',
     currentStakedAmount: 'كمية الرهان الحالية',
     totalStakedRewards: 'إجمالي مكافآت الرهان',
@@ -914,8 +925,17 @@ export default {
       confirmWithdraw: 'تأكيد السحب',
       withdrawing: 'جاري السحب...',
       withdrawSuccess: 'تم السحب بنجاح',
-      withdrawFailed: 'فشل السحب'
+      withdrawFailed: 'فشل السحب',
+      withdrawSubmitted: 'تم تقديم طلب السحب، في انتظار المراجعة اليدوية. يمكنك التحقق من الحالة في طلباتك السابقة.',
+      successModal: {
+        modal: {
+          title: 'تم تقديم طلب السحب',
+          message: 'تم تقديم طلب السحب، في انتظار المراجعة اليدوية. يمكنك التحقق من الحالة في طلباتك السابقة.',
+          confirm: 'موافق'
+        }
+      }
     },
+
 
 
     // Invitation

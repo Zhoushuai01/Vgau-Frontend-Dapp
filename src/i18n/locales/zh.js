@@ -18,7 +18,14 @@ export default {
       confirm: '確認',
       cancel: '取消'
     },
-    loading: '正在提現...'
+    loading: '正在提現...',
+    successModal: {
+      modal: {
+        title: '提現申請已提交',
+        message: '提現申請已提交，正在等待人工審核。您可在歷史訂單中查看狀態。',
+        confirm: '確定'
+      }
+    }
   },
 
   // 通用UI元素
@@ -186,6 +193,10 @@ export default {
     pleaseConnectWallet: '請先連接您的錢包',
     userRejectedConnection: '用戶拒絕連接',
     noWalletDetected: '未檢測到錢包',
+    claiming: '正在領取...',
+    claimSuccess: '領取成功',
+    claimFailed: '領取失敗',
+    claimRetry: '領取失敗，請稍後重試',
     assetOverview: '資產概覽',
     currentStakedAmount: '當前質押數量',
     totalStakedRewards: '總質押獎勵',
@@ -969,8 +980,17 @@ export default {
       confirmWithdraw: '確認提現',
       withdrawing: '提現中...',
       withdrawSuccess: '提現成功',
-      withdrawFailed: '提現失敗'
+      withdrawFailed: '提現失敗',
+      withdrawSubmitted: '提現申請已提交，正在等待人工審核。您可在歷史訂單中查看狀態。',
+      successModal: {
+        modal: {
+          title: '提現申請已提交',
+          message: '提現申請已提交，正在等待人工審核。您可在歷史訂單中查看狀態。',
+          confirm: '確定'
+        }
+      }
     },
+
 
 
     // Invitation

@@ -89,6 +89,33 @@
         </view>
       </view>
 
+      <!-- 提现成功弹窗 -->
+      <view v-if="showSuccessModal" class="success-modal-overlay" @click="closeSuccessModal">
+        <view class="success-modal" @click.stop>
+          <!-- 成功图标 -->
+          <view class="success-icon">
+            <text class="icon-text">✓</text>
+          </view>
+          
+            <!-- 弹窗标题 -->
+            <view class="success-title">
+              <text class="title-text">{{ t('withdraw.successModal.modal.title') }}</text>
+            </view>
+            
+            <!-- 弹窗内容 -->
+            <view class="success-message">
+              <text class="message-text">{{ t('withdraw.successModal.modal.message') }}</text>
+            </view>
+            
+            <!-- 确认按钮 -->
+            <view class="success-actions">
+              <view class="success-btn" @click="closeSuccessModal">
+                <text class="btn-text">{{ t('withdraw.successModal.modal.confirm') }}</text>
+              </view>
+            </view>
+        </view>
+      </view>
+
       <!-- 邮箱验证模态框 -->
       <view v-if="showEmailModal" class="auth-modal-overlay" @click="cancelEmailVerification">
         <view class="auth-modal" @click.stop>
@@ -174,6 +201,8 @@ const { t } = useI18n()
 const inputAmount = ref('')
 // 可用VGAU余额（后端返回）
 const vgauAvailable = ref('0.00')
+// 提现成功弹窗
+const showSuccessModal = ref(false)
 // 邮箱验证模态框
 const showEmailModal = ref(false)
 const emailCode = ref('')
@@ -255,10 +284,7 @@ const handleConfirm = async () => {
       }
       showEmailModal.value = true
     } else if (resp?.success) {
-      uni.showToast({ title: t('withdrawSuccess') || '提现成功', icon: 'success', duration: 1500 })
-      setTimeout(() => {
-        uni.switchTab({ url: '/pages/Defi' })
-      }, 500)
+      showSuccessModal.value = true
     } else {
       throw new Error(resp?.message || '提现失败')
     }
@@ -290,18 +316,13 @@ const confirmEmailVerification = async () => {
     const resp = await userFundsAPI.verifyEmailCode(verifyData)
     
     if (resp?.success) {
-      uni.showToast({ title: t('withdrawSuccess') || '提现成功', icon: 'success', duration: 1500 })
       showEmailModal.value = false
       emailCode.value = ''
       pendingWithdraw = null
+      showSuccessModal.value = true
       
       // 刷新余额
       await loadVgauAvailable()
-      
-      // 返回或跳转
-      setTimeout(() => {
-        uni.switchTab({ url: '/pages/Defi' })
-      }, 500)
     } else {
       throw new Error(resp?.message || '验证失败')
     }
@@ -318,6 +339,15 @@ const confirmEmailVerification = async () => {
 const cancelEmailVerification = () => {
   showEmailModal.value = false
   emailCode.value = ''
+}
+
+// 关闭成功弹窗
+const closeSuccessModal = () => {
+  showSuccessModal.value = false
+  // 跳转到DeFi页面
+  setTimeout(() => {
+    uni.switchTab({ url: '/pages/Defi' })
+  }, 300)
 }
 
 // 发送邮箱验证码
@@ -689,6 +719,104 @@ const getCodePlaceholder = () => {
   font-size: 32rpx;
   color: #000000;
   font-weight: 400;
+}
+
+/* 提现成功弹窗样式 */
+.success-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success-modal {
+  width: 90%;
+  max-width: 640rpx;
+  background: rgba(26, 26, 26, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 24rpx;
+  padding: 48rpx 32rpx;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.5);
+}
+
+.success-icon {
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(135deg, #00CC66 0%, #00AA55 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 204, 102, 0.3);
+}
+
+.icon-text {
+  font-size: 48rpx;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.success-title {
+  margin-bottom: 24rpx;
+  text-align: center;
+}
+
+.title-text {
+  font-size: 36rpx;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.success-message {
+  margin-bottom: 48rpx;
+  text-align: center;
+}
+
+.message-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.success-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.success-btn {
+  width: 200rpx;
+  height: 88rpx;
+  background: linear-gradient(90deg, rgba(254, 218, 120, 1) 0%, rgba(176, 121, 32, 1) 100%);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.success-btn:active {
+  transform: scale(0.98);
+}
+
+.btn-text {
+  font-size: 32rpx;
+  color: #000000;
+  font-weight: 600;
 }
 
 /* 邮箱验证模态框样式 */

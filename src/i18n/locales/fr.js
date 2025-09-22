@@ -18,7 +18,14 @@ export default {
       confirm: 'Confirmer',
       cancel: 'Annuler'
     },
-    loading: 'Retrait en cours...'
+    loading: 'Retrait en cours...',
+    successModal: {
+      modal: {
+        title: 'Demande de Retrait Soumise',
+        message: 'Demande de retrait soumise, en attente d\'examen manuel. Vous pouvez vérifier le statut dans vos commandes historiques.',
+        confirm: 'OK'
+      }
+    }
   },
 
   // 通用UI元素
@@ -171,6 +178,10 @@ export default {
     pleaseConnectWallet: 'Veuillez d\'abord connecter votre portefeuille',
     userRejectedConnection: 'Utilisateur a Rejeté la Connexion',
     noWalletDetected: 'Aucun Portefeuille Détecté',
+    claiming: 'Réclamation en cours...',
+    claimSuccess: 'Réclamation réussie',
+    claimFailed: 'Échec de la réclamation',
+    claimRetry: 'Échec de la réclamation, veuillez réessayer plus tard',
     assetOverview: 'Aperçu des Actifs',
     currentStakedAmount: 'Montant Actuel en Stake',
     totalStakedRewards: 'Récompenses Totales en Stake',
@@ -914,8 +925,17 @@ export default {
       confirmWithdraw: 'Confirmer le Retrait',
       withdrawing: 'Retrait en cours...',
       withdrawSuccess: 'Retrait réussi',
-      withdrawFailed: 'Retrait échoué'
+      withdrawFailed: 'Retrait échoué',
+      withdrawSubmitted: 'Demande de retrait soumise, en attente d\'examen manuel. Vous pouvez vérifier le statut dans vos commandes historiques.',
+      successModal: {
+        modal: {
+          title: 'Demande de Retrait Soumise',
+          message: 'Demande de retrait soumise, en attente d\'examen manuel. Vous pouvez vérifier le statut dans vos commandes historiques.',
+          confirm: 'OK'
+        }
+      }
     },
+
 
 
     // Invitation

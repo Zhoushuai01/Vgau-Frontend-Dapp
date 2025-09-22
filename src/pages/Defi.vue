@@ -555,7 +555,7 @@
     const isWalletConnected = await checkWalletConnection()
     if (!isWalletConnected) {
       uni.showToast({
-        title: '请先连接钱包',
+        title: t('person.pleaseConnectWallet'),
         icon: 'none',
         duration: 2000
       })
@@ -578,7 +578,7 @@
       
       // 显示加载提示
       uni.showLoading({
-        title: '正在领取...',
+        title: t('person.claiming'),
         mask: true
       })
       
@@ -595,7 +595,7 @@
         
         // 显示成功提示
         uni.showToast({
-          title: '领取成功',
+          title: t('person.claimSuccess'),
           icon: 'success',
           duration: 2000
         })
@@ -610,7 +610,7 @@
         
         // 显示失败提示
         uni.showToast({
-          title: response?.message || '领取失败',
+          title: response?.message || t('person.claimFailed'),
           icon: 'none',
           duration: 2000
         })
@@ -623,7 +623,7 @@
       
       // 显示错误提示
       uni.showToast({
-        title: '领取失败，请稍后重试',
+        title: t('person.claimRetry'),
         icon: 'none',
         duration: 2000
       })
@@ -690,7 +690,7 @@
       if (!isWalletConnected) {
         console.log('❌ 钱包未连接，无法进行操作')
         uni.showToast({
-          title: '请先连接钱包',
+          title: t('person.pleaseConnectWallet'),
           icon: 'none',
           duration: 2000
         })
@@ -719,7 +719,7 @@
         
         console.log('✅ 钱包验证成功，已创建会话')
         uni.showToast({
-          title: '登录成功',
+          title: t('auth.loginSuccess'),
           icon: 'success',
           duration: 1500
         })
@@ -766,7 +766,7 @@
     const isWalletConnected = await checkWalletConnection()
     if (!isWalletConnected) {
       uni.showToast({
-        title: '请先连接钱包',
+        title: t('person.pleaseConnectWallet'),
         icon: 'none',
         duration: 2000
       })
@@ -785,7 +785,7 @@
     const isWalletConnected = await checkWalletConnection()
     if (!isWalletConnected) {
       uni.showToast({
-        title: '请先连接钱包',
+        title: t('person.pleaseConnectWallet'),
         icon: 'none',
         duration: 2000
       })
@@ -804,7 +804,7 @@
     const isWalletConnected = await checkWalletConnection()
     if (!isWalletConnected) {
       uni.showToast({
-        title: '请先连接钱包',
+        title: t('person.pleaseConnectWallet'),
         icon: 'none',
         duration: 2000
       })
@@ -823,7 +823,7 @@
     const isWalletConnected = await checkWalletConnection()
     if (!isWalletConnected) {
       uni.showToast({
-        title: '请先连接钱包',
+        title: t('person.pleaseConnectWallet'),
         icon: 'none',
         duration: 2000
       })
@@ -991,7 +991,7 @@
           if (!wasConnected) {
             console.log('✅ 检测到钱包重新连接')
             uni.showToast({
-              title: '钱包已重新连接',
+              title: t('person.walletConnectionSuccess'),
               icon: 'success',
               duration: 1500
             })
@@ -1028,7 +1028,7 @@
             balances.USDT = '0'
             yieldData.pending = '0'
             uni.showToast({
-              title: '钱包已断开连接',
+              title: t('person.walletDisconnected'),
               icon: 'none',
               duration: 2000
             })

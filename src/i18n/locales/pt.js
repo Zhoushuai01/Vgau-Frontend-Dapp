@@ -18,7 +18,14 @@ export default {
       confirm: 'Confirmar',
       cancel: 'Cancelar'
     },
-    loading: 'Sacando...'
+    loading: 'Sacando...',
+    successModal: {
+      modal: {
+        title: 'Pedido de Saque Submetido',
+        message: 'Pedido de saque submetido, aguardando revisão manual. Você pode verificar o status em seus pedidos históricos.',
+        confirm: 'OK'
+      }
+    }
   },
 
   // 通用UI元素
@@ -171,6 +178,10 @@ export default {
     pleaseConnectWallet: 'Por favor, conecte sua carteira primeiro',
     userRejectedConnection: 'Usuário Rejeitou Conexão',
     noWalletDetected: 'Nenhuma Carteira Detectada',
+    claiming: 'Reivindicando...',
+    claimSuccess: 'Reivindicação bem-sucedida',
+    claimFailed: 'Falha na reivindicação',
+    claimRetry: 'Falha na reivindicação, tente novamente mais tarde',
     assetOverview: 'Visão Geral dos Ativos',
     currentStakedAmount: 'Quantidade Atual em Stake',
     totalStakedRewards: 'Recompensas Totais em Stake',
@@ -914,8 +925,17 @@ export default {
       confirmWithdraw: 'Confirmar Saque',
       withdrawing: 'Sacando...',
       withdrawSuccess: 'Saque bem-sucedido',
-      withdrawFailed: 'Saque falhou'
+      withdrawFailed: 'Saque falhou',
+      withdrawSubmitted: 'Pedido de saque submetido, aguardando revisão manual. Você pode verificar o status em seus pedidos históricos.',
+      successModal: {
+        modal: {
+          title: 'Pedido de Saque Submetido',
+          message: 'Pedido de saque submetido, aguardando revisão manual. Você pode verificar o status em seus pedidos históricos.',
+          confirm: 'OK'
+        }
+      }
     },
+
 
 
     // Invitation

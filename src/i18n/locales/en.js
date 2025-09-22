@@ -18,7 +18,14 @@ export default {
       confirm: 'Confirm',
       cancel: 'Cancel'
     },
-    loading: 'Withdrawing...'
+    loading: 'Withdrawing...',
+    successModal: {
+      modal: {
+        title: 'Withdrawal Submitted',
+        message: 'Withdrawal application submitted, pending manual review. You can check the status in your history orders.',
+        confirm: 'OK'
+      }
+    }
   },
 
   // Common UI Elements
@@ -183,6 +190,10 @@ export default {
     pleaseConnectWallet: 'Please connect your wallet first',
     userRejectedConnection: 'User rejected connection',
     noWalletDetected: 'No wallet detected',
+    claiming: 'Claiming...',
+    claimSuccess: 'Claim successful',
+    claimFailed: 'Claim failed',
+    claimRetry: 'Claim failed, please try again later',
     assetOverview: 'Asset Overview',
     currentStakedAmount: 'Current Staked Amount',
     totalStakedRewards: 'Total Staked Rewards',
@@ -945,8 +956,17 @@ export default {
       confirmWithdraw: 'Confirm Withdraw',
       withdrawing: 'Withdrawing...',
       withdrawSuccess: 'Withdraw Successful',
-      withdrawFailed: 'Withdraw Failed'
+      withdrawFailed: 'Withdraw Failed',
+      withdrawSubmitted: 'Withdrawal application submitted, pending manual review. You can check the status in your history orders.',
+      successModal: {
+        modal: {
+          title: 'Withdrawal Submitted',
+          message: 'Withdrawal application submitted, pending manual review. You can check the status in your history orders.',
+          confirm: 'OK'
+        }
+      }
     },
+
 
 
     // Invitation
