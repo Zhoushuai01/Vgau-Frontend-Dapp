@@ -214,7 +214,7 @@
                </text>
              </view>
              <view class="earn-transaction-right">
-               <text class="earn-transaction-time">{{ formatTime(transaction.rawData?.createTime || transaction.rawData?.createdAt) }}</text>
+               <text class="earn-transaction-time">{{ getDisplayTime(transaction.rawData) }}</text>
                <view class="earn-view-details-btn" @click="viewEarnTransactionDetail(transaction)">
                  <text class="earn-view-details-text">{{ t('history.earn.viewDetails') }}</text>
                </view>
@@ -375,14 +375,30 @@ const processedStakeOrders = computed(() => {
     const status = order.status || 'PENDING'
     const statusClass = getStakeStatusClass(status)
     
+    // 根据订单状态选择显示的时间
+    let displayTime
+    if (status === 'COMPLETED' || status === 'REDEEMED') {
+      // 已完成的订单显示赎回时间
+      displayTime = order.redeemTime || order.redeemedAt || order.completedAt
+    } else {
+      // 其他状态显示创建时间
+      displayTime = order.createdAt || order.created_at
+    }
+    
     return {
       id: order.orderId || order.id,
       status: getStakeStatusText(status),
       statusClass: statusClass,
       amount: `${order.stakeAmount || order.amount || '0'} VGAU`,
-      date: formatDate(order.createdAt || order.created_at),
+      date: formatDate(displayTime),
+      displayTime: displayTime, // 添加用于排序的时间字段
       rawData: order
     }
+  }).sort((a, b) => {
+    // 按显示时间降序排序（最新的在前面）
+    const timeA = new Date(a.displayTime || 0).getTime()
+    const timeB = new Date(b.displayTime || 0).getTime()
+    return timeB - timeA
   })
 })
 
@@ -444,6 +460,23 @@ const formatTime = (dateString) => {
   } catch (error) {
     console.error('时间格式化错误:', error)
     return ''
+  }
+}
+
+// 获取质押订单的显示时间
+const getDisplayTime = (orderData) => {
+  if (!orderData) return ''
+  
+  const status = orderData.status || 'PENDING'
+  
+  // 已完成的订单显示赎回时间
+  if (status === 'COMPLETED' || status === 'REDEEMED') {
+    const redeemTime = orderData.redeemTime || orderData.redeemedAt || orderData.completedAt
+    return formatTime(redeemTime)
+  } else {
+    // 其他状态显示创建时间
+    const createTime = orderData.createTime || orderData.createdAt
+    return formatTime(createTime)
   }
 }
 
