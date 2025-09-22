@@ -189,7 +189,7 @@ export default {
     assetOverview: '資產概覽',
     currentStakedAmount: '當前質押數量',
     totalStakedRewards: '總質押獎勵',
-    currentCollateral: '當前抵押品',
+    currentCollateral: '當前抵押數量',
     remainingDebt: '剩餘債務',
     totalPoints: '總積分',
     notificationCenter: '通知中心（清算警報）',

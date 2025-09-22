@@ -186,7 +186,7 @@ export default {
     assetOverview: 'Asset Overview',
     currentStakedAmount: 'Current Staked Amount',
     totalStakedRewards: 'Total Staked Rewards',
-    currentCollateral: 'Current Collateral',
+    currentCollateral: 'Current Collateral Amount',
     remainingDebt: 'Remaining Debt',
     totalPoints: 'Total Points',
     notificationCenter: 'Notification Center (Liquidation Alert)',

@@ -174,7 +174,7 @@ export default {
     assetOverview: 'نظرة عامة على الأصول',
     currentStakedAmount: 'كمية الرهان الحالية',
     totalStakedRewards: 'إجمالي مكافآت الرهان',
-    currentCollateral: 'الضمان الحالي',
+    currentCollateral: 'كمية الضمان الحالية',
     remainingDebt: 'الدين المتبقي',
     totalPoints: 'إجمالي النقاط',
     notificationCenter: 'مركز الإشعارات (تنبيهات التصفية)',

@@ -174,7 +174,7 @@ export default {
     assetOverview: 'Aperçu des Actifs',
     currentStakedAmount: 'Montant Actuel en Stake',
     totalStakedRewards: 'Récompenses Totales en Stake',
-    currentCollateral: 'Garantie Actuelle',
+    currentCollateral: 'Montant de Garantie Actuel',
     remainingDebt: 'Dette Restante',
     totalPoints: 'Points Totaux',
     notificationCenter: 'Centre de Notifications (Alertes de Liquidation)',
