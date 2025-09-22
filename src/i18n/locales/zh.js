@@ -261,6 +261,7 @@ export default {
       done: '已完成',
       pending: '待處理',
       processing: '處理中',
+      success: '已成功',
       failed: '失敗',
       cancelled: '已取消'
     },
@@ -478,7 +479,7 @@ export default {
     status: {
       pending: '待處理',
       processing: '處理中',
-      success: '成功',
+      success: '已成功',
       completed: '已完成',
       failed: '失敗',
       cancelled: '已取消',

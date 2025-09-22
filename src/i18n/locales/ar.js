@@ -246,6 +246,7 @@ export default {
       done: 'مكتمل',
       pending: 'في الانتظار',
       processing: 'قيد المعالجة',
+      success: 'مكتمل',
       failed: 'فشل',
       cancelled: 'ملغي'
     },
@@ -446,7 +447,7 @@ export default {
     status: {
       pending: 'في الانتظار',
       processing: 'قيد المعالجة',
-      success: 'نجح',
+      success: 'مكتمل',
       completed: 'مكتمل',
       failed: 'فشل',
       cancelled: 'ملغي',

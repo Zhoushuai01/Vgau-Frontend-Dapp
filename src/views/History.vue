@@ -452,6 +452,7 @@ const getStatusText = (status) => {
   const statusMap = {
     'PENDING': t('history.transaction.pending'),
     'PROCESSING': t('history.transaction.processing'),
+    'SUCCESS': t('history.transaction.success'),
     'COMPLETED': t('history.transaction.done'),
     'FAILED': t('history.transaction.failed'),
     'CANCELLED': t('history.transaction.cancelled'),
@@ -465,6 +466,7 @@ const getStatusClass = (status) => {
   const classMap = {
     'PENDING': 'pending',
     'PROCESSING': 'processing',
+    'SUCCESS': 'success',
     'COMPLETED': 'success',
     'FAILED': 'failed',
     'CANCELLED': 'cancelled',

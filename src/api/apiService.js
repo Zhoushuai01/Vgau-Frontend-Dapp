@@ -16,6 +16,15 @@ class ApiService {
       ...options,
       url: this.baseURL + url
     }
+    
+    // 平台兼容性处理：只在支持的平台添加withCredentials
+    // #ifdef H5
+    config.withCredentials = true
+    // #endif
+    
+    // #ifdef APP-PLUS
+    config.withCredentials = true
+    // #endif
 
     // 禁用缓存，确保每次都从后端获取最新数据
     if (config.method === 'GET') {
@@ -37,6 +46,7 @@ class ApiService {
       url: config.url,
       data: config.data,
       headers: config.headers,
+      withCredentials: config.withCredentials, // 添加调试信息
       timeout: config.timeout,
       retries: retries
     })
@@ -44,7 +54,10 @@ class ApiService {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         console.log(`📤 开始发送请求 (尝试 ${attempt}/${retries})...`)
-        const response = await uni.request(config)
+        const response = await uni.request({
+          ...config,
+          withCredentials: true // 确保发送cookie
+        })
         
         console.log('📡 API响应详情:', {
           statusCode: response.statusCode,
@@ -113,6 +126,7 @@ class ApiService {
             'Content-Type': 'application/json'
           },
           timeout: 10000,
+          withCredentials: true, // 确保发送cookie
           success: (res) => {
             console.log('✅ uni.request success:', res)
             console.log('📊 响应数据详情:', JSON.stringify(res.data, null, 2))

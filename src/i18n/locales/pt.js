@@ -246,6 +246,7 @@ export default {
       done: 'Concluído',
       pending: 'Pendente',
       processing: 'Processando',
+      success: 'Concluído',
       failed: 'Falhou',
       cancelled: 'Cancelado'
     },
@@ -446,7 +447,7 @@ export default {
     status: {
       pending: 'Pendente',
       processing: 'Processando',
-      success: 'Sucesso',
+      success: 'Concluído',
       completed: 'Concluído',
       failed: 'Falhou',
       cancelled: 'Cancelado',

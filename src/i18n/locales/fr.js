@@ -246,6 +246,7 @@ export default {
       done: 'Terminé',
       pending: 'En Attente',
       processing: 'En Traitement',
+      success: 'Terminé',
       failed: 'Échoué',
       cancelled: 'Annulé'
     },
@@ -446,7 +447,7 @@ export default {
     status: {
       pending: 'En Attente',
       processing: 'En Traitement',
-      success: 'Succès',
+      success: 'Terminé',
       completed: 'Terminé',
       failed: 'Échec',
       cancelled: 'Annulé',
