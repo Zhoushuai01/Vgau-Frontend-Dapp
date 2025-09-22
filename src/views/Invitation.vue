@@ -459,18 +459,35 @@ onMounted(() => {
   const isWalletConnected = checkWalletConnection()
   console.log('🔍 邀请页面挂载时钱包连接状态:', isWalletConnected)
   
-  // 只有在钱包连接时才获取统计数据
+  // 只有在钱包连接时才检查登录状态并获取数据
   if (isWalletConnected) {
-    console.log('🔍 钱包已连接，开始获取统计数据...')
-    fetchStatistics() // 这个函数现在会获取所有数据包括邀请列表
+    console.log('🔍 钱包已连接，检查用户登录状态...')
+    
+    setTimeout(async () => {
+      try {
+        console.log('🔍 检查用户登录状态...')
+        const { checkUserLoginStatus } = await import('@/utils/walletService.js')
+        const loginStatus = await checkUserLoginStatus()
+        
+        if (loginStatus.isLoggedIn && loginStatus.userData) {
+          console.log('✅ 检测到用户已登录，自动加载邀请数据')
+          fetchStatistics() // 这个函数现在会获取所有数据包括邀请列表
+        } else {
+          console.log('⏳ 用户未登录，等待用户登录事件以加载邀请数据...')
+        }
+      } catch (error) {
+        console.error('❌ 检查用户登录状态失败:', error)
+        console.log('⏳ 等待用户登录事件以加载邀请数据...')
+      }
+    }, 500)
   } else {
     console.log('🔍 钱包未连接，跳过数据获取')
   }
   
-  // 监听钱包连接事件
-  uni.$on('walletConnected', async (data) => {
-    console.log('📡 邀请页面收到钱包连接事件:', data)
-    console.log('🔍 邀请页面钱包连接事件详情:', {
+  // 监听用户登录事件（而不是钱包连接事件）
+  uni.$on('userLoggedIn', async (data) => {
+    console.log('📡 邀请页面收到用户登录事件:', data)
+    console.log('🔍 邀请页面用户登录事件详情:', {
       data,
       web3Service: window.web3Service ? {
         isConnected: window.web3Service.isConnected,
@@ -491,6 +508,16 @@ onMounted(() => {
     } else {
       console.log('❌ 邀请页面钱包连接检查失败，跳过API调用')
     }
+  })
+  
+  // 监听钱包连接事件（仅更新连接状态，不调用需要认证的API）
+  uni.$on('walletConnected', async (data) => {
+    console.log('📡 邀请页面收到钱包连接事件:', data)
+    // 重新检查钱包连接状态
+    const isConnected = checkWalletConnection()
+    console.log('🔍 邀请页面钱包连接检查结果:', isConnected)
+    // 注意：这里不调用需要认证的API，等待用户登录事件
+    console.log('✅ 邀请页面钱包连接状态已更新，等待用户登录...')
   })
   
   // 监听钱包断开事件

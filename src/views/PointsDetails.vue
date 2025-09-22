@@ -390,10 +390,10 @@ onMounted(async () => {
     await fetchPointsRecords()
   }
   
-  // 监听钱包连接事件
-  uni.$on('walletConnected', async (data) => {
-    console.log('📡 积分详情页面收到钱包连接事件:', data)
-    console.log('🔍 积分页面钱包连接事件详情:', {
+  // 监听用户登录事件（而不是钱包连接事件）
+  uni.$on('userLoggedIn', async (data) => {
+    console.log('📡 积分详情页面收到用户登录事件:', data)
+    console.log('🔍 积分页面用户登录事件详情:', {
       data,
       web3Service: window.web3Service ? {
         isConnected: window.web3Service.isConnected,
@@ -409,14 +409,39 @@ onMounted(async () => {
     console.log('🔍 积分页面钱包连接检查结果:', isConnected)
     
     if (isConnected) {
-      console.log('✅ 积分页面开始获取数据...')
-      // 先获取积分详情（包含总积分）
-      await fetchPointsDetails()
-      // 然后获取积分记录（包含全部数据）
-      await fetchPointsRecords()
+      console.log('✅ 积分页面钱包已连接，检查用户登录状态...')
+      
+      try {
+        console.log('🔍 检查用户登录状态...')
+        const { checkUserLoginStatus } = await import('@/utils/walletService.js')
+        const loginStatus = await checkUserLoginStatus()
+        
+        if (loginStatus.isLoggedIn && loginStatus.userData) {
+          console.log('✅ 检测到用户已登录，自动加载积分数据')
+          // 先获取积分详情（包含总积分）
+          await fetchPointsDetails()
+          // 然后获取积分记录（包含全部数据）
+          await fetchPointsRecords()
+        } else {
+          console.log('⏳ 用户未登录，等待用户登录事件以加载积分数据...')
+        }
+      } catch (error) {
+        console.error('❌ 检查用户登录状态失败:', error)
+        console.log('⏳ 等待用户登录事件以加载积分数据...')
+      }
     } else {
       console.log('❌ 积分页面钱包连接检查失败，跳过API调用')
     }
+  })
+  
+  // 监听钱包连接事件（仅更新连接状态，不调用需要认证的API）
+  uni.$on('walletConnected', async (data) => {
+    console.log('📡 积分详情页面收到钱包连接事件:', data)
+    // 重新检查钱包连接状态
+    const isConnected = checkWalletConnection()
+    console.log('🔍 积分页面钱包连接检查结果:', isConnected)
+    // 注意：这里不调用需要认证的API，等待用户登录事件
+    console.log('✅ 积分页面钱包连接状态已更新，等待用户登录...')
   })
   
   // 监听钱包断开事件

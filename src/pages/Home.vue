@@ -346,7 +346,7 @@
         // 设置钱包连接状态到localStorage
         localStorage.setItem('walletConnected', 'true')
         
-        // 触发钱包连接事件，通知其他页面
+        // 触发钱包连接事件（仅通知钱包已连接）
         uni.$emit('walletConnected', {
           walletAddress: currentAccount.value,
           isConnected: true,

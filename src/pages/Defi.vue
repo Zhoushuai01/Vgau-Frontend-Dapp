@@ -276,6 +276,15 @@
     lastConnectedAt: null
   })
   
+  // 用户登录状态管理
+  const userLoginStatus = ref({
+    isLoggedIn: false,
+    walletAddress: null,
+    loggedInAt: null,
+    userData: null,
+    token: null
+  })
+  
   // 余额数据
   const balances = reactive({
     VGAU: '0',
@@ -562,6 +571,12 @@
       return
     }
     
+    // 进行钱包登录认证
+    const loginSuccess = await performWalletLogin()
+    if (!loginSuccess) {
+      return
+    }
+    
     // 检查是否需要重新认证
     const isWalletBound = await checkWalletBinding()
     if (!isWalletBound) {
@@ -706,7 +721,15 @@
         return true
       }
       
-      console.log('⚠️ 无有效会话或钱包地址不匹配，开始钱包验证')
+      // 检查用户是否已经登录（通过performWalletLogin）
+      if (checkUserLoginStatus()) {
+        console.log('✅ 用户已登录，跳过钱包验证')
+        walletBindStatus.value.isBound = true
+        walletBindStatus.value.walletAddress = walletConnectionStatus.value.walletAddress
+        return true
+      }
+      
+      console.log('⚠️ 无有效会话且用户未登录，开始钱包验证')
       const result = await smartUserVerify()
       
       if (result.success) {
@@ -760,6 +783,111 @@
     }
   }
   
+  // 检查用户是否已登录
+  const checkUserLoginStatus = () => {
+    const currentWalletAddress = walletConnectionStatus.value.walletAddress
+    const isLoggedIn = userLoginStatus.value.isLoggedIn && 
+                      userLoginStatus.value.walletAddress === currentWalletAddress
+    
+    console.log('🔍 检查用户登录状态:', {
+      isLoggedIn: userLoginStatus.value.isLoggedIn,
+      currentWalletAddress,
+      loggedInWalletAddress: userLoginStatus.value.walletAddress,
+      result: isLoggedIn
+    })
+    
+    return isLoggedIn
+  }
+  
+  // 清除用户登录状态
+  const clearUserLoginStatus = () => {
+    console.log('🧹 清除用户登录状态')
+    userLoginStatus.value = {
+      isLoggedIn: false,
+      walletAddress: null,
+      loggedInAt: null,
+      userData: null,
+      token: null
+    }
+  }
+  
+  // 钱包登录认证函数
+  const performWalletLogin = async () => {
+    // 检查是否已经登录
+    if (checkUserLoginStatus()) {
+      console.log('✅ 用户已登录，跳过登录流程')
+      return true
+    }
+    
+    try {
+      console.log('🔐 开始钱包登录认证...')
+      
+      // 进行钱包验证/登录
+      const result = await smartUserVerify()
+      
+      if (result.success) {
+        console.log('✅ 钱包登录成功:', result)
+        console.log('🔍 登录结果详情:', {
+          hasWalletAddress: !!result.walletAddress,
+          hasUserData: !!result.userData,
+          hasToken: !!result.token,
+          walletAddress: result.walletAddress,
+          userData: result.userData,
+          token: result.token
+        })
+        
+        // 更新登录状态
+        userLoginStatus.value = {
+          isLoggedIn: true,
+          walletAddress: result.walletAddress,
+          loggedInAt: Date.now(),
+          userData: result.userData,
+          token: result.token
+        }
+        
+        // 准备事件数据
+        const eventData = {
+          walletAddress: result.walletAddress,
+          userData: result.userData,
+          token: result.token,
+          loggedInAt: Date.now()
+        }
+        
+        console.log('🚀 准备触发userLoggedIn事件:', eventData)
+        
+        // 登录成功，触发用户登录事件
+        uni.$emit('userLoggedIn', eventData)
+        
+        console.log('✅ userLoggedIn事件已触发')
+        
+        // 显示登录成功提示
+        uni.showToast({
+          title: t('auth.loginSuccess') || '登录成功',
+          icon: 'success',
+          duration: 1000
+        })
+        
+        return true
+      } else {
+        console.error('❌ 钱包登录失败:', result)
+        uni.showToast({
+          title: t('auth.loginFailed') || '登录失败',
+          icon: 'error',
+          duration: 2000
+        })
+        return false
+      }
+    } catch (loginError) {
+      console.error('❌ 钱包登录异常:', loginError)
+      uni.showToast({
+        title: t('auth.loginFailed') || '登录失败',
+        icon: 'error',
+        duration: 2000
+      })
+      return false
+    }
+  }
+  
   // 操作按钮事件处理
   const handleRecharge = async () => {
     // 先检查并初始化钱包连接状态
@@ -770,6 +898,12 @@
         icon: 'none',
         duration: 2000
       })
+      return
+    }
+    
+    // 进行钱包登录认证
+    const loginSuccess = await performWalletLogin()
+    if (!loginSuccess) {
       return
     }
     
@@ -792,6 +926,12 @@
       return
     }
     
+    // 进行钱包登录认证
+    const loginSuccess = await performWalletLogin()
+    if (!loginSuccess) {
+      return
+    }
+    
     const isWalletBound = await checkWalletBinding()
     if (isWalletBound) {
       currentAction.value = 'withdraw'
@@ -811,6 +951,12 @@
       return
     }
     
+    // 进行钱包登录认证
+    const loginSuccess = await performWalletLogin()
+    if (!loginSuccess) {
+      return
+    }
+    
     const isWalletBound = await checkWalletBinding()
     if (isWalletBound) {
       currentAction.value = 'finance'
@@ -827,6 +973,12 @@
         icon: 'none',
         duration: 2000
       })
+      return
+    }
+    
+    // 进行钱包登录认证
+    const loginSuccess = await performWalletLogin()
+    if (!loginSuccess) {
       return
     }
     
@@ -1096,9 +1248,9 @@
     // 设置钱包事件监听
     setupWalletEventListeners()
     
-    // 监听钱包连接状态变化
-    uni.$on('walletConnected', async (data) => {
-      console.log('📡 DeFi页面收到钱包连接事件:', data)
+    // 监听用户登录事件（而不是钱包连接事件）
+    uni.$on('userLoggedIn', async (data) => {
+      console.log('📡 DeFi页面收到用户登录事件:', data)
       // 重新检查钱包连接状态
       await checkWalletConnection()
       // 获取用户数据
@@ -1110,13 +1262,35 @@
       }
     })
     
+    // 监听钱包连接事件（仅更新连接状态，不进行登录认证）
+    uni.$on('walletConnected', async (data) => {
+      console.log('📡 DeFi页面收到钱包连接事件:', data)
+      
+      // 重新检查钱包连接状态
+      await checkWalletConnection()
+      
+      // 检查钱包地址是否发生变化，如果变化则清除登录状态
+      const currentWalletAddress = walletConnectionStatus.value.walletAddress
+      const loggedInWalletAddress = userLoginStatus.value.walletAddress
+      
+      if (currentWalletAddress !== loggedInWalletAddress) {
+        console.log('🔄 检测到钱包地址变化，清除登录状态')
+        clearUserLoginStatus()
+      }
+      
+      console.log('✅ DeFi页面钱包连接状态已更新，等待用户点击功能按钮进行登录...')
+    })
+    
     // 监听钱包地址变化事件
     uni.$on('walletAddressChanged', async (data) => {
       console.log('📡 DeFi页面收到钱包地址变化事件:', data)
       if (data.newAddress) {
         console.log('🔄 钱包地址已变化，强制清除认证状态并重新认证...')
         
-        // 1. 通知API服务重置认证状态
+        // 1. 清除用户登录状态
+        clearUserLoginStatus()
+        
+        // 2. 通知API服务重置认证状态
         try {
           const { default: apiService } = await import('@/api/apiService.js')
           apiService.resetAuthState()

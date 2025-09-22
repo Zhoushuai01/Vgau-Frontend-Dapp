@@ -145,7 +145,7 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatShortAddress } from '@/utils/addressUtils'
-import { authAPI, stakeAPI, loanAPI, pointsAPI } from '@/api/apiService.js'
+import { authAPI, stakeAPI, loanAPI, pointsAPI, inviteAPI } from '@/api/apiService.js'
 import web3Service from '@/utils/web3.js'
 
 const { t, locale } = useI18n()
@@ -167,6 +167,13 @@ const assets = reactive({
 })
 
 const points = ref('0')
+
+// 邀请数据
+const inviteData = reactive({
+  totalInvites: '0',
+  totalRewards: '0',
+  inviteCode: ''
+})
 
 // 手动连接功能已移除（仅显示已连接地址）
 
@@ -190,21 +197,10 @@ const setupWalletEventListeners = () => {
         
         // 如果是从未连接状态变为连接状态，或者地址发生变化
         if (!wasConnected || wasAddress !== newAddress) {
-          console.log('🔄 钱包状态变化，开始刷新数据...')
+          console.log('🔄 钱包状态变化，更新连接状态...')
           
-          // 延迟刷新数据，确保web3Service状态已更新
-          setTimeout(async () => {
-            try {
-              // 刷新用户信息和资产数据
-              await Promise.all([
-                getUserInfo(),
-                getAssetsInfo()
-              ])
-              console.log('✅ 钱包状态变化后数据刷新完成')
-            } catch (error) {
-              console.error('❌ 钱包状态变化后数据刷新失败:', error)
-            }
-          }, 500)
+          // 注意：这里不调用需要认证的API，等待用户登录事件
+          console.log('✅ 钱包连接状态已更新，等待用户登录...')
         }
       } else {
         // 没有账户连接
@@ -261,20 +257,12 @@ const startWalletStatusCheck = () => {
             address: web3Service.currentAccount
           })
           
-          // 如果是从未连接状态变为连接状态，或者地址发生变化，刷新数据
+          // 如果是从未连接状态变为连接状态，或者地址发生变化
           if (!wasConnected || wasAddress !== web3Service.currentAccount) {
-            console.log('🔄 定期检查: 检测到钱包状态变化，开始刷新数据...')
-            setTimeout(async () => {
-              try {
-                await Promise.all([
-                  getUserInfo(),
-                  getAssetsInfo()
-                ])
-                console.log('✅ 定期检查: 数据刷新完成')
-              } catch (error) {
-                console.error('❌ 定期检查: 数据刷新失败:', error)
-              }
-            }, 500)
+            console.log('🔄 定期检查: 检测到钱包状态变化，更新连接状态...')
+            
+            // 注意：这里不调用需要认证的API，等待用户登录事件
+            console.log('✅ 定期检查: 钱包连接状态已更新，等待用户登录...')
           }
         }
       } else {
@@ -418,7 +406,9 @@ const getUserInfo = async () => {
     }
     
     console.log('🔍 开始获取用户信息...')
+    console.log('📡 调用authAPI.getMe()...')
     const response = await authAPI.getMe()
+    console.log('📡 authAPI.getMe()响应:', response)
     
     if (response && response.success && response.data) {
       console.log('✅ 获取到用户信息:', response.data)
@@ -456,13 +446,22 @@ const getAssetsInfo = async () => {
     }
     
     console.log('📊 开始获取资产信息...')
+    console.log('📡 并行调用API接口...')
     
-    // 并行调用质押统计、借贷汇总和积分详情接口
-    const [stakeResponse, loanResponse, pointsResponse] = await Promise.allSettled([
+    // 并行调用质押统计、借贷汇总、积分详情和邀请统计接口
+    const [stakeResponse, loanResponse, pointsResponse, inviteResponse] = await Promise.allSettled([
       stakeAPI.getStatistics(),
       loanAPI.getSummary(),
-      pointsAPI.getMy()
+      pointsAPI.getMy(),
+      inviteAPI.getMyStats()
     ])
+    
+    console.log('📡 API接口响应结果:', {
+      stake: stakeResponse.status,
+      loan: loanResponse.status,
+      points: pointsResponse.status,
+      invite: inviteResponse.status
+    })
     
     // 处理质押统计数据
     if (stakeResponse.status === 'fulfilled' && stakeResponse.value?.success) {
@@ -531,7 +530,40 @@ const getAssetsInfo = async () => {
       points.value = '0'
     }
     
-    console.log('📊 资产信息更新完成:', { assets, points: points.value })
+    // 处理邀请统计数据
+    if (inviteResponse.status === 'fulfilled' && inviteResponse.value?.success) {
+      const inviteResponseData = inviteResponse.value.data
+      console.log('✅ 邀请统计数据:', inviteResponseData)
+      
+      // 更新总邀请人数
+      if (inviteResponseData.totalInvites !== undefined) {
+        inviteData.totalInvites = formatNumber(inviteResponseData.totalInvites)
+      } else {
+        inviteData.totalInvites = '0'
+      }
+      
+      // 更新总奖励
+      if (inviteResponseData.totalRewards !== undefined) {
+        inviteData.totalRewards = formatNumber(inviteResponseData.totalRewards)
+      } else {
+        inviteData.totalRewards = '0'
+      }
+      
+      // 更新邀请码
+      if (inviteResponseData.inviteCode !== undefined) {
+        inviteData.inviteCode = inviteResponseData.inviteCode
+      } else {
+        inviteData.inviteCode = ''
+      }
+    } else {
+      console.warn('⚠️ 邀请统计接口调用失败:', inviteResponse.reason)
+      // 接口失败时保持默认值
+      inviteData.totalInvites = '0'
+      inviteData.totalRewards = '0'
+      inviteData.inviteCode = ''
+    }
+    
+    console.log('📊 资产信息更新完成:', { assets, points: points.value, inviteData })
   } catch (error) {
     console.error('❌ 获取资产信息失败:', error)
     
@@ -541,6 +573,9 @@ const getAssetsInfo = async () => {
     assets.collateralVGAU = '0'
     assets.remainingDebt = '0'
     points.value = '0'
+    inviteData.totalInvites = '0'
+    inviteData.totalRewards = '0'
+    inviteData.inviteCode = ''
     
     // 不显示错误提示，静默处理
     console.log('📊 使用默认值显示资产信息')
@@ -651,29 +686,55 @@ onMounted(async () => {
   // 启动定期检查钱包状态
   startWalletStatusCheck()
   
-  // 监听钱包连接事件
-  uni.$on('walletConnected', async (data) => {
-    console.log('📡 收到钱包连接事件:', data)
-    if (data.walletAddress && data.isConnected) {
-      console.log('🔄 钱包已连接，更新个人中心数据...')
+  // 监听用户登录事件（而不是钱包连接事件）
+  uni.$on('userLoggedIn', async (data) => {
+    console.log('📡 收到用户登录事件:', data)
+    console.log('🔍 事件数据详情:', {
+      hasWalletAddress: !!data.walletAddress,
+      hasUserData: !!data.userData,
+      walletAddress: data.walletAddress,
+      userData: data.userData,
+      token: data.token
+    })
+    
+    if (data.walletAddress) {
+      console.log('🔄 用户已登录，更新个人中心数据...')
       
       // 更新钱包连接状态
       walletAddress.value = data.walletAddress
       walletConnected.value = true
       
-      // 延迟获取数据，确保web3Service状态已更新
+      // 延迟获取数据，确保认证状态已更新
       setTimeout(async () => {
         try {
+          console.log('🚀 开始调用个人中心API...')
           // 刷新用户信息和资产数据
           await Promise.all([
             getUserInfo(),
             getAssetsInfo()
           ])
-          console.log('✅ 钱包连接后数据刷新完成')
+          console.log('✅ 用户登录后数据刷新完成')
         } catch (error) {
-          console.error('❌ 钱包连接后数据刷新失败:', error)
+          console.error('❌ 用户登录后数据刷新失败:', error)
         }
       }, 500)
+    } else {
+      console.warn('⚠️ 用户登录事件缺少钱包地址，跳过数据刷新')
+    }
+  })
+  
+  // 监听钱包连接事件（仅更新连接状态，不调用需要认证的API）
+  uni.$on('walletConnected', async (data) => {
+    console.log('📡 收到钱包连接事件:', data)
+    if (data.walletAddress && data.isConnected) {
+      console.log('🔄 钱包已连接，更新连接状态...')
+      
+      // 更新钱包连接状态
+      walletAddress.value = data.walletAddress
+      walletConnected.value = true
+      
+      // 注意：这里不调用需要认证的API，等待用户登录事件
+      console.log('✅ 钱包连接状态已更新，等待用户登录...')
     }
   })
   
@@ -786,14 +847,37 @@ onMounted(async () => {
     // 重新检查钱包连接状态
     const isWalletConnected = await getConnectedWalletAddress()
     
-    // 只有在钱包连接时才获取数据
+    // 检查用户登录状态，如果已登录则自动加载数据
     if (isWalletConnected && walletAddress.value) {
-      console.log('✅ 钱包已连接，开始获取数据...')
-      await Promise.all([
-        getUserInfo(),
-        getAssetsInfo()
-      ])
-      console.log('✅ 个人中心数据获取完成')
+      console.log('✅ 钱包已连接，检查用户登录状态...')
+      
+      try {
+        console.log('🔍 检查用户登录状态...')
+        const { checkUserLoginStatus } = await import('@/utils/walletService.js')
+        const loginStatus = await checkUserLoginStatus()
+        
+        if (loginStatus.isLoggedIn && loginStatus.userData) {
+          console.log('✅ 检测到用户已登录，自动加载数据')
+          console.log('👤 用户数据:', loginStatus.userData)
+          
+          // 触发用户登录事件以加载数据
+          const eventData = {
+            walletAddress: walletAddress.value,
+            userData: loginStatus.userData,
+            token: null, // 从后端检查不包含token
+            autoLogin: true // 标记这是自动登录
+          }
+          
+          console.log('🚀 触发自动登录事件:', eventData)
+          uni.$emit('userLoggedIn', eventData)
+          
+        } else {
+          console.log('⏳ 用户未登录，等待用户登录事件以加载用户相关数据...')
+        }
+      } catch (error) {
+        console.error('❌ 检查用户登录状态失败:', error)
+        console.log('⏳ 等待用户登录事件以加载用户相关数据...')
+      }
     } else {
       console.log('⚠️ 钱包未连接，跳过数据获取')
     }
