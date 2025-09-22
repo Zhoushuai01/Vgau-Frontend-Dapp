@@ -236,7 +236,7 @@
   import vgauService from '../utils/vgauService.js'
   import contractExchange from '@/utils/contractExchange.js'
   import { formatShortAddress } from '@/utils/addressUtils'
-  import { platformFundsAPI } from '@/api/apiService.js'
+  import { platformFundsAPI, authAPI } from '@/api/apiService.js'
   
   const { t, locale } = useI18n()
   
