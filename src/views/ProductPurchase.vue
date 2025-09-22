@@ -82,6 +82,7 @@
                    type="number" 
                    :placeholder="$t('components.productPurchase.enterStakingAmount')" 
                    v-model="stakingAmount"
+                   @input="calculateEstimatedInterest"
                    :adjust-position="false" />
             <view class="input-suffix">
               <text class="currency-text">{{ t('components.productPurchase.vgau') }}</text>
@@ -113,20 +114,8 @@
           
           <view class="rules-content" v-if="currentTab === 'transaction'">
             <view class="transaction-rule-item">
-              <text class="transaction-rule-label">{{ t('components.productPurchase.purchaseTime') }}</text>
-              <text class="transaction-rule-value">{{ t('components.productPurchase.purchaseTimeValue') }}</text>
-            </view>
-            <view class="transaction-rule-item">
-              <text class="transaction-rule-label">{{ t('components.productPurchase.expirationTime') }}</text>
-              <text class="transaction-rule-value">{{ t('components.productPurchase.expirationTimeValue') }}</text>
-            </view>
-            <view class="transaction-rule-item">
               <text class="transaction-rule-label">{{ t('components.productPurchase.estimatedInterest') }}</text>
-              <text class="transaction-rule-value">{{ t('components.productPurchase.estimatedInterestValue') }}</text>
-            </view>
-            <view class="transaction-rule-item">
-              <text class="transaction-rule-label">{{ t('components.productPurchase.requiresManualRedemption') }}</text>
-              <text class="transaction-rule-value">{{ t('components.productPurchase.requiresManualRedemptionValue') }}</text>
+              <text class="transaction-rule-value">{{ estimatedInterest }} USDT</text>
             </view>
           </view>
           
@@ -192,11 +181,76 @@ const stakingAmount = ref('')
 const currentTab = ref('transaction')
 const vgauBalance = ref('0.00')
 const balanceLoading = ref(false)
+const vgauPrice = ref('0.00') // VGAU价格（USDT）
+const estimatedInterest = ref('0.00') // 预估利息
 
 // 计算属性
 const selectedProductInfo = computed(() => {
   return products.value.find(product => product.id === selectedProduct.value)
 })
+
+// 获取VGAU价格
+const fetchVGAUPrice = async () => {
+  try {
+    console.log('🔄 开始获取VGAU价格...')
+    
+    // 这里需要调用获取VGAU价格的API或合约方法
+    // 暂时使用模拟数据，实际应该从链上获取
+    const response = await userFundsAPI.getBalances() // 假设这个API也返回价格信息
+    
+    if (response.success && response.data) {
+      // 查找VGAU价格信息
+      const vgauPriceData = response.data.find(balance => balance.currency === 'VGAU')
+      
+      if (vgauPriceData && vgauPriceData.price) {
+        vgauPrice.value = parseFloat(vgauPriceData.price).toFixed(4)
+        console.log('💰 VGAU价格获取成功:', vgauPrice.value)
+      } else {
+        // 如果没有价格数据，使用默认值
+        vgauPrice.value = '123.4561' // 默认价格
+        console.log('⚠️ 未找到VGAU价格数据，使用默认值')
+      }
+    } else {
+      vgauPrice.value = '123.4561' // 默认价格
+      console.log('⚠️ 获取价格失败，使用默认值')
+    }
+  } catch (error) {
+    console.error('❌ 获取VGAU价格失败:', error)
+    vgauPrice.value = '123.4561' // 默认价格
+  }
+}
+
+// 计算预估利息
+const calculateEstimatedInterest = () => {
+  if (!stakingAmount.value || !selectedProductInfo.value || !vgauPrice.value) {
+    estimatedInterest.value = '0.00'
+    return
+  }
+  
+  const amount = parseFloat(stakingAmount.value)
+  const price = parseFloat(vgauPrice.value)
+  const annualRate = parseFloat(selectedProductInfo.value.annualRate) / 100 // 转换为小数
+  const lockDays = selectedProductInfo.value.lockDays
+  
+  if (amount <= 0 || price <= 0 || annualRate <= 0 || lockDays <= 0) {
+    estimatedInterest.value = '0.00'
+    return
+  }
+  
+  // 计算公式：质押VGAU数量 × 每枚VGAU的USDT × 年化利率 × (选择产品天数/ 365)
+  const interest = amount * price * annualRate * (lockDays / 365)
+  
+  // 保留4位小数
+  estimatedInterest.value = interest.toFixed(4)
+  
+  console.log('💰 预估利息计算:', {
+    amount,
+    price,
+    annualRate,
+    lockDays,
+    interest: estimatedInterest.value
+  })
+}
 
 // 获取VGAU余额
 const fetchVGAUBalance = async () => {
@@ -302,6 +356,8 @@ const fetchProducts = async () => {
 const selectProduct = (productId) => {
   selectedProduct.value = productId
   showProductDetail.value = true
+  // 选择产品后重新计算预估利息
+  calculateEstimatedInterest()
 }
 
 // 关闭产品详情
@@ -329,6 +385,9 @@ const setMaxAmount = () => {
     const userBalance = parseFloat(vgauBalance.value) || 0
     stakingAmount.value = userBalance.toString()
   }
+  
+  // 设置金额后重新计算预估利息
+  calculateEstimatedInterest()
 }
 
 // 切换标签页
@@ -542,11 +601,15 @@ const goBack = () => {
 onMounted(async () => {
   console.log('📱 ProductPurchase 页面初始化开始...')
   
-  // 并行获取产品列表和VGAU余额
+  // 并行获取产品列表、VGAU余额和VGAU价格
   await Promise.all([
     fetchProducts(),
-    fetchVGAUBalance()
+    fetchVGAUBalance(),
+    fetchVGAUPrice()
   ])
+  
+  // 初始化完成后计算一次预估利息
+  calculateEstimatedInterest()
   
   console.log('✅ ProductPurchase 页面初始化完成')
 })

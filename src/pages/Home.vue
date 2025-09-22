@@ -270,7 +270,7 @@
   const currentAccount = ref('')
   const accountBalance = ref('0')
   const vgauBalance = ref('0')
-  const tvlData = ref('1,000')
+  const tvlData = ref('0')
   const vgauPrice = ref('123.4561')
   const aprData = ref('1%')
   const showWalletModal = ref(false)
@@ -457,12 +457,12 @@
         })
       } else {
         console.warn('⚠️ 平台资金总览接口返回数据格式异常，使用默认值')
-        tvlData.value = '1,000'
+        tvlData.value = '0'
       }
     } catch (error) {
       console.error('❌ 获取TVL数据失败:', error)
       // 发生异常时使用默认值
-      tvlData.value = '1,000'
+      tvlData.value = '0'
     }
   }
   
