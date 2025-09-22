@@ -443,16 +443,16 @@
       const response = await platformFundsAPI.getOverview()
       
       if (response?.success && response?.data) {
-        const { totalStakeValue } = response.data
+        const { totalVgauStaked } = response.data
         
-        // 直接使用totalStakeValue字段作为TVL数据
-        const totalTvl = parseFloat(totalStakeValue || 0)
+        // 直接使用totalVgauStaked字段作为TVL数据
+        const totalTvl = parseFloat(totalVgauStaked || 0)
         
         // 格式化显示（整数，添加千分位分隔符）
         tvlData.value = Math.round(totalTvl).toLocaleString('en-US')
         
         console.log('✅ TVL数据更新:', {
-          totalStakeValue: totalStakeValue,
+          totalVgauStaked: totalVgauStaked,
           totalTvl: tvlData.value
         })
       } else {
