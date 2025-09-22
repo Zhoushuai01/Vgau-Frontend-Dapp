@@ -397,10 +397,33 @@ const switchTab = (tab) => {
 
 // 显示记录
 const showRecords = () => {
-  uni.showToast({
-    title: t('components.productPurchase.recordsFeature'),
-    icon: 'none',
-    duration: 2000
+  console.log('🔄 点击历史记录按钮，准备跳转到History页面...')
+  
+  uni.navigateTo({
+    url: '/views/History',
+    success: () => {
+      console.log('✅ 成功跳转到History页面')
+    },
+    fail: (error) => {
+      console.error('❌ 跳转到History页面失败:', error)
+      
+      // 尝试备用路径
+      console.log('🔄 尝试备用路径...')
+      uni.navigateTo({
+        url: 'views/History',
+        success: () => {
+          console.log('✅ 备用路径跳转成功')
+        },
+        fail: (backupError) => {
+          console.error('❌ 备用路径也失败:', backupError)
+          uni.showToast({
+            title: '页面跳转失败',
+            icon: 'none',
+            duration: 2000
+          })
+        }
+      })
+    }
   })
 }
 
