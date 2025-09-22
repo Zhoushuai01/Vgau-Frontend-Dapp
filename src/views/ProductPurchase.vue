@@ -157,25 +157,9 @@
                 <text class="rule-bullet">•</text>
                 <text class="rule-text">{{ t('components.productPurchase.subscriptionAndRedemptionDaily') }}</text>
               </view>
-            </view>
-            
-            <view class="rule-section">
-              <text class="rule-section-title">{{ t('components.productPurchase.earlyRedemption') }}</text>
               <view class="rule-item">
                 <text class="rule-bullet">•</text>
                 <text class="rule-text">{{ t('components.productPurchase.earlyRedemptionMyFinance') }}</text>
-              </view>
-              <view class="rule-item">
-                <text class="rule-bullet">•</text>
-                <text class="rule-text">{{ t('components.productPurchase.earlyRedemptionLoseIncome') }}</text>
-              </view>
-              <view class="rule-item">
-                <text class="rule-bullet">•</text>
-                <text class="rule-text">{{ t('components.productPurchase.earlyRedemptionBalanceCredit') }}</text>
-              </view>
-              <view class="rule-item">
-                <text class="rule-bullet">•</text>
-                <text class="rule-text">{{ t('components.productPurchase.earlyRedemptionMarketFluctuations') }}</text>
               </view>
             </view>
           </view>
