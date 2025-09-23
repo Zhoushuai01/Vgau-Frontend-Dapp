@@ -238,8 +238,8 @@ class Web3Service {
           console.log('✅ 已强制更新为MetaMask当前选中的地址:', this.currentAccount)
           
           // 如果不是初始化检查，才触发地址变化事件
-          if (!isInitialCheck && typeof window !== 'undefined' && window.uni) {
-            window.uni.$emit('walletAddressChanged', {
+          if (!isInitialCheck) {
+            uni.$emit('walletAddressChanged', {
               oldAddress: oldAddress,
               newAddress: metaMaskCurrentAddress,
               reason: 'force_check'
@@ -284,13 +284,11 @@ class Web3Service {
             this.clearLocalCache()
             
             // 触发钱包断开连接事件
-            if (typeof window !== 'undefined' && window.uni) {
-              window.uni.$emit('walletDisconnected', {
-                clearUserData: true,
-                clearAssetsData: true,
-                reason: 'wallet_disconnected'
-              })
-            }
+            uni.$emit('walletDisconnected', {
+              clearUserData: true,
+              clearAssetsData: true,
+              reason: 'wallet_disconnected'
+            })
           } else {
             // 账户重新出现，恢复连接
             console.log('检测到账户重新出现，恢复连接:', currentAccounts)
@@ -366,18 +364,16 @@ class Web3Service {
           }
           
           // 触发地址变化事件
-          if (typeof window !== 'undefined' && window.uni) {
-            console.log('📡 触发钱包地址变化事件:', {
-              oldAddress: oldAddress,
-              newAddress: newAddress,
-              reason: 'accounts_changed'
-            })
-            window.uni.$emit('walletAddressChanged', {
-              oldAddress: oldAddress,
-              newAddress: newAddress,
-              reason: 'accounts_changed'
-            })
-          }
+          console.log('📡 触发钱包地址变化事件:', {
+            oldAddress: oldAddress,
+            newAddress: newAddress,
+            reason: 'accounts_changed'
+          })
+          uni.$emit('walletAddressChanged', {
+            oldAddress: oldAddress,
+            newAddress: newAddress,
+            reason: 'accounts_changed'
+          })
           
           console.log('✅ 地址已强制更新:', this.currentAccount)
         } else if (!this.currentAccount) {
@@ -416,7 +412,7 @@ class Web3Service {
     console.log('🚨 强制清除所有认证状态...')
     
     // 调用后端登出接口
-    if (typeof window !== 'undefined' && window.uni) {
+    if (typeof uni !== 'undefined') {
       // 异步调用登出接口，不阻塞地址更新
       setTimeout(async () => {
         try {
@@ -915,13 +911,11 @@ class Web3Service {
     }
     
     // 触发钱包断开连接事件
-    if (typeof window !== 'undefined' && window.uni) {
-      window.uni.$emit('walletDisconnected', {
-        clearUserData: true,
-        clearAssetsData: true,
-        reason: 'manual_disconnect'
-      })
-    }
+    uni.$emit('walletDisconnected', {
+      clearUserData: true,
+      clearAssetsData: true,
+      reason: 'manual_disconnect'
+    })
     
     console.log('Web3服务已断开连接')
   }

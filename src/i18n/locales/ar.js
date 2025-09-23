@@ -968,6 +968,7 @@ export default {
         'direct': 'مباشر',
         'indirect': 'غير مباشر',
         '完成质押赎回获得积分': 'إكمال استرداد الرهان',
+        '完成借贷订单创建获得积分': 'createLendingOrder',
         'staking': 'رهان',
         '质押': 'رهان'
       },
@@ -1008,7 +1009,8 @@ export default {
       inviteRelationship: 'دعوة',
       directReferral: 'مباشر',
       indirectReferral: 'غير مباشر',
-      lendingRepayment: 'سداد القرض'
+      lendingRepayment: 'سداد القرض',
+      createLendingOrder: 'إقراض'
     },
 
   },

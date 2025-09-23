@@ -1,4 +1,4 @@
-<template>
+imageUrl  需要调用 作为图片<template>
   <view class="content">
     <!-- 主要内容区域 -->
     <view class="main-content">

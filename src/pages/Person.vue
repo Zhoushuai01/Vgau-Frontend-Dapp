@@ -220,14 +220,23 @@ const setupWalletEventListeners = () => {
     // 监听网络变化
     window.ethereum.on('chainChanged', (chainId) => {
       console.log('🔄 网络已切换:', chainId)
-      // 网络切换时也刷新数据
+      // 网络切换时，只有在用户已登录的情况下才刷新数据
       setTimeout(async () => {
         try {
-          await Promise.all([
-            getUserInfo(),
-            getAssetsInfo()
-          ])
-          console.log('✅ 网络切换后数据刷新完成')
+          // 检查用户是否已登录
+          const { checkUserLoginStatus } = await import('@/utils/walletService.js')
+          const loginStatus = await checkUserLoginStatus()
+          
+          if (loginStatus.isLoggedIn && loginStatus.userData) {
+            console.log('✅ 用户已登录，网络切换后刷新数据')
+            await Promise.all([
+              getUserInfo(),
+              getAssetsInfo()
+            ])
+            console.log('✅ 网络切换后数据刷新完成')
+          } else {
+            console.log('⏳ 用户未登录，网络切换后跳过数据刷新')
+          }
         } catch (error) {
           console.error('❌ 网络切换后数据刷新失败:', error)
         }

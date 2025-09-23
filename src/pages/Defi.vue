@@ -1158,13 +1158,8 @@
               icon: 'success',
               duration: 1500
             })
-            // 钱包重新连接后，获取用户数据
-            Promise.all([
-              getBalances(),
-              getClaimableInterest()
-            ]).catch(error => {
-              console.error('重新连接后获取数据失败:', error)
-            })
+            // 钱包重新连接后，不自动获取用户数据，等待用户登录
+            console.log('⏳ 钱包重新连接，等待用户登录以获取数据...')
           } else if (wasAddress !== newAddress) {
             console.log('🔄 检测到钱包地址变化')
             // 地址变化，清除会话
@@ -1399,14 +1394,47 @@
     // 获取汇率数据（不需要钱包连接）
     await getExchangeRate()
     
-    // 只有在钱包连接时才获取用户相关数据
+    // 检查用户是否已经登录，如果已登录则自动获取数据
     if (walletConnectionStatus.value.isConnected && walletConnectionStatus.value.walletAddress) {
-      await Promise.all([
-        getBalances(),
-        getClaimableInterest()
-      ])
+      console.log('✅ 钱包已连接，检查用户登录状态...')
+      
+      try {
+        console.log('🔍 检查用户登录状态...')
+        const { checkUserLoginStatus } = await import('@/utils/walletService.js')
+        const loginStatus = await checkUserLoginStatus()
+        
+        if (loginStatus.isLoggedIn && loginStatus.userData) {
+          console.log('✅ 检测到用户已登录，自动加载数据')
+          console.log('👤 用户数据:', loginStatus.userData)
+          
+          // 触发用户登录事件以加载数据
+          const eventData = {
+            walletAddress: walletConnectionStatus.value.walletAddress,
+            userData: loginStatus.userData,
+            token: null, // 从后端检查不包含token
+            autoLogin: true // 标记这是自动登录
+          }
+          
+          console.log('🚀 触发自动登录事件:', eventData)
+          uni.$emit('userLoggedIn', eventData)
+          
+        } else {
+          console.log('⏳ 用户未登录，等待用户登录事件以加载用户相关数据...')
+          // 确保余额和收益数据为0
+          balances.VGAU = '0'
+          balances.USDT = '0'
+          yieldData.pending = '0'
+        }
+      } catch (error) {
+        console.error('❌ 检查用户登录状态失败:', error)
+        console.log('⏳ 等待用户登录事件以加载用户相关数据...')
+        // 确保余额和收益数据为0
+        balances.VGAU = '0'
+        balances.USDT = '0'
+        yieldData.pending = '0'
+      }
     } else {
-      console.log('⚠️ 钱包未连接，跳过用户数据获取')
+      console.log('⚠️ 钱包未连接，跳过数据获取')
       // 确保余额和收益数据为0
       balances.VGAU = '0'
       balances.USDT = '0'

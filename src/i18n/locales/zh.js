@@ -1023,6 +1023,7 @@ export default {
         'direct': '直推',
         'indirect': '間推',
         '完成质押赎回获得积分': '完成质押赎回',
+        '完成借贷订单创建获得积分': 'createLendingOrder',
         'staking': '质押',
         '质押': '质押'
       },
@@ -1063,7 +1064,8 @@ export default {
       inviteRelationship: '邀請',
       lendingRepayment: '借貸還款',
       directReferral: '直推',
-      indirectReferral: '間推'
+      indirectReferral: '間推',
+      createLendingOrder: '借貸'
     },
 
     // Exchange

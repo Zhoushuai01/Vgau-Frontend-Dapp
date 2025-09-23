@@ -968,6 +968,7 @@ export default {
         'direct': 'Direct',
         'indirect': 'Indirect',
         '完成质押赎回获得积分': 'Rachat de Stake Complet',
+        '完成借贷订单创建获得积分': 'createLendingOrder',
         'staking': 'Stake',
         '质押': 'Stake'
       },
@@ -1008,7 +1009,8 @@ export default {
       inviteRelationship: 'Invitation',
       directReferral: 'Direct',
       indirectReferral: 'Indirect',
-      lendingRepayment: 'Remboursement de Prêt'
+      lendingRepayment: 'Remboursement de Prêt',
+      createLendingOrder: 'Prêt'
     },
 
   },

@@ -53,12 +53,11 @@ export const CONTRACTS = {
   }
 }
 
-// 网络配置
+// 网络配置 - 只保留必要信息，RPC由用户钱包管理
 export const NETWORKS = {
   BSC_MAINNET: {
     chainId: 56,
     name: 'BSC Mainnet',
-    rpcUrl: 'https://bsc-dataseed1.binance.org/',
     explorer: 'https://bscscan.com/',
     nativeCurrency: {
       name: 'BNB',
@@ -69,7 +68,6 @@ export const NETWORKS = {
   BSC_TESTNET: {
     chainId: 97,
     name: 'BSC Testnet',
-    rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545/',
     explorer: 'https://testnet.bscscan.com/',
     nativeCurrency: {
       name: 'tBNB',
