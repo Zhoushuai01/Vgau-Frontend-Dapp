@@ -1,4 +1,4 @@
-imageUrl  需要调用 作为图片<template>
+<template>
   <view class="content">
     <!-- 主要内容区域 -->
     <view class="main-content">
@@ -21,8 +21,8 @@ imageUrl  需要调用 作为图片<template>
             <view class="popular-link-item">
               <view class="popular-link-image">
                 <image 
-                  v-if="link.imageUrl" 
-                  :src="link.imageUrl" 
+                  v-if="getLinkImageUrl(link)" 
+                  :src="getLinkImageUrl(link)" 
                   class="popular-image"
                   mode="aspectFill"
                 />
@@ -72,8 +72,8 @@ imageUrl  需要调用 作为图片<template>
         >
           <view class="game-icon">
             <image 
-              v-if="link.iconUrl" 
-              :src="link.iconUrl" 
+              v-if="getLinkIconUrl(link)" 
+              :src="getLinkIconUrl(link)" 
               class="game-icon-image"
               mode="aspectFit"
             />
@@ -104,8 +104,8 @@ imageUrl  需要调用 作为图片<template>
         >
           <view class="game-icon-small">
             <image 
-              v-if="link.iconUrl" 
-              :src="link.iconUrl" 
+              v-if="getLinkIconUrl(link)" 
+              :src="getLinkIconUrl(link)" 
               class="game-icon-image-small"
               mode="aspectFit"
             />
@@ -129,6 +129,11 @@ imageUrl  需要调用 作为图片<template>
 <script setup>
 import { ref, onMounted } from 'vue'
 import { contentAPI } from '@/api/apiService.js'
+import { BASE_URL } from '@/config/api.js'
+import { useI18n } from 'vue-i18n'
+
+// 国际化
+const { t } = useI18n()
 
 // 响应式数据
 const links = ref([])
@@ -136,6 +141,24 @@ const popularLinks = ref([])
 const loading = ref(false)
 const error = ref('')
 const currentSwiperIndex = ref(0)
+
+// 生成外链图标URL
+const getLinkIconUrl = (link) => {
+  if (!link.iconFileId) {
+    return null
+  }
+  // 使用新的图标API接口
+  return `${BASE_URL}/content/links/icon/${link.iconFileId}`
+}
+
+// 生成外链图片URL（用于轮播图）
+const getLinkImageUrl = (link) => {
+  if (!link.imageFileId) {
+    return null
+  }
+  // 使用新的图片API接口
+  return `${BASE_URL}/content/links/image/${link.imageFileId}`
+}
 
 // 获取外链数据
 const fetchLinks = async () => {
@@ -148,7 +171,7 @@ const fetchLinks = async () => {
     // 并行获取所有外链和热门外链
     const [linksResponse, popularResponse] = await Promise.all([
       contentAPI.getLinks(),
-      contentAPI.getPopularLinks({ limit: 3 }) // 获取前3个热门外链
+      contentAPI.getPopularLinks() // 获取热门外链，数量由后端决定
     ])
     
     console.log('📡 外链数据响应:', linksResponse)
@@ -182,19 +205,48 @@ const onSwiperChange = (e) => {
 }
 
 // 处理外链点击
-const handleLinkClick = (link) => {
+const handleLinkClick = async (link) => {
   console.log('🔗 点击外链:', link)
   
   if (!link.targetUrl) {
     uni.showToast({
-      title: '链接地址无效',
+      title: t('invitation.invalidLink'),
       icon: 'none',
       duration: 2000
     })
     return
   }
   
-  // 在外部浏览器中打开链接
+  try {
+    // 1. 记录点击 - 匿名调用，不需要登录
+    console.log('📊 记录外链点击...')
+    await contentAPI.recordLinkClick(link.id)
+    console.log('✅ 点击记录成功')
+  } catch (error) {
+    console.warn('⚠️ 点击记录失败:', error.message)
+    // 点击记录失败不影响用户操作，继续执行
+  }
+  
+  try {
+    // 2. 确认进入 - 需要登录，尝试获取积分奖励
+    console.log('🎯 尝试确认进入外链获取积分...')
+    const confirmResult = await contentAPI.confirmLinkEntry(link.id)
+    console.log('✅ 确认进入成功:', confirmResult)
+    
+    // 显示积分奖励提示
+    if (confirmResult.success) {
+      uni.showToast({
+        title: t('invitation.pointsReward'),
+        icon: 'success',
+        duration: 2000
+      })
+    }
+  } catch (error) {
+    console.warn('⚠️ 确认进入失败:', error.message)
+    // 确认进入失败不影响用户访问链接，静默处理
+  }
+  
+  // 3. 直接打开外链
   // #ifdef H5
   window.open(link.targetUrl, '_blank')
   // #endif
@@ -205,7 +257,7 @@ const handleLinkClick = (link) => {
   
   // #ifdef MP
   uni.showToast({
-    title: '请在浏览器中打开',
+    title: t('invitation.openInBrowser'),
     icon: 'none',
     duration: 2000
   })
@@ -391,6 +443,7 @@ onMounted(() => {
 /* 横向游戏图标区域 */
 .horizontal-games {
   display: flex;
+  justify-content: space-between;
   gap: 24rpx;
   margin-bottom: 40rpx;
   overflow-x: auto;

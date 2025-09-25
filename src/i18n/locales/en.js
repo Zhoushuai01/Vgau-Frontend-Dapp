@@ -1012,7 +1012,19 @@ export default {
       inviteFriends: 'Invite Friends',
       referralRewards: 'Referral Rewards',
       myInvitations: 'My Invitations',
-      bindSuccess: 'Invite code submitted!'
+      bindSuccess: 'Invite code submitted!',
+      // External link related
+      confirmEnterLink: 'Confirm Enter Link',
+      confirmEnterLinkContent: 'Are you sure you want to visit "{linkName}"?\n\nConfirm entry to get points reward!',
+      confirmEnter: 'Confirm Enter',
+      cancel: 'Cancel',
+      pointsReward: 'Earned +1 Points!',
+      needLogin: 'Login Required',
+      needLoginContent: 'Confirming entry to external link requires login, please login first',
+      confirmFailed: 'Confirmation failed, but you can still access the link',
+      userCanceled: 'User canceled entering external link',
+      openInBrowser: 'Please open in browser',
+      invalidLink: 'Invalid link address'
     },
 
     // PointsDetails

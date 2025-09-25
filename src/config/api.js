@@ -148,7 +148,11 @@ export const API_ENDPOINTS = {
     LINKS: '/content/links',
     POPULAR_LINKS: '/content/links/popular',
     LINKS_BY_CATEGORY: '/content/links/category',
-    LINK_CATEGORIES: '/content/links/categories'
+    LINK_CATEGORIES: '/content/links/categories',
+    LINK_ICON: '/content/links/icon',
+    LINK_IMAGE: '/content/links/image',
+    LINK_CLICK: '/content/links',
+    LINK_CONFIRM_ENTRY: '/content/links'
   }
 }
 

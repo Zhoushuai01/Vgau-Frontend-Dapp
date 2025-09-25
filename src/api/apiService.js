@@ -411,13 +411,25 @@ class ApiService {
     getLinks: () => this.get(this.endpoints.CONTENT.LINKS),
     
     // 获取热门外链
-    getPopularLinks: () => this.get(this.endpoints.CONTENT.POPULAR_LINKS),
+    getPopularLinks: (params = {}) => this.get(this.endpoints.CONTENT.POPULAR_LINKS, params),
     
     // 根据分类获取外链
     getLinksByCategory: (category) => this.get(`${this.endpoints.CONTENT.LINKS_BY_CATEGORY}/${category}`),
     
     // 获取外链分类
-    getLinkCategories: () => this.get(this.endpoints.CONTENT.LINK_CATEGORIES)
+    getLinkCategories: () => this.get(this.endpoints.CONTENT.LINK_CATEGORIES),
+    
+    // 获取外链图标
+    getLinkIcon: (fileId) => this.get(`${this.endpoints.CONTENT.LINK_ICON}/${fileId}`),
+    
+    // 获取外链图片
+    getLinkImage: (fileId) => this.get(`${this.endpoints.CONTENT.LINK_IMAGE}/${fileId}`),
+    
+    // 记录外链点击
+    recordLinkClick: (linkId) => this.post(`${this.endpoints.CONTENT.LINK_CLICK}/${linkId}/click`),
+    
+    // 确认进入外链
+    confirmLinkEntry: (linkId) => this.post(`${this.endpoints.CONTENT.LINK_CONFIRM_ENTRY}/${linkId}/confirm-entry`)
   }
 
   // 检查是否需要重新认证

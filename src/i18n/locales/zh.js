@@ -1036,7 +1036,19 @@ export default {
       inviteFriends: '邀請好友',
       referralRewards: '推薦獎勵',
       myInvitations: '我的邀請',
-      bindSuccess: '邀請碼提交成功！'
+      bindSuccess: '邀請碼提交成功！',
+      // 外链相关
+      confirmEnterLink: '確認進入外鏈',
+      confirmEnterLinkContent: '確定要訪問 "{linkName}" 嗎？\n\n確認進入可獲得積分獎勵！',
+      confirmEnter: '確認進入',
+      cancel: '取消',
+      pointsReward: '獲得 +1 積分！',
+      needLogin: '需要登錄',
+      needLoginContent: '確認進入外鏈需要登錄，請先登錄後再試',
+      confirmFailed: '確認失敗，但仍可訪問鏈接',
+      userCanceled: '用戶取消進入外鏈',
+      openInBrowser: '請在瀏覽器中打開',
+      invalidLink: '鏈接地址無效'
     },
 
     // PointsDetails
