@@ -18,16 +18,10 @@
    page {
     width: 100%;
     height: 100%;
-    background:black;
-    animation: fadeIn 0.5s 
-    ease-in-out;
+    background: var(--color, black);
   }
-  @keyframes fadeIn {
-    from {
-        opacity: 0.3;
-    }
-    to {
-        opacity: 1;
-    }
-}
+  /* 全局背景色 */
+  :deep(body), :deep(html) {
+    background-color: var(--color, #0A0A0A) !important;
+  }
 </style>
